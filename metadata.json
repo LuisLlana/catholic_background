@@ -1,0 +1,13 @@
+{
+    "uuid": "catholic-background@luis.llana.diaz",
+    "name": "Catholic Background of the Day",
+    "description": "Sets a Catholic artwork as your wallpaper every day, downloaded from a Catholic background of the day server, which is checked periodically (every 30 minutes by default) for new images.\n\nThe artwork is always shown complete, as big as possible, and the rest of the screen is filled with a blurred copy of it, its average color or a color of your choice.",
+    "shell-version": [
+        "48",
+        "49",
+        "50",
+        "51"
+    ],
+    "settings-schema": "org.gnome.shell.extensions.catholic-background",
+    "version-name": "0.4.0"
+}
