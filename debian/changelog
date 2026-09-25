@@ -1,0 +1,36 @@
+catholic-background (0.4.0) trixie; urgency=medium
+
+  * Settings: the interval between checks of the server is adjustable.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 25 Sep 2026 20:00:00 +0200
+
+catholic-background (0.3.0) trixie; urgency=medium
+
+  * Check the server every 30 minutes (systemd user timer) and refresh the
+    wallpaper when there is a different image for the day.
+  * The GNOME Shell extension is now a separate project.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 25 Sep 2026 19:00:00 +0200
+
+catholic-background (0.2.1) trixie; urgency=medium
+
+  * Settings: warn when Plasma uses an old or duplicated copy of the
+    provider, with a button to restart Plasma.
+  * Settings: fix the Apply button staying enabled after choosing a color.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 25 Sep 2026 16:00:00 +0200
+
+catholic-background (0.2.0) trixie; urgency=medium
+
+  * The image is always shown complete, scaled to fit the screen.
+  * Fill the rest of the screen with a blurred copy of the image, its
+    average color or a chosen color.
+  * New application: Catholic Background Settings.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 25 Sep 2026 15:00:00 +0200
+
+catholic-background (0.1.0) trixie; urgency=medium
+
+  * Initial release.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 25 Sep 2026 12:00:00 +0200
