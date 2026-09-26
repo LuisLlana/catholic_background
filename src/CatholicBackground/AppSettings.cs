@@ -9,7 +9,7 @@ namespace CatholicBackground;
 /// <summary>Configuration and state, stored as JSON in the data folder.</summary>
 public sealed class AppSettings
 {
-    public const string DefaultServerUrl = "http://localhost:8000/background";
+    public const string DefaultServerUrl = "https://simba.fdi.ucm.es/background";
     public const int DefaultCheckInterval = 30;
     public const int MinCheckInterval = 5;
     public const int MaxCheckInterval = 24 * 60;

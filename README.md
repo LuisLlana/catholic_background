@@ -1,7 +1,8 @@
 # Catholic Background of the Day — Windows
 
 Sets a Catholic artwork as your Windows wallpaper, downloaded from a Catholic
-background of the day server (the same protocol used by the
+background of the day server (by default https://simba.fdi.ucm.es/background;
+the same protocol used by the
 `catholic_background_kde` and `catholic_background_gnome` projects).
 
 Author: Luis Llana <luis.llana.diaz@gmail.com>
