@@ -6,7 +6,7 @@ from django.db.models.signals import post_migrate
 
 class ArtworksConfig(AppConfig):
     name = "artworks"
-    verbose_name = "Contenidos"
+    verbose_name = "Content"
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
@@ -26,10 +26,10 @@ REVIEWER_PERMISSIONS = EDITOR_PERMISSIONS + [
 
 
 def create_groups(sender, using="default", **kwargs):
-    """Groups 'Editores' (upload and edit) and 'Revisores' (also approve and edit the calendar)."""
+    """Groups 'Editors' (upload and edit) and 'Reviewers' (also approve and edit the calendar)."""
     from django.contrib.auth.models import Group, Permission
 
-    for name, codenames in (("Editores", EDITOR_PERMISSIONS), ("Revisores", REVIEWER_PERMISSIONS)):
+    for name, codenames in (("Editors", EDITOR_PERMISSIONS), ("Reviewers", REVIEWER_PERMISSIONS)):
         group, _ = Group.objects.using(using).get_or_create(name=name)
         permissions = Permission.objects.using(using).filter(content_type__app_label="artworks", codename__in=codenames)
         group.permissions.set(permissions)

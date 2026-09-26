@@ -5,7 +5,7 @@ from django.apps import AppConfig
 
 class AccountsConfig(AppConfig):
     name = "accounts"
-    verbose_name = "Acceso"
+    verbose_name = "Access"
 
     def ready(self):
         from django.contrib.auth.signals import user_logged_in

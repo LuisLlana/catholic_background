@@ -11,7 +11,7 @@ from artworks import views as artwork_views
 admin.site.login = secure_admin_login(admin.site.login)
 admin.site.site_header = "Catholic Background"
 admin.site.site_title = "Catholic Background"
-admin.site.index_title = "Gestión de contenidos"
+admin.site.index_title = "Content management"
 
 urlpatterns = [
     path("", account_views.home, name="home"),

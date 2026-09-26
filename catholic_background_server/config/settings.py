@@ -132,7 +132,7 @@ ADMIN_EMAILS = [e.lower() for e in env_list("ADMIN_EMAILS")]
 AUTO_APPROVE_DOMAINS = [d.lower() for d in env_list("AUTO_APPROVE_DOMAINS")]
 
 # ---------------------------------------------------------------- language and time
-LANGUAGE_CODE = "es"
+LANGUAGE_CODE = "en-us"
 TIME_ZONE = env("TIME_ZONE", "Europe/Madrid")
 USE_I18N = True
 USE_TZ = True

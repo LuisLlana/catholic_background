@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Pendiente de aprobación · Catholic Background{% endblock %}
+{% block title %}Waiting for approval · Catholic Background{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>Pendiente de aprobación</h1>
-  <p>Has entrado como <strong>{{ user.email }}</strong>, pero tu cuenta todavía no tiene permiso
-     para gestionar obras. Un administrador tiene que aprobarla.</p>
+  <h1>Waiting for approval</h1>
+  <p>You are logged in as <strong>{{ user.email }}</strong>, but your account cannot manage
+     artworks yet. An administrator has to approve it.</p>
   <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}
-    <button class="provider" type="submit">Salir</button>
+    <button class="provider" type="submit">Log out</button>
   </form>
 </div>
 {% endblock %}

@@ -20,7 +20,7 @@ with the same protocol:
 - **Login without passwords**, with Google or Microsoft accounts. New users wait
   until an administrator approves them; e-mails in `ADMIN_EMAILS` become
   administrators and users from `AUTO_APPROVE_DOMAINS` become editors.
-- **Roles**: *Editores* upload and edit artworks; *Revisores* also approve them and
+- **Roles**: *Editors* upload and edit artworks; *Reviewers* also approve them and
   edit the calendar. Nothing is served until it is approved, and a change by an
   editor must be approved again.
 - **Artwork**: the image (JPEG or PNG, the only required field), title, author,

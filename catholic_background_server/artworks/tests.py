@@ -23,7 +23,7 @@ from artworks.selection import candidates, pick
 MEDIA = tempfile.mkdtemp()
 
 
-def image_file(width=1600, height=1000, fmt="JPEG", name="obra.jpg"):
+def image_file(width=1600, height=1000, fmt="JPEG", name="artwork.jpg"):
     buffer = io.BytesIO()
     Image.new("RGB", (width, height), (120, 30, 60)).save(buffer, fmt)
     return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/jpeg")
@@ -88,25 +88,25 @@ class SelectionTests(TestCase):
 
     def test_or_semantics(self):
         joseph = Celebration.objects.get(month=3, day=19)
-        lent = make_artwork("Cuaresma", {"type": "season", "season": "lent"})
-        saint = make_artwork("San José", {"type": "saint", "celebration": joseph})
-        both = make_artwork("Dos condiciones", {"type": "yearly_date", "month": 12, "day": 8},
+        lent = make_artwork("Lent", {"type": "season", "season": "lent"})
+        saint = make_artwork("Saint Joseph", {"type": "saint", "celebration": joseph})
+        both = make_artwork("Two conditions", {"type": "yearly_date", "month": 12, "day": 8},
                             {"type": "season", "season": "lent"})
-        make_artwork("Adviento", {"type": "season", "season": "advent"})
-        make_artwork("Sin aprobar", {"type": "season", "season": "lent"}, approved=False)
+        make_artwork("Advent", {"type": "season", "season": "advent"})
+        make_artwork("Not approved", {"type": "season", "season": "lent"}, approved=False)
         self.assertEqual(candidates(date(2026, 3, 19)), [lent, saint, both])
         # 8 December is in Advent: the Advent artwork is also a candidate
-        self.assertEqual([a.title for a in candidates(date(2026, 12, 8))], ["Dos condiciones", "Adviento"])
+        self.assertEqual([a.title for a in candidates(date(2026, 12, 8))], ["Two conditions", "Advent"])
 
     def test_movable_celebration(self):
         pentecost = Celebration.objects.get(movable="pentecost")
-        artwork = make_artwork("Pentecostés", {"type": "celebration", "celebration": pentecost})
+        artwork = make_artwork("Pentecost", {"type": "celebration", "celebration": pentecost})
         self.assertEqual(candidates(date(2026, 5, 24)), [artwork])
         self.assertEqual(candidates(date(2027, 5, 16)), [artwork])
 
     def test_specific_date_and_reserve(self):
-        reserve = make_artwork("Reserva", {"type": "any"})
-        special = make_artwork("Un día", {"type": "date", "date": date(2026, 10, 1)})
+        reserve = make_artwork("Reserve", {"type": "any"})
+        special = make_artwork("One day", {"type": "date", "date": date(2026, 10, 1)})
         self.assertEqual(candidates(date(2026, 10, 1)), [special])
         self.assertEqual(candidates(date(2026, 10, 2)), [reserve])
 
@@ -121,9 +121,9 @@ class SelectionTests(TestCase):
 @override_settings(MEDIA_ROOT=MEDIA)
 class ApiTests(TestCase):
     def test_background(self):
-        key = MetadataKey.objects.create(name="Museo")
-        artwork = make_artwork("La Anunciación", {"type": "any"})
-        artwork.author, artwork.year, artwork.description = "Fra Angelico", "c. 1426", "El ángel y la Virgen."
+        key = MetadataKey.objects.create(name="Museum")
+        artwork = make_artwork("The Annunciation", {"type": "any"})
+        artwork.author, artwork.year, artwork.description = "Fra Angelico", "c. 1426", "The angel and the Virgin."
         artwork.save()
         ArtworkMetadata.objects.create(artwork=artwork, key=key, value="Museo del Prado")
 
@@ -132,8 +132,8 @@ class ApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Cache-Control"], "no-store")
         data = response.json()
-        self.assertEqual((data["title"], data["author"], data["date"]), ("La Anunciación", "Fra Angelico", "c. 1426"))
-        self.assertEqual(data["extra"], {"Museo": "Museo del Prado"})
+        self.assertEqual((data["title"], data["author"], data["date"]), ("The Annunciation", "Fra Angelico", "c. 1426"))
+        self.assertEqual(data["extra"], {"Museum": "Museo del Prado"})
         with Image.open(io.BytesIO(base64.b64decode(data["image"]))) as image:
             self.assertEqual(image.size, (1600, 1000))
         self.assertEqual(AccessLog.objects.get().user_agent, "test-agent")
@@ -190,14 +190,14 @@ class AccessTests(TestCase):
             apply_automatic_roles(user)
             user.refresh_from_db()
         self.assertTrue(boss.is_superuser)
-        self.assertTrue(editor.is_staff and editor.groups.filter(name="Editores").exists())
+        self.assertTrue(editor.is_staff and editor.groups.filter(name="Editors").exists())
         self.assertFalse(stranger.is_staff)
 
     def test_pending_page_and_admin_login_redirect(self):
         user = get_user_model().objects.create(username="x", email="x@gmail.com")
         self.assertRedirects(self.client.get("/admin/"), "/admin/login/?next=/admin/", fetch_redirect_response=False)
         self.client.force_login(user)
-        self.assertContains(self.client.get("/"), "Pendiente de aprobación")
+        self.assertContains(self.client.get("/"), "Waiting for approval")
 
     def test_no_password_login(self):
         response = self.client.get(reverse("account_login"))
@@ -206,15 +206,15 @@ class AccessTests(TestCase):
 
     def test_editor_changes_need_review(self):
         editor = get_user_model().objects.create(username="ed", email="ana@ucm.es", is_staff=True)
-        editor.groups.add(Group.objects.get(name="Editores"))
-        artwork = make_artwork("Aprobada", {"type": "any"})
+        editor.groups.add(Group.objects.get(name="Editors"))
+        artwork = make_artwork("Approved", {"type": "any"})
         self.client.force_login(editor)
         url = reverse("admin:artworks_artwork_change", args=[artwork.pk])
         page = self.client.get(url)
         self.assertEqual(page.status_code, 200)
         condition = artwork.conditions.get()
         response = self.client.post(url, {
-            "title": "Cambiada", "author": "", "year": "", "description": "", "source_url": "", "license": "",
+            "title": "Changed", "author": "", "year": "", "description": "", "source_url": "", "license": "",
             "conditions-TOTAL_FORMS": "1", "conditions-INITIAL_FORMS": "1", "conditions-MIN_NUM_FORMS": "0",
             "conditions-MAX_NUM_FORMS": "1000", "conditions-0-id": str(condition.pk), "conditions-0-artwork": str(artwork.pk),
             "conditions-0-type": "any",
@@ -222,7 +222,7 @@ class AccessTests(TestCase):
         })
         self.assertEqual(response.status_code, 302, getattr(response, "context_data", {}).get("errors"))
         artwork.refresh_from_db()
-        self.assertEqual(artwork.title, "Cambiada")
+        self.assertEqual(artwork.title, "Changed")
         self.assertFalse(artwork.approved)
 
     def test_admin_pages(self):
