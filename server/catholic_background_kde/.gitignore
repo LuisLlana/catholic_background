@@ -1,0 +1,9 @@
+build/
+obj-*/
+debian/.debhelper/
+debian/catholic-background/
+debian/catholic-background-dbgsym/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/*.log

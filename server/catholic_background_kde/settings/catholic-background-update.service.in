@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+[Unit]
+Description=Check for a new Catholic background of the day
+PartOf=graphical-session.target
+After=plasma-workspace.target
+
+[Service]
+Type=oneshot
+ExecStart=@KDE_INSTALL_FULL_BINDIR@/catholic-background-settings --update

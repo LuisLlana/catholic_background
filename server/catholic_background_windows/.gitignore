@@ -1,0 +1,6 @@
+build/
+dist/
+bin/
+obj/
+tools/msix/
+tools/msix-packaging/

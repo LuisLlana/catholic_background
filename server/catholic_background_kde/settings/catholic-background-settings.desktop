@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Catholic Background Settings
+GenericName=Wallpaper Settings
+Comment=Configure the Catholic background of the day wallpaper
+Exec=catholic-background-settings
+Icon=catholic-background
+Terminal=false
+Categories=Qt;KDE;Settings;DesktopSettings;
+Keywords=wallpaper;background;catholic;picture of the day;
