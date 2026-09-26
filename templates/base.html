@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Catholic Background{% endblock %}</title>
+  <style>
+    :root { color-scheme: light dark; --accent: #1f67b4; }
+    body { font-family: system-ui, sans-serif; max-width: 44rem; margin: 3rem auto; padding: 0 1.2rem; line-height: 1.55; }
+    h1 { font-size: 1.6rem; }
+    .card { border: 1px solid #8884; border-radius: 12px; padding: 2rem; text-align: center; }
+    .provider { display: block; width: 100%; max-width: 20rem; margin: .6rem auto; padding: .75rem 1rem; font-size: 1rem;
+                border: 1px solid #8886; border-radius: 8px; background: Canvas; color: CanvasText; cursor: pointer; }
+    .provider:hover { border-color: var(--accent); }
+    .muted { opacity: .7; font-size: .9rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+{% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Pendiente de aprobación · Catholic Background{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Pendiente de aprobación</h1>
+  <p>Has entrado como <strong>{{ user.email }}</strong>, pero tu cuenta todavía no tiene permiso
+     para gestionar obras. Un administrador tiene que aprobarla.</p>
+  <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}
+    <button class="provider" type="submit">Salir</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy · Catholic Background{% endblock %}
+{% block content %}
+<h1>Privacy Policy — Catholic Background</h1>
+<p>Catholic Background ("the app") is available for Windows, KDE Plasma and GNOME. This policy explains what data is processed when you use it.</p>
+<h2>Who is responsible</h2>
+<p>{{ opts.PRIVACY_CONTROLLER }}. Contact: <a href="mailto:{{ opts.PRIVACY_CONTACT }}">{{ opts.PRIVACY_CONTACT }}</a></p>
+<h2>What the app does</h2>
+<p>To show the image of the day, the app periodically requests it from this server. The request only contains today's date.
+The app does not ask for, collect or send your name, e-mail, location or any other personal information, and it has no account or login.
+Its settings stay on your computer.</p>
+<h2>What this server records</h2>
+<p>For each request the server records the IP address of the computer that made it, the date and time and the technical
+information sent by the app (such as its version). An IP address is personal data under the GDPR.</p>
+<h2>Why</h2>
+<p>1. To detect and fix problems with the service (debugging and security).
+2. To produce statistics on how many people use the app. Statistics are aggregated and do not identify anyone.
+Legal basis: our legitimate interest in running, securing and improving the service (Article 6(1)(f) GDPR).</p>
+<h2>How long</h2>
+<p>Full IP addresses are kept for a maximum of {{ opts.ACCESS_LOG_DAYS }} days and then deleted. Statistics are kept
+without IP addresses (daily counts only) and may be kept indefinitely.</p>
+<h2>Who we share it with</h2>
+<p>Nobody. The data is not sold or shared with third parties and it is not used for advertising.</p>
+<h2>Your rights</h2>
+<p>You can ask for access to, rectification or erasure of your data, restriction of or objection to its processing, by
+writing to {{ opts.PRIVACY_CONTACT }}. Since only IP addresses are stored, you may need to tell us your IP address and the
+dates you used the app. You can also lodge a complaint with the Spanish Data Protection Agency
+(<a href="https://www.aepd.es">www.aepd.es</a>). If you do not want your IP address to be recorded, do not use the app.</p>
+<h2>Changes</h2>
+<p>Any changes to this policy will be published on this page.</p>
+{% endblock %}

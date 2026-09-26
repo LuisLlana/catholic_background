@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+[Unit]
+Description=Catholic background of the day server
+After=network.target
+
+[Service]
+User=catholic
+Group=catholic
+WorkingDirectory=/opt/catholic-background
+EnvironmentFile=/etc/catholic-background/env
+ExecStart=/opt/catholic-background/venv/bin/gunicorn config.wsgi --bind 127.0.0.1:8000 --workers 3 --timeout 60
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
