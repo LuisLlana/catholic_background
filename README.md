@@ -63,7 +63,7 @@ the bundled header should be updated to match it.
 
 ## Build and install
 
-    cmake -B build -DCMAKE_INSTALL_PREFIX=/usr -DWALLPAPER_URL="http://localhost:8000/background"
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/usr -DWALLPAPER_URL="https://simba.fdi.ucm.es/background"
     cmake --build build
     sudo cmake --install build
     plasmashell --replace &>/dev/null & disown   # or log out and back in
@@ -148,7 +148,8 @@ enough), using plasmashell's D-Bus scripting API.
     Url=https://my-server.example/background
     InfoUrl=https://my-server.example/
 
-`Url` overrides the URL set at build time.
+`Url` overrides the URL set at build time (by default
+https://simba.fdi.ucm.es/background).
 
 The image is always shown complete: it is scaled, keeping its proportions,
 to the largest size that fits entirely in the part of the primary screen not
@@ -198,6 +199,9 @@ Wallpaper type: Picture of the Day → Provider: Catholic background of the day.
     python3 -m http.server 8000
 
 `http.server` ignores the `ts` parameter and serves the `background` file.
+Point the provider to it (the default server is https://simba.fdi.ucm.es/background):
+
+    kwriteconfig6 --file catholicbackgroundrc --group General --key Url http://localhost:8000/background
 
 To discard cached images: `rm -rf ~/.cache/plasma_engine_potd/`
 To see log messages: `journalctl --user -f | grep -i potd`

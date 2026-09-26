@@ -1,3 +1,9 @@
+catholic-background (0.4.1) trixie; urgency=medium
+
+  * Default server: https://simba.fdi.ucm.es/background
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Sat, 26 Sep 2026 10:00:00 +0200
+
 catholic-background (0.4.0) trixie; urgency=medium
 
   * Settings: the interval between checks of the server is adjustable.

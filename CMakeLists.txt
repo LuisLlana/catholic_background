@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.18)
-project(catholic-background-potd-provider VERSION 0.4.0)
+project(catholic-background-potd-provider VERSION 0.4.1)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF6_MIN_VERSION "6.0.0")
 
 # Default server URL (override at configure time with -DWALLPAPER_URL=...)
-set(WALLPAPER_URL "http://localhost:8000/background" CACHE STRING "Base URL of the wallpaper of the day (?ts=... is appended)")
+set(WALLPAPER_URL "https://simba.fdi.ucm.es/background" CACHE STRING "Base URL of the wallpaper of the day (?ts=... is appended)")
 
 find_package(ECM ${KF6_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})

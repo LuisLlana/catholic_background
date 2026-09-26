@@ -6,7 +6,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # Default server URL compiled into the plugin. Override it with:
 #     WALLPAPER_URL=https://my-server.example/background dpkg-buildpackage -us -uc -b
-WALLPAPER_URL ?= http://localhost:8000/background
+WALLPAPER_URL ?= https://simba.fdi.ucm.es/background
 
 %:
 	dh $@
