@@ -16,7 +16,7 @@ def apply_automatic_roles(user):
         user.is_staff = True
         changed = True
         user.save(update_fields=["is_staff"])
-        group, _ = Group.objects.get_or_create(name="Editores")
+        group, _ = Group.objects.get_or_create(name="Editors")
         user.groups.add(group)
         return
     if changed:

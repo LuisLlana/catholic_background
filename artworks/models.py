@@ -10,38 +10,38 @@ from . import liturgy
 from .validators import validate_image
 
 KIND_CHOICES = [
-    ("lord", "Del Señor"),
-    ("mary", "De la Virgen María"),
-    ("saint", "Santo o santa"),
-    ("other", "Otra"),
+    ("lord", "Of the Lord"),
+    ("mary", "Of the Virgin Mary"),
+    ("saint", "Saint"),
+    ("other", "Other"),
 ]
 RANK_CHOICES = [
-    ("solemnity", "Solemnidad"),
-    ("feast", "Fiesta"),
-    ("memorial", "Memoria obligatoria"),
-    ("optional", "Memoria libre"),
-    ("other", "Otra"),
+    ("solemnity", "Solemnity"),
+    ("feast", "Feast"),
+    ("memorial", "Memorial"),
+    ("optional", "Optional memorial"),
+    ("other", "Other"),
 ]
 MONTH_CHOICES = [(i, name) for i, name in enumerate(
-    ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
-     "agosto", "septiembre", "octubre", "noviembre", "diciembre"], start=1)]
+    ["January", "February", "March", "April", "May", "June", "July",
+     "August", "September", "October", "November", "December"], start=1)]
 
 
 class Celebration(models.Model):
     """A celebration of the liturgical calendar: fixed date or movable (computed every year)."""
 
-    name = models.CharField("nombre", max_length=200)
-    kind = models.CharField("tipo", max_length=10, choices=KIND_CHOICES, default="saint")
-    rank = models.CharField("grado", max_length=10, choices=RANK_CHOICES, default="memorial")
-    month = models.PositiveSmallIntegerField("mes", choices=MONTH_CHOICES, null=True, blank=True)
-    day = models.PositiveSmallIntegerField("día", null=True, blank=True)
-    movable = models.CharField("fiesta móvil", max_length=30, choices=liturgy.MOVABLE, blank=True,
-                               help_text="Para fiestas que cambian de fecha cada año (se calculan a partir de la Pascua).")
-    notes = models.TextField("notas", blank=True)
+    name = models.CharField("name", max_length=200)
+    kind = models.CharField("kind", max_length=10, choices=KIND_CHOICES, default="saint")
+    rank = models.CharField("rank", max_length=10, choices=RANK_CHOICES, default="memorial")
+    month = models.PositiveSmallIntegerField("month", choices=MONTH_CHOICES, null=True, blank=True)
+    day = models.PositiveSmallIntegerField("day", null=True, blank=True)
+    movable = models.CharField("movable celebration", max_length=30, choices=liturgy.MOVABLE, blank=True,
+                               help_text="For celebrations whose date changes every year (computed from Easter).")
+    notes = models.TextField("notes", blank=True)
 
     class Meta:
-        verbose_name = "celebración"
-        verbose_name_plural = "calendario de celebraciones"
+        verbose_name = "celebration"
+        verbose_name_plural = "calendar of celebrations"
         ordering = ["month", "day", "name"]
 
     def __str__(self):
@@ -50,33 +50,33 @@ class Celebration(models.Model):
     def clean(self):
         fixed = self.month is not None or self.day is not None
         if bool(self.movable) == fixed:
-            raise ValidationError("Indica una fecha fija (mes y día) o una fiesta móvil, pero no las dos.")
+            raise ValidationError("Give either a fixed date (month and day) or a movable celebration, not both.")
         if fixed:
             if self.month is None or self.day is None:
-                raise ValidationError("Indica el mes y el día.")
+                raise ValidationError("Give the month and the day.")
             try:
                 date(2024, self.month, self.day)   # leap year: allows 29 February
             except ValueError:
-                raise ValidationError("Esa fecha no existe.")
+                raise ValidationError("That date does not exist.")
 
     def when(self):
         if self.movable:
-            return dict(liturgy.MOVABLE).get(self.movable, self.movable) + " (móvil)"
+            return dict(liturgy.MOVABLE).get(self.movable, self.movable) + " (movable)"
         if self.month and self.day:
-            return f"{self.day} de {dict(MONTH_CHOICES)[self.month]}"
+            return f"{dict(MONTH_CHOICES)[self.month]} {self.day}"
         return ""
-    when.short_description = "fecha"
+    when.short_description = "date"
 
 
 class MetadataKey(models.Model):
     """Names of the extra data of the artworks (museum, technique...), shared by all editors."""
 
-    name = models.CharField("nombre", max_length=100, unique=True)
-    order = models.PositiveSmallIntegerField("orden", default=0)
+    name = models.CharField("name", max_length=100, unique=True)
+    order = models.PositiveSmallIntegerField("order", default=0)
 
     class Meta:
-        verbose_name = "tipo de dato adicional"
-        verbose_name_plural = "tipos de datos adicionales"
+        verbose_name = "kind of additional data"
+        verbose_name_plural = "kinds of additional data"
         ordering = ["order", "name"]
 
     def __str__(self):
@@ -84,34 +84,34 @@ class MetadataKey(models.Model):
 
 
 class Artwork(models.Model):
-    image = models.ImageField("imagen", upload_to="artworks/%Y/", validators=[validate_image],
-                              help_text="JPEG o PNG. Solo la obra, sin marcos ni fondos añadidos.")
-    title = models.CharField("título", max_length=300, blank=True)
-    author = models.CharField("autor", max_length=300, blank=True)
-    year = models.CharField("año", max_length=100, blank=True, help_text="Texto libre: «1426», «c. 1450», «1450–1455»…")
-    description = models.TextField("comentario", blank=True, help_text="Qué aparece en la obra y cualquier explicación útil.")
-    source_url = models.URLField("procedencia", max_length=500, blank=True,
-                                 help_text="Dirección de la página de donde se ha obtenido la imagen.")
-    license = models.CharField("licencia", max_length=200, blank=True,
-                               help_text="Por ejemplo: «Dominio público», «CC0», «CC BY 4.0».")
+    image = models.ImageField("image", upload_to="artworks/%Y/", validators=[validate_image],
+                              help_text="JPEG or PNG. Only the artwork, without added frames or backgrounds.")
+    title = models.CharField("title", max_length=300, blank=True)
+    author = models.CharField("author", max_length=300, blank=True)
+    year = models.CharField("year", max_length=100, blank=True, help_text="Free text: “1426”, “c. 1450”, “1450–1455”…")
+    description = models.TextField("comment", blank=True, help_text="What the artwork shows and any useful explanation.")
+    source_url = models.URLField("source", max_length=500, blank=True,
+                                 help_text="Address of the page the image was taken from.")
+    license = models.CharField("license", max_length=200, blank=True,
+                               help_text="For example: “Public domain”, “CC0”, “CC BY 4.0”.")
 
-    approved = models.BooleanField("aprobada", default=False)
-    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="aprobada por", null=True, blank=True,
+    approved = models.BooleanField("approved", default=False)
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="approved by", null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name="+")
-    approved_at = models.DateTimeField("aprobada el", null=True, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="subida por", null=True, blank=True,
+    approved_at = models.DateTimeField("approved at", null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="uploaded by", null=True, blank=True,
                                    on_delete=models.SET_NULL, related_name="+")
-    created_at = models.DateTimeField("creada el", auto_now_add=True)
-    updated_at = models.DateTimeField("modificada el", auto_now=True)
+    created_at = models.DateTimeField("created at", auto_now_add=True)
+    updated_at = models.DateTimeField("updated at", auto_now=True)
 
     class Meta:
-        verbose_name = "obra"
-        verbose_name_plural = "obras"
+        verbose_name = "artwork"
+        verbose_name_plural = "artworks"
         ordering = ["-created_at"]
-        permissions = [("approve_artwork", "Puede aprobar obras")]
+        permissions = [("approve_artwork", "Can approve artworks")]
 
     def __str__(self):
-        return self.title or self.author or f"Obra {self.pk}"
+        return self.title or self.author or f"Artwork {self.pk}"
 
     def extra(self):
         return {m.key.name: m.value for m in self.metadata.select_related("key").all() if m.value}
@@ -119,12 +119,12 @@ class Artwork(models.Model):
 
 class ArtworkMetadata(models.Model):
     artwork = models.ForeignKey(Artwork, on_delete=models.CASCADE, related_name="metadata")
-    key = models.ForeignKey(MetadataKey, verbose_name="dato", on_delete=models.PROTECT)
-    value = models.CharField("valor", max_length=500)
+    key = models.ForeignKey(MetadataKey, verbose_name="data", on_delete=models.PROTECT)
+    value = models.CharField("value", max_length=500)
 
     class Meta:
-        verbose_name = "dato adicional"
-        verbose_name_plural = "otros datos"
+        verbose_name = "additional data"
+        verbose_name_plural = "other data"
         constraints = [models.UniqueConstraint(fields=["artwork", "key"], name="unique_metadata_per_artwork")]
 
     def __str__(self):
@@ -132,12 +132,12 @@ class ArtworkMetadata(models.Model):
 
 
 CONDITION_TYPES = [
-    ("season", "Tiempo litúrgico"),
-    ("celebration", "Celebración (del Señor, de la Virgen…)"),
-    ("saint", "Santo del día"),
-    ("yearly_date", "Fecha de todos los años"),
-    ("date", "Fecha concreta"),
-    ("any", "Cualquier día (de reserva)"),
+    ("season", "Liturgical season"),
+    ("celebration", "Celebration (of the Lord, of the Virgin…)"),
+    ("saint", "Saint of the day"),
+    ("yearly_date", "Date of every year"),
+    ("date", "Specific date"),
+    ("any", "Any day (reserve)"),
 ]
 
 
@@ -145,17 +145,17 @@ class Condition(models.Model):
     """When an artwork can be shown. An artwork is shown on days that meet ANY of its conditions."""
 
     artwork = models.ForeignKey(Artwork, on_delete=models.CASCADE, related_name="conditions")
-    type = models.CharField("cuándo", max_length=20, choices=CONDITION_TYPES)
-    season = models.CharField("tiempo litúrgico", max_length=20, choices=liturgy.SEASONS, blank=True)
-    celebration = models.ForeignKey(Celebration, verbose_name="celebración o santo", null=True, blank=True,
+    type = models.CharField("when", max_length=20, choices=CONDITION_TYPES)
+    season = models.CharField("liturgical season", max_length=20, choices=liturgy.SEASONS, blank=True)
+    celebration = models.ForeignKey(Celebration, verbose_name="celebration or saint", null=True, blank=True,
                                     on_delete=models.PROTECT)
-    month = models.PositiveSmallIntegerField("mes", choices=MONTH_CHOICES, null=True, blank=True)
-    day = models.PositiveSmallIntegerField("día", null=True, blank=True)
-    date = models.DateField("fecha", null=True, blank=True)
+    month = models.PositiveSmallIntegerField("month", choices=MONTH_CHOICES, null=True, blank=True)
+    day = models.PositiveSmallIntegerField("day", null=True, blank=True)
+    date = models.DateField("date", null=True, blank=True)
 
     class Meta:
-        verbose_name = "cuándo se muestra"
-        verbose_name_plural = "cuándo se muestra (basta con que se cumpla una)"
+        verbose_name = "when it is shown"
+        verbose_name_plural = "when it is shown (it is enough to meet one)"
 
     def __str__(self):
         if self.type == "season":
@@ -163,7 +163,7 @@ class Condition(models.Model):
         if self.type in ("celebration", "saint"):
             return str(self.celebration or "")
         if self.type == "yearly_date" and self.month and self.day:
-            return f"Cada {self.day} de {dict(MONTH_CHOICES)[self.month]}"
+            return f"Every {dict(MONTH_CHOICES)[self.month]} {self.day}"
         if self.type == "date" and self.date:
             return self.date.strftime("%d/%m/%Y")
         return dict(CONDITION_TYPES).get(self.type, "")
@@ -173,14 +173,14 @@ class Condition(models.Model):
             "season": ["season"], "celebration": ["celebration"], "saint": ["celebration"],
             "yearly_date": ["month", "day"], "date": ["date"], "any": [],
         }.get(self.type, [])
-        errors = {field: "Obligatorio para este tipo." for field in required if getattr(self, field) in (None, "")}
+        errors = {field: "Required for this kind." for field in required if getattr(self, field) in (None, "")}
         if errors:
             raise ValidationError(errors)
         if self.type == "yearly_date":
             try:
                 date(2024, self.month, self.day)
             except ValueError:
-                raise ValidationError({"day": "Esa fecha no existe."})
+                raise ValidationError({"day": "That date does not exist."})
         # Keep only the fields of the chosen type
         for field in ("season", "celebration", "month", "day", "date"):
             if field not in required:
@@ -198,20 +198,20 @@ class AccessLog(models.Model):
     artwork = models.ForeignKey(Artwork, null=True, on_delete=models.SET_NULL, related_name="+")
 
     class Meta:
-        verbose_name = "acceso"
-        verbose_name_plural = "accesos"
+        verbose_name = "access"
+        verbose_name_plural = "accesses"
 
 
 class DailyStatistic(models.Model):
     """Aggregated usage per day, without IP addresses (kept indefinitely)."""
 
-    day = models.DateField("día", unique=True)
-    requests = models.PositiveIntegerField("peticiones", default=0)
-    clients = models.PositiveIntegerField("equipos distintos", default=0)
+    day = models.DateField("day", unique=True)
+    requests = models.PositiveIntegerField("requests", default=0)
+    clients = models.PositiveIntegerField("different computers", default=0)
 
     class Meta:
-        verbose_name = "estadística diaria"
-        verbose_name_plural = "estadísticas diarias"
+        verbose_name = "daily statistic"
+        verbose_name_plural = "daily statistics"
         ordering = ["-day"]
 
     def __str__(self):

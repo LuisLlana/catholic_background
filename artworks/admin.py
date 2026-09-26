@@ -22,7 +22,7 @@ class AtLeastOneConditionFormSet(BaseInlineFormSet):
         kept = [f for f in self.forms
                 if f.cleaned_data and not f.cleaned_data.get("DELETE") and f.cleaned_data.get("type")]
         if not kept:
-            raise ValidationError("Indica al menos cuándo se muestra la obra (puede ser «Cualquier día»).")
+            raise ValidationError("Say at least when the artwork is shown (it can be “Any day”).")
 
 
 class ConditionInline(admin.TabularInline):
@@ -53,22 +53,22 @@ class ArtworkAdmin(admin.ModelAdmin):
     readonly_fields = ["preview", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]
     fieldsets = [
         (None, {"fields": ["image", "preview"]}),
-        ("La obra", {"fields": ["title", "author", "year", "description"]}),
-        ("Procedencia", {"fields": ["source_url", "license"]}),
-        ("Revisión", {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
+        ("The artwork", {"fields": ["title", "author", "year", "description"]}),
+        ("Source", {"fields": ["source_url", "license"]}),
+        ("Review", {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
     ]
     actions = ["approve"]
     change_list_template = "admin/artworks/artwork/change_list.html"
 
-    @admin.display(description="imagen")
+    @admin.display(description="image")
     def thumbnail(self, obj):
         return format_html('<img src="{}" style="height:60px;max-width:110px;object-fit:contain">', obj.image.url) if obj.image else ""
 
-    @admin.display(description="vista previa")
+    @admin.display(description="preview")
     def preview(self, obj):
         return format_html('<img src="{}" style="max-height:320px;max-width:100%">', obj.image.url) if obj.image else "—"
 
-    @admin.display(description="cuándo")
+    @admin.display(description="when")
     def when(self, obj):
         return "; ".join(str(c) for c in obj.conditions.all())
 
@@ -87,10 +87,10 @@ class ArtworkAdmin(admin.ModelAdmin):
             actions.pop("approve", None)
         return actions
 
-    @admin.action(description="Aprobar las obras seleccionadas")
+    @admin.action(description="Approve the selected artworks")
     def approve(self, request, queryset):
         count = queryset.filter(approved=False).update(approved=True, approved_by=request.user, approved_at=timezone.now())
-        self.message_user(request, f"{count} obra(s) aprobada(s).")
+        self.message_user(request, f"{count} artwork(s) approved.")
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -116,9 +116,9 @@ class ArtworkAdmin(admin.ModelAdmin):
         except Exception:
             return
         if height > width * 1.6:
-            messages.warning(request, "La imagen es muy vertical: en las pantallas se verá estrecha, con mucho relleno a los lados.")
+            messages.warning(request, "The image is very tall: on screens it will look narrow, with a lot of filling at the sides.")
         elif width > height * 3:
-            messages.warning(request, "La imagen es muy panorámica: en las pantallas se verá baja, con mucho relleno arriba y abajo.")
+            messages.warning(request, "The image is very wide: on screens it will look low, with a lot of filling above and below.")
 
     # ------------------------------------------------ calendar of the next days
     def get_urls(self):
@@ -136,7 +136,7 @@ class ArtworkAdmin(admin.ModelAdmin):
                 "celebrations": ", ".join(c.name for c in celebrations_on(day)),
                 "artworks": candidates(day),
             })
-        context = {**self.admin_site.each_context(request), "title": "Calendario de los próximos días",
+        context = {**self.admin_site.each_context(request), "title": "Calendar of the next days",
                    "days": days, "opts": self.model._meta}
         return TemplateResponse(request, "admin/artworks/artwork/calendar.html", context)
 

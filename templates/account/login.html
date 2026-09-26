@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% load socialaccount %}
-{% block title %}Entrar · Catholic Background{% endblock %}
+{% block title %}Log in · Catholic Background{% endblock %}
 {% block content %}
 <div class="card">
   <h1>Catholic Background</h1>
-  <p>Gestión de las obras del fondo de escritorio.</p>
+  <p>Management of the artworks of the wallpaper.</p>
   {% get_providers as providers %}
   {% for provider in providers %}
     <form method="post" action="{% provider_login_url provider.id process='login' next=request.GET.next %}">
       {% csrf_token %}
-      <button class="provider" type="submit">Entrar con {{ provider.name }}</button>
+      <button class="provider" type="submit">Log in with {{ provider.name }}</button>
     </form>
   {% empty %}
-    <p>No hay ningún proveedor configurado (GOOGLE_CLIENT_ID o MICROSOFT_CLIENT_ID).</p>
+    <p>No login provider is configured (GOOGLE_CLIENT_ID or MICROSOFT_CLIENT_ID).</p>
   {% endfor %}
-  <p class="muted">No se usan contraseñas: se entra con una cuenta de Google o de Microsoft.</p>
+  <p class="muted">No passwords: log in with a Google or Microsoft account.</p>
 </div>
 {% endblock %}
