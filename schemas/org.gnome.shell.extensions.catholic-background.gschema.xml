@@ -7,7 +7,7 @@
 
     <!-- Configuration -->
     <key name="server-url" type="s">
-      <default>'http://localhost:8000/background'</default>
+      <default>'https://simba.fdi.ucm.es/background'</default>
       <summary>Server URL</summary>
       <description>Base URL of the server; "?ts=&lt;timestamp of today's local midnight&gt;" is appended.</description>
     </key>

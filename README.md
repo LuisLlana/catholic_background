@@ -1,7 +1,8 @@
 # Catholic Background of the Day — GNOME Shell extension
 
 Sets a Catholic artwork as your GNOME wallpaper every day, downloaded from a
-Catholic background of the day server (the same protocol used by the
+Catholic background of the day server (by default
+https://simba.fdi.ucm.es/background; the same protocol used by the
 `catholic_background_kde` KDE Plasma project).
 
 Author: Luis Llana <luis.llana.diaz@gmail.com>
