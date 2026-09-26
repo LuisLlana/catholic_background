@@ -1,0 +1,32 @@
+<!-- SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows 10 SDK projection: StartupTask and ApplicationData when packaged as MSIX -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Allows building on Linux -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>..\..\assets\catholic-background.ico</ApplicationIcon>
+    <AssemblyName>CatholicBackground</AssemblyName>
+    <RootNamespace>CatholicBackground</RootNamespace>
+
+    <Version>0.4.0</Version>
+    <Product>Catholic Background of the Day</Product>
+    <AssemblyTitle>Catholic Background of the Day</AssemblyTitle>
+    <Company>Luis Llana</Company>
+    <Authors>Luis Llana</Authors>
+    <Copyright>© 2026 Luis Llana. GPL-3.0-or-later.</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\catholic-background.ico" LogicalName="CatholicBackground.ico" />
+  </ItemGroup>
+
+</Project>
