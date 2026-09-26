@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+[Unit]
+Description=Catholic background: daily statistics and deletion of old access logs
+
+[Service]
+Type=oneshot
+User=catholic
+WorkingDirectory=/opt/catholic-background
+EnvironmentFile=/etc/catholic-background/env
+ExecStart=/opt/catholic-background/venv/bin/python manage.py process_access_logs

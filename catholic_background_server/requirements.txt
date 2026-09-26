@@ -1,0 +1,7 @@
+Django>=5.2,<7
+django-allauth[socialaccount]>=65,<66
+dj-database-url>=2
+Pillow>=10
+gunicorn>=22
+# Only for PostgreSQL:   psycopg[binary]>=3.1
+# Only for MariaDB/MySQL: mysqlclient>=2.2

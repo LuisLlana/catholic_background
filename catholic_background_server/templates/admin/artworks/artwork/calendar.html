@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Inicio</a> › <a href="{% url 'admin:artworks_artwork_changelist' %}">Obras</a> › Calendario</div>{% endblock %}
+{% block content %}
+<p>Obras aprobadas que se mostrarán cada día. Si hay varias, se reparten por turnos a lo largo del día.
+Si un día no tiene ninguna, se usan las marcadas como «Cualquier día».</p>
+<table style="width:100%">
+  <thead><tr><th>Día</th><th>Tiempo litúrgico</th><th>Celebraciones</th><th>Obras</th></tr></thead>
+  <tbody>
+  {% for d in days %}
+    <tr>
+      <td style="white-space:nowrap">{{ d.date|date:"D j M Y" }}</td>
+      <td>{{ d.seasons }}</td>
+      <td>{{ d.celebrations|default:"—" }}</td>
+      <td>{% for a in d.artworks %}<a href="{% url 'admin:artworks_artwork_change' a.pk %}" title="{{ a }}"><img src="{{ a.image.url }}" style="height:48px;margin:2px"></a>{% empty %}<strong style="color:#b00">ninguna</strong>{% endfor %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
