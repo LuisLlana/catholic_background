@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Template: build.sh replaces the @...@ values (see packaging/identity.env) -->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap desktop rescap">
+
+  <Identity Name="@PACKAGE_NAME@" Publisher="@PUBLISHER@" Version="@VERSION@" ProcessorArchitecture="@ARCH@" />
+
+  <Properties>
+    <DisplayName>@DISPLAY_NAME@</DisplayName>
+    <PublisherDisplayName>@PUBLISHER_DISPLAY_NAME@</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="CatholicBackground.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="@DISPLAY_NAME@"
+                          Description="Sets a Catholic artwork as your wallpaper every day."
+                          BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- Start with Windows (can be turned off in the app or in Settings > Apps > Startup) -->
+        <desktop:Extension Category="windows.startupTask" Executable="CatholicBackground.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="CatholicBackgroundStartup" Enabled="true" DisplayName="@DISPLAY_NAME@" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
