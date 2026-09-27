@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
@@ -21,6 +22,7 @@ from artworks.models import AccessLog, Artwork, ArtworkMetadata, Celebration, Co
 from artworks.selection import candidates, pick
 
 MEDIA = tempfile.mkdtemp()
+PREFIX = settings.PREFIX
 
 
 def image_file(width=1600, height=1000, fmt="JPEG", name="artwork.jpg"):
@@ -195,9 +197,10 @@ class AccessTests(TestCase):
 
     def test_pending_page_and_admin_login_redirect(self):
         user = get_user_model().objects.create(username="x", email="x@gmail.com")
-        self.assertRedirects(self.client.get("/admin/"), "/admin/login/?next=/admin/", fetch_redirect_response=False)
+        admin_url = f"{PREFIX}admin/"
+        self.assertRedirects(self.client.get(admin_url), f"{admin_url}login/?next={admin_url}", fetch_redirect_response=False)
         self.client.force_login(user)
-        self.assertContains(self.client.get("/"), "Waiting for approval")
+        self.assertContains(self.client.get(f"{PREFIX}home/"), "Waiting for approval")
 
     def test_no_password_login(self):
         response = self.client.get(reverse("account_login"))
@@ -229,6 +232,16 @@ class AccessTests(TestCase):
         admin = get_user_model().objects.create(username="admin", email="jefe@example.com", is_staff=True, is_superuser=True)
         make_artwork("A", {"type": "any"})
         self.client.force_login(admin)
-        for url in ("/admin/", "/admin/artworks/artwork/", "/admin/artworks/artwork/add/", "/admin/artworks/artwork/calendar/",
-                    "/admin/artworks/celebration/", "/admin/artworks/metadatakey/", "/privacy/"):
-            self.assertEqual(self.client.get(url).status_code, 200, url)
+        for url in ("admin/", "admin/artworks/artwork/", "admin/artworks/artwork/add/", "admin/artworks/artwork/calendar/",
+                    "admin/artworks/celebration/", "admin/artworks/metadatakey/", "privacy/"):
+            self.assertEqual(self.client.get(PREFIX + url).status_code, 200, url)
+
+    def test_everything_hangs_from_the_base_path(self):
+        image_url = PREFIX.rstrip("/") or "/"
+        self.assertEqual(reverse("background"), image_url)
+        for name in ("home", "privacy", "account_login", "admin:index"):
+            self.assertTrue(reverse(name).startswith(PREFIX), name)
+        self.assertTrue(settings.STATIC_URL.startswith(PREFIX) and settings.MEDIA_URL.startswith(PREFIX))
+        make_artwork("A", {"type": "any"})
+        self.assertEqual(self.client.get(PREFIX).status_code, 200)             # /background/ also works
+        self.assertEqual(self.client.get(image_url).status_code, 200)           # /background

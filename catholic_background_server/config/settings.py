@@ -25,6 +25,12 @@ def env_list(name):
 
 
 SECRET_KEY = env("SECRET_KEY", "insecure-development-key-change-me")
+
+# Base path of the application: it is the address the applications take the image
+# from (/background?ts=...), and every other page hangs from it (/background/admin/...).
+# Empty to serve everything from the root of the host.
+BASE_PATH = env("BASE_PATH", "background").strip("/")
+PREFIX = f"/{BASE_PATH}/" if BASE_PATH else "/"
 DEBUG = env_bool("DEBUG")
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") or (["*"] if DEBUG else [])
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
@@ -138,12 +144,16 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------- files
-STATIC_URL = "static/"
+STATIC_URL = f"{PREFIX}static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = "media/"
+MEDIA_URL = f"{PREFIX}media/"
 MEDIA_ROOT = DATA_DIR / "media"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 40 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+# Cookies only for this application, not for the rest of the host
+SESSION_COOKIE_PATH = PREFIX
+CSRF_COOKIE_PATH = PREFIX
 
 # ---------------------------------------------------------------- behind nginx (HTTPS)
 if env_bool("BEHIND_PROXY", not DEBUG):

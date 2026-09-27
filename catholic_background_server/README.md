@@ -15,7 +15,20 @@ with the same protocol:
 
 `date` is the year of the artwork (free text); `extra` contains the additional data.
 
-## Content manager (`/admin/`)
+## Addresses
+
+Everything hangs from the base path, `BASE_PATH` (default `background`):
+
+| Address | |
+|---|---|
+| `/background?ts=…` | the image of the day (used by the applications) |
+| `/background/home/` | start page after logging in |
+| `/background/admin/` | content management |
+| `/background/accounts/…` | login with Google or Microsoft |
+| `/background/privacy/` | privacy policy |
+| `/background/static/`, `/background/media/` | files of the admin site and uploaded images |
+
+## Content manager (`/background/admin/`)
 
 - **Login without passwords**, with Google or Microsoft accounts. New users wait
   until an administrator approves them; e-mails in `ADMIN_EMAILS` become
@@ -41,7 +54,7 @@ with the same protocol:
 
 ## Privacy
 
-`/privacy/` shows the privacy policy. The server stores the IP address of each
+`/background/privacy/` shows the privacy policy. The server stores the IP address of each
 request for `ACCESS_LOG_DAYS` days (30); `manage.py process_access_logs` (every
 night, see `deploy/`) turns them into daily statistics without IP addresses and
 deletes the old ones. Uploaded images are only visible to logged-in editors; the
@@ -52,7 +65,7 @@ applications receive them through `/background`.
     python3 -m venv .venv && . .venv/bin/activate
     pip install -r requirements.txt
     DEBUG=true python manage.py migrate
-    DEBUG=true python manage.py runserver
+    DEBUG=true python manage.py runserver     # http://127.0.0.1:8000/background/home/
     DEBUG=true python manage.py test
 
 ## Installation on Debian 13 (simba)
@@ -72,15 +85,18 @@ applications receive them through `/background`.
     sudo systemctl daemon-reload
     sudo systemctl enable --now catholic-background catholic-background-maintenance.timer
 
-Add `deploy/nginx.conf` to the HTTPS server block of nginx and reload it. Then
-log in at `https://simba.fdi.ucm.es/` with an account listed in `ADMIN_EMAILS`.
+Copy `deploy/nginx-proxy.conf` to `/etc/nginx/catholic-background-proxy.conf`, add
+`deploy/nginx.conf` to the HTTPS server block of nginx and reload it: only
+`/background` goes to the application, the rest of the host is untouched. Then
+log in at `https://simba.fdi.ucm.es/background/home/` with an account listed in
+`ADMIN_EMAILS`.
 
 ## Google and Microsoft login
 
 Callback addresses (replace the host if it is different):
 
-- Google: `https://simba.fdi.ucm.es/accounts/google/login/callback/`
-- Microsoft: `https://simba.fdi.ucm.es/accounts/microsoft/login/callback/`
+- Google: `https://simba.fdi.ucm.es/background/accounts/google/login/callback/`
+- Microsoft: `https://simba.fdi.ucm.es/background/accounts/microsoft/login/callback/`
 
 **Google**: Google Cloud Console → APIs & Services → Credentials → Create
 credentials → OAuth client ID → Web application; add the callback address as an
