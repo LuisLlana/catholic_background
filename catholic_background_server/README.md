@@ -30,9 +30,11 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 
 ## Content manager (`/background/admin/`)
 
-- **Login without passwords**, with Google or Microsoft accounts. New users wait
-  until an administrator approves them; e-mails in `ADMIN_EMAILS` become
-  administrators and users from `AUTO_APPROVE_DOMAINS` become editors.
+- **Login with Google or Microsoft accounts**. New users wait until an
+  administrator approves them; e-mails in `ADMIN_EMAILS` become administrators
+  and users from `AUTO_APPROVE_DOMAINS` become editors. While Google and
+  Microsoft are not set up, **login with e-mail and password** is available
+  (see "Password login").
 - **Roles**: *Editors* upload and edit artworks; *Reviewers* also approve them and
   edit the calendar. Nothing is served until it is approved, and a change by an
   editor must be approved again.
@@ -90,6 +92,23 @@ Copy `deploy/nginx-proxy.conf` to `/etc/nginx/catholic-background-proxy.conf`, a
 `/background` goes to the application, the rest of the host is untouched. Then
 log in at `https://simba.fdi.ucm.es/background/home/` with an account listed in
 `ADMIN_EMAILS`.
+
+## Password login
+
+`PASSWORD_LOGIN=true` shows an e-mail and password form on the login page. If the
+variable is not set, it is enabled only while no Google or Microsoft login is
+configured. There is no self sign-up: an administrator creates the accounts.
+
+The first administrator:
+
+    python manage.py createsuperuser
+
+Other users: in `/background/admin/` → Users → Add user (username and password),
+then give them an e-mail, "Staff status" and the group *Editors* or *Reviewers*.
+
+When Google or Microsoft is set up and password login is turned off, users who log
+in with a Google or Microsoft account with the same e-mail keep their user and
+permissions.
 
 ## Google and Microsoft login
 

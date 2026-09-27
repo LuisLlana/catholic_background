@@ -75,6 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "accounts.context_processors.login_options",
             ],
         },
     },
@@ -100,7 +101,8 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------- login
-# No passwords: only Google and Microsoft accounts.
+# Google and Microsoft accounts and, while they are not set up, e-mail and password
+# (PASSWORD_LOGIN, below).
 AUTHENTICATION_BACKENDS = ["allauth.account.auth_backends.AuthenticationBackend"]
 LOGIN_URL = "account_login"
 LOGIN_REDIRECT_URL = "home"
@@ -108,7 +110,7 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "account_login"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
-SOCIALACCOUNT_ONLY = True
+ACCOUNT_ADAPTER = "accounts.adapters.AccountAdapter"   # no self sign-up with a password
 SOCIALACCOUNT_LOGIN_ON_GET = False
 SOCIALACCOUNT_AUTO_SIGNUP = True
 # The same person entering with Google and with Microsoft (same e-mail) is one user
@@ -131,6 +133,15 @@ if env("MICROSOFT_CLIENT_ID"):
             "settings": {"tenant": env("MICROSOFT_TENANT", "common")},
         }],
     }
+
+# Login with e-mail and password (accounts created by an administrator).
+# By default it is enabled only while no Google or Microsoft login is configured.
+PASSWORD_LOGIN = env_bool("PASSWORD_LOGIN", not SOCIALACCOUNT_PROVIDERS)
+SOCIALACCOUNT_ONLY = not PASSWORD_LOGIN
+if PASSWORD_LOGIN:
+    # Accounts have a password (otherwise allauth switches to login by e-mailed code)
+    ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_LOGIN_BY_CODE_ENABLED = False
 
 # Users with these e-mails become administrators when they log in
 ADMIN_EMAILS = [e.lower() for e in env_list("ADMIN_EMAILS")]

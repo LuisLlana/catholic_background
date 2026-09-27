@@ -202,10 +202,39 @@ class AccessTests(TestCase):
         self.client.force_login(user)
         self.assertContains(self.client.get(f"{PREFIX}home/"), "Waiting for approval")
 
-    def test_no_password_login(self):
+    @override_settings(PASSWORD_LOGIN=False, SOCIALACCOUNT_ONLY=True)
+    def test_no_password_login_when_disabled(self):
         response = self.client.get(reverse("account_login"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'type="password"')
+        self.client.post(reverse("account_login"), {"login": "a@b.c", "password": "x"})
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(PASSWORD_LOGIN=True, SOCIALACCOUNT_ONLY=False,
+                       ACCOUNT_SIGNUP_FIELDS=["email*", "password1*", "password2*"])
+    def test_password_login(self):
+        User = get_user_model()
+        User.objects.create_user("luis", "luis@example.com", "a-long-password-123", is_staff=True)
+        User.objects.create_user("new", "new@example.com", "another-password-456")
+        page = self.client.get(reverse("account_login"))
+        self.assertContains(page, 'type="password"')
+        wrong = self.client.post(reverse("account_login"), {"login": "luis@example.com", "password": "bad"})
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(wrong.status_code, 200)
+        response = self.client.post(reverse("account_login"), {"login": "luis@example.com", "password": "a-long-password-123"})
+        self.assertRedirects(response, reverse("home"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("home")), reverse("admin:index"), fetch_redirect_response=False)
+        self.client.logout()
+        # A user without permissions waits for approval
+        self.client.post(reverse("account_login"), {"login": "new@example.com", "password": "another-password-456"})
+        self.assertContains(self.client.get(reverse("home")), "Waiting for approval")
+
+    @override_settings(PASSWORD_LOGIN=True, SOCIALACCOUNT_ONLY=False,
+                       ACCOUNT_SIGNUP_FIELDS=["email*", "password1*", "password2*"])
+    def test_no_self_signup(self):
+        response = self.client.post(reverse("account_signup"), {"email": "x@example.com", "password1": "p4ssw0rd-long!", "password2": "p4ssw0rd-long!"})
+        self.assertFalse(get_user_model().objects.filter(email="x@example.com").exists())
+        self.assertIn(response.status_code, (200, 302))
 
     def test_editor_changes_need_review(self):
         editor = get_user_model().objects.create(username="ed", email="ana@ucm.es", is_staff=True)

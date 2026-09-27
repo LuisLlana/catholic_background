@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -23,7 +24,17 @@ def apply_automatic_roles(user):
         user.save(update_fields=["is_staff", "is_superuser"])
 
 
+class AccountAdapter(DefaultAccountAdapter):
+    def is_open_for_signup(self, request):
+        # Accounts with a password are created by an administrator
+        return False
+
+
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
+    def is_open_for_signup(self, request, sociallogin):
+        # Anybody can log in with Google or Microsoft; they wait for approval
+        return True
+
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form)
         apply_automatic_roles(user)
