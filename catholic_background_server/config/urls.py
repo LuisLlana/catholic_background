@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 """
-Everything hangs from BASE_PATH (see settings):
-    /background              the image of the day (the address used by the applications)
-    /background/home/        start page after logging in
-    /background/admin/       content management
-    /background/accounts/    login with Google or Microsoft
-    /background/privacy/     privacy policy
-    /background/media/       uploaded images (editors only)
+Everything hangs from BASE_PATH, read from the environment in settings.py
+(os.environ["BASE_PATH"], "background" if it is not set):
+    /<BASE_PATH>              the image of the day (the address used by the applications)
+    /<BASE_PATH>/home/        start page after logging in
+    /<BASE_PATH>/admin/       content management
+    /<BASE_PATH>/accounts/    login with Google or Microsoft
+    /<BASE_PATH>/privacy/     privacy policy
+    /<BASE_PATH>/media/       uploaded images (editors only)
 """
 from allauth.account.decorators import secure_admin_login
 from django.conf import settings
