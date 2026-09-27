@@ -1,7 +1,8 @@
 __pycache__/
 *.pyc
 .env
-data/
-staticfiles/
+# Only at the root: database and uploaded images (not artworks/data, the catalogue)
+/data/
+/staticfiles/
 .venv/
 venv/
