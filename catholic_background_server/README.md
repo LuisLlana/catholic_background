@@ -87,11 +87,29 @@ applications receive them through `/background`.
     sudo systemctl daemon-reload
     sudo systemctl enable --now catholic-background catholic-background-maintenance.timer
 
-Copy `deploy/nginx-proxy.conf` to `/etc/nginx/catholic-background-proxy.conf`, add
-`deploy/nginx.conf` to the HTTPS server block of nginx and reload it: only
-`/background` goes to the application, the rest of the host is untouched. Then
-log in at `https://simba.fdi.ucm.es/background/home/` with an account listed in
-`ADMIN_EMAILS`.
+### nginx
+
+The application lives under a path of an existing site, so its configuration is a
+snippet included in the `server` block of that site (not a separate site):
+
+    sudo cp deploy/nginx/*.conf /etc/nginx/snippets/
+    sudo -u catholic sh -c 'set -a; . /etc/catholic-background/env; venv/bin/python manage.py collectstatic --noinput'
+
+Then add this line inside the `server` block (the HTTPS one) of the site, e.g. in
+`/etc/nginx/sites-available/default`:
+
+    include snippets/catholic-background.conf;
+
+and reload: `sudo nginx -t && sudo systemctl reload nginx`. Only `/background` and
+`/background/…` go to the application; the rest of the site is untouched. If
+`BASE_PATH` is different, replace `/background` in `catholic-background.conf`; if
+gunicorn listens on another port, change it in `catholic-background-proxy.conf`.
+
+If the site is served over plain HTTP (no HTTPS), set `BEHIND_PROXY=false` in the
+environment file, otherwise the session cookies are marked as HTTPS-only and
+logging in does not work.
+
+Then log in at `https://simba.fdi.ucm.es/background/home/`.
 
 ## Password login
 
