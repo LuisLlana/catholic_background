@@ -194,6 +194,11 @@ CATHOLIC_BACKGROUND = {
     # Images
     "MIN_IMAGE_SIDE": int(env("MIN_IMAGE_SIDE", "1000")),
     "MAX_IMAGE_MB": int(env("MAX_IMAGE_MB", "25")),
+    # Label below the artwork (reason, title, author) unless the application asks caption=0
+    "CAPTION_DEFAULT": env_bool("CAPTION_DEFAULT", True),
+    "CAPTION_FONT": env("CAPTION_FONT", ""),          # default: DejaVu Sans (fonts-dejavu-core)
+    "CAPTION_FONT_BOLD": env("CAPTION_FONT_BOLD", ""),
+    "CAPTION_CACHE_DAYS": int(env("CAPTION_CACHE_DAYS", "30")),
     # Privacy: days that access logs with IP addresses are kept
     "ACCESS_LOG_DAYS": int(env("ACCESS_LOG_DAYS", "30")),
     # Shown on the privacy page

@@ -145,7 +145,7 @@ class ApiTests(TestCase):
         ArtworkMetadata.objects.create(artwork=artwork, key=key, language=spanish(), value="Museo del Prado")
 
         ts = local_midnight_ts(date.today())
-        response = self.client.get(reverse("background"), {"ts": ts}, HTTP_USER_AGENT="test-agent")
+        response = self.client.get(reverse("background"), {"ts": ts, "caption": "0"}, HTTP_USER_AGENT="test-agent")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Cache-Control"], "no-store")
         data = response.json()
@@ -425,7 +425,7 @@ class ContentLanguageTests(TestCase):
         self.assertEqual(response["Content-Language"], "es")
 
     def test_requested_language_and_fallback_per_field(self):
-        for kwargs in ({"data": {"lang": "en"}}, {"HTTP_ACCEPT_LANGUAGE": "en-GB,en;q=0.9"}, {"HTTP_ACCEPT_LANGUAGE": "fr, en;q=0.5"}):
+        for kwargs in ({"data": {"lang": "en"}}, {"data": {"lang": "en-GB"}}, {"data": {"lang": "EN"}}):
             _, data = self.get(**kwargs)
             self.assertEqual(data["language"], "en", kwargs)
             self.assertEqual((data["title"], data["license"]), ("The Annunciation", "Public domain"))
@@ -434,8 +434,13 @@ class ContentLanguageTests(TestCase):
             self.assertEqual(data["extra"], {"Museum": "Prado Museum"})
 
     def test_unavailable_language(self):
-        _, data = self.get(HTTP_ACCEPT_LANGUAGE="fr-FR")
+        _, data = self.get(data={"lang": "fr-FR"})
         self.assertEqual((data["language"], data["title"]), ("es", "La Anunciación"))
+
+    def test_accept_language_is_not_used(self):
+        # The same request must give the same image whatever HTTP library the application uses
+        _, data = self.get(HTTP_ACCEPT_LANGUAGE="en-GB,en;q=0.9")
+        self.assertEqual(data["language"], "es")
 
     def test_new_language_added_by_the_administrator(self):
         french = Language.objects.create(code="fr", name="Français", order=2)
@@ -496,3 +501,56 @@ class ReasonTests(TestCase):
         for day in (date(2026, 10, 1), date(2026, 10, 2)):
             data = self.fetch(day, "es")
             self.assertEqual((data["reason"], data["reason_type"]), ("", ""))
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class LabelTests(TestCase):
+    def fetch(self, **params):
+        data = self.client.get(reverse("background"), params).json()
+        return data, base64.b64decode(data["image"])
+
+    def test_label_below_the_artwork(self):
+        artwork = make_artwork("La Anunciación", {"type": "any"})
+        artwork.translations.update(author="Fra Angelico", year="c. 1426")
+        _, labelled = self.fetch()
+        with Image.open(io.BytesIO(labelled)) as image:
+            width, height = image.size
+            self.assertEqual(width, 1600)
+            self.assertGreater(height, 1000)                          # the label is added below
+            self.assertEqual(image.getpixel((5, height - 5)), image.getpixel((1595, height - 5)))   # a plain band
+        _, plain = self.fetch(caption="0")
+        with artwork.image.open("rb") as f:
+            self.assertEqual(plain, f.read())                       # caption=0: the original file
+
+    def test_same_request_same_bytes_and_one_image_per_language(self):
+        artwork = make_artwork("La Anunciación", {"type": "any"})
+        ArtworkTranslation.objects.create(artwork=artwork, language=english(), title="The Annunciation")
+        _, first = self.fetch(lang="es")
+        _, second = self.fetch(lang="es")
+        _, english_image = self.fetch(lang="en")
+        self.assertEqual(first, second)
+        self.assertNotEqual(first, english_image)
+
+    def test_changing_the_texts_changes_the_image(self):
+        artwork = make_artwork("La Anunciación", {"type": "any"})
+        _, before = self.fetch()
+        artwork.translations.update(title="La Anunciación de Cortona")
+        _, after = self.fetch()
+        self.assertNotEqual(before, after)
+
+    def test_no_texts_no_label(self):
+        artwork = Artwork.objects.create(image=image_file(), approved=True)
+        Condition.objects.create(artwork=artwork, type="any")
+        _, data = self.fetch()
+        with Image.open(io.BytesIO(data)) as image:
+            self.assertEqual(image.size, (1600, 1000))
+
+    @override_settings(CATHOLIC_BACKGROUND={**settings.CATHOLIC_BACKGROUND, "CAPTION_DEFAULT": False})
+    def test_label_can_be_disabled_by_default(self):
+        make_artwork("A", {"type": "any"})
+        _, data = self.fetch()
+        with Image.open(io.BytesIO(data)) as image:
+            self.assertEqual(image.size, (1600, 1000))
+        _, data = self.fetch(caption="1")
+        with Image.open(io.BytesIO(data)) as image:
+            self.assertGreater(image.size[1], 1000)

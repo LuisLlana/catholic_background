@@ -12,6 +12,7 @@ from django.utils import timezone as dj_timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
+from .caption import labelled_jpeg
 from .models import AccessLog, Language
 from .selection import pick, reason
 
@@ -19,15 +20,19 @@ MAX_TS_DISTANCE = 2 * 86400   # do not answer for days far from today
 
 
 def requested_language(request):
-    """?lang=xx, else the Accept-Language header, else the default language of the content."""
-    codes = []
-    if request.GET.get("lang"):
-        codes.append(request.GET["lang"])
-    for part in request.META.get("HTTP_ACCEPT_LANGUAGE", "").split(","):
-        code = part.split(";")[0].strip()
-        if code and code != "*":
-            codes.append(code)
-    return Language.best_match(codes) or Language.default()
+    """
+    ?lang=xx, else the default language of the content. The Accept-Language header is not
+    used on purpose: the image (with its label) must be the same for the same request,
+    whatever HTTP library the application uses.
+    """
+    return Language.best_match([request.GET.get("lang", "")]) or Language.default()
+
+
+def wants_caption(request):
+    value = request.GET.get("caption")
+    if value is None:
+        return settings.CATHOLIC_BACKGROUND["CAPTION_DEFAULT"]
+    return value.lower() not in ("0", "false", "no", "off")
 
 
 def client_ip(request):
@@ -41,11 +46,12 @@ def client_ip(request):
 @require_GET
 def background(request):
     """
-    GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>]
+    GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>][&caption=0]
     -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language",
         "reason", "reason_type"}
     "reason" says why the artwork is shown that day (saint, celebration or liturgical season), if it is special.
-    The texts are in the requested language (lang, or Accept-Language), or else in the default one.
+    The texts are in the requested language (lang), or else in the default one. The image has a
+    label below the artwork with the reason, title and author (unless caption=0).
     """
     now = time.time()
     raw = request.GET.get("ts")
@@ -66,19 +72,23 @@ def background(request):
     if artwork is None:
         return JsonResponse({"error": "no image for this day"}, status=404)
 
+    language = requested_language(request)
+    texts = artwork.texts(language)
+    why = reason(artwork, day, language)
     try:
-        with artwork.image.open("rb") as f:
-            image = base64.b64encode(f.read()).decode("ascii")
-    except (FileNotFoundError, ValueError):
+        if wants_caption(request):
+            data = labelled_jpeg(artwork, texts, why["text"])
+        else:
+            with artwork.image.open("rb") as f:
+                data = f.read()
+    except (FileNotFoundError, ValueError, OSError):
         return JsonResponse({"error": "image file missing"}, status=500)
+    image = base64.b64encode(data).decode("ascii")
 
     AccessLog.objects.create(day=dj_timezone.localdate(), ip=client_ip(request),
                              user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
                              artwork=artwork)
 
-    language = requested_language(request)
-    texts = artwork.texts(language)
-    why = reason(artwork, day, language)
     response = JsonResponse({
         "image": image,
         "title": texts["title"],
@@ -95,7 +105,6 @@ def background(request):
     # Several artworks may share a day: never serve a cached answer
     response["Cache-Control"] = "no-store"
     response["Content-Language"] = texts["language"]
-    response["Vary"] = "Accept-Language"
     return response
 
 

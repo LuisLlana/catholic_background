@@ -11,7 +11,7 @@ It serves the applications of the other projects (`catholic_background_kde`,
 with the same protocol:
 
     GET /background?ts=<Unix timestamp of the client's local midnight>
-    GET /background?ts=<…>&lang=<language code>     (lang is optional)
+    GET /background?ts=<…>&lang=<language code>&caption=0     (lang and caption are optional)
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
         "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|"}
 
@@ -83,14 +83,27 @@ The texts of the artworks are multilingual, independently of the interface:
 - **Other data**: each value has a language; the names of the kinds of data (Museum,
   Technique…) have a name in each language.
 
+The image has a museum-style **label below the artwork**: the reason (in gold), the
+title and the author and year, in the language asked. The applications fit the whole
+image on the screen, so the size of the text is computed for a 16:9 screen. With
+`caption=0` the original image is sent; `CAPTION_DEFAULT=false` makes that the
+default (then `caption=1` asks for the label). Labelled images are cached in
+`media/caption-cache/` (the same request always gets the same bytes, which the
+applications compare to detect a new image) and removed by `process_access_logs` when
+they have not been used for `CAPTION_CACHE_DAYS` days. The label uses the DejaVu Sans
+font (`sudo apt install fonts-dejavu-core`; `CAPTION_FONT` and `CAPTION_FONT_BOLD` to
+use others).
+
 `reason` says why the artwork is shown that day when the reason is special: the saint
 or the celebration of the day, or else the liturgical season (the most specific one if
 the artwork meets several conditions), in the language asked. It is empty for artworks
 shown because of a date or as a reserve.
 
-`/background` returns the texts in the language asked with `?lang=xx` or with the
-`Accept-Language` header, else in the default language; every empty field is taken
-from the default language (or from any other). The answer includes `"language"` and a
+`/background` returns the texts in the language asked with `?lang=xx`, else in the
+default language; every empty field is taken from the default language (or from any
+other). The `Accept-Language` header is not used on purpose: with the label, each
+language gives a different image, and the same request must give the same image
+whatever HTTP library the application uses. The answer includes `"language"` and a
 `Content-Language` header.
 
 The celebrations of the calendar are content, not interface: each one has a name and
@@ -114,7 +127,7 @@ applications receive them through `/background`.
 
 ## Installation on Debian 13 (simba)
 
-    sudo apt install python3-venv nginx
+    sudo apt install python3-venv nginx fonts-dejavu-core
     sudo useradd --system --home /opt/catholic-background catholic
     sudo mkdir -p /opt/catholic-background /var/lib/catholic-background /etc/catholic-background
     # copy the project to /opt/catholic-background
