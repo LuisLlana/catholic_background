@@ -267,6 +267,48 @@ class AccessTests(TestCase):
         page = self.client.get(reverse("admin:artworks_artwork_change", args=[artwork.pk]))
         self.assertContains(page, f'src="{artwork.image.url}"')   # current image shown in the area
 
+    def add_artwork_through_admin(self, user, approved):
+        self.client.force_login(user)
+        data = {
+            "image": image_file(), "title": f"By {user.username}", "author": "", "year": "", "description": "",
+            "source_url": "", "license": "",
+            "conditions-TOTAL_FORMS": "1", "conditions-INITIAL_FORMS": "0", "conditions-MIN_NUM_FORMS": "0",
+            "conditions-MAX_NUM_FORMS": "1000", "conditions-0-type": "any",
+            "metadata-TOTAL_FORMS": "0", "metadata-INITIAL_FORMS": "0", "metadata-MIN_NUM_FORMS": "0", "metadata-MAX_NUM_FORMS": "1000",
+        }
+        if approved:
+            data["approved"] = "on"
+        response = self.client.post(reverse("admin:artworks_artwork_add"), data)
+        self.assertEqual(response.status_code, 302, getattr(response, "context_data", {}).get("errors"))
+        return Artwork.objects.get(title=f"By {user.username}")
+
+    def test_reviewer_uploads_are_approved_by_default(self):
+        User = get_user_model()
+        reviewer = User.objects.create(username="rev", email="rev@ucm.es", is_staff=True)
+        reviewer.groups.add(Group.objects.get(name="Reviewers"))
+        editor = User.objects.create(username="ed", email="ed@ucm.es", is_staff=True)
+        editor.groups.add(Group.objects.get(name="Editors"))
+
+        # The reviewer sees the box already ticked
+        self.client.force_login(reviewer)
+        page = self.client.get(reverse("admin:artworks_artwork_add"))
+        self.assertContains(page, 'name="approved" id="id_approved" checked')
+        artwork = self.add_artwork_through_admin(reviewer, approved=True)
+        self.assertTrue(artwork.approved)
+        self.assertEqual(artwork.approved_by, reviewer)
+        self.assertIsNotNone(artwork.approved_at)
+
+        # ...but can leave it pending
+        reviewer.username = "rev2"
+        reviewer.save()
+        pending = self.add_artwork_through_admin(reviewer, approved=False)
+        self.assertFalse(pending.approved)
+        self.assertIsNone(pending.approved_by)
+
+        # Editors' uploads are still pending, even if they send the box
+        by_editor = self.add_artwork_through_admin(editor, approved=True)
+        self.assertFalse(by_editor.approved)
+
     def test_admin_pages(self):
         admin = get_user_model().objects.create(username="admin", email="jefe@example.com", is_staff=True, is_superuser=True)
         make_artwork("A", {"type": "any"})

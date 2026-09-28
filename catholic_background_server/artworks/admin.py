@@ -91,12 +91,21 @@ class ArtworkAdmin(admin.ModelAdmin):
         count = queryset.filter(approved=False).update(approved=True, approved_by=request.user, approved_at=timezone.now())
         self.message_user(request, f"{count} artwork(s) approved.")
 
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        # Artworks uploaded by a reviewer are approved by default (the box can be unticked)
+        if can_approve(request):
+            initial.setdefault("approved", True)
+        return initial
+
     def save_model(self, request, obj, form, change):
         if not change:
             obj.created_by = request.user
         if can_approve(request):
-            if "approved" in form.changed_data:
-                obj.approved_by, obj.approved_at = (request.user, timezone.now()) if obj.approved else (None, None)
+            if not obj.approved:
+                obj.approved_by, obj.approved_at = None, None
+            elif "approved" in form.changed_data or not obj.approved_by:
+                obj.approved_by, obj.approved_at = request.user, timezone.now()
         elif change and form.changed_data:
             # A change by an editor must be reviewed again
             obj.approved, obj.approved_by, obj.approved_at = False, None, None
