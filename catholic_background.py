@@ -7,16 +7,19 @@ Catholic background of the day: download today's image and set it as wallpaper.
     catholic_background.set_wallpaper()                       # simba server, blurred background
     catholic_background.set_wallpaper(background="average")   # average color of the image
     catholic_background.set_wallpaper(background="#1f3a5f")   # a color
+    catholic_background.set_wallpaper(caption=False)          # without the label below the artwork
 
-Works on Windows, macOS, GNOME and KDE Plasma. Requires Pillow (pip install Pillow certifi).
+Works on Windows, macOS, GNOME and KDE Plasma. Requires Pillow (pip install Pillow).
 
 The image is shown complete and as big as possible on the primary screen; the
 rest of the screen is filled with a blurred copy of it, its average color or a
-color.
+color. The server adds a label below the artwork with why it is shown that day
+(saint, celebration or liturgical season, if it is special), its title, author
+and year, in the language of the system.
 
 Server protocol:
-    GET <server>?ts=<Unix timestamp of today's local midnight>
-    -> {"image": "<base64>", "title": ..., "author": ..., "date": ...}
+    GET <server>?ts=<Unix timestamp of today's local midnight>&lang=<language>[&caption=0]
+    -> {"image": "<base64, with the label>", "title": ..., "author": ..., "date": ..., "reason": ...}
 """
 
 import base64
@@ -32,6 +35,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -44,17 +48,19 @@ DEFAULT_BACKGROUND = "blur"
 __all__ = ["set_wallpaper", "DEFAULT_SERVER", "DEFAULT_BACKGROUND"]
 
 
-def set_wallpaper(server=DEFAULT_SERVER, background=DEFAULT_BACKGROUND):
+def set_wallpaper(server=DEFAULT_SERVER, background=DEFAULT_BACKGROUND, caption=True, lang=None):
     """
     Downloads today's image from `server` and sets it as the wallpaper.
 
     `background` fills the screen around the image: "blur" (default), "average"
     (average color of the image) or a color such as "#1f3a5f".
+    `caption` asks the server for the label below the artwork (reason, title, author and year).
+    `lang` is the language of the texts ("es", "en"…); by default, that of the system.
 
-    Returns a dict with "title", "author" and "file" (the composed wallpaper).
+    Returns a dict with "title", "author", "year", "reason" and "file" (the composed wallpaper).
     Raises RuntimeError with a readable message if something fails.
     """
-    data = _download(server)
+    data = _download(server, lang or _system_language(), caption)
     image = ImageOps.exif_transpose(Image.open(io.BytesIO(data["image"]))).convert("RGB")
 
     size = _screen_size()
@@ -62,24 +68,33 @@ def set_wallpaper(server=DEFAULT_SERVER, background=DEFAULT_BACKGROUND):
     path = _save(wallpaper)
     _apply(path, fill)
 
-    return {"title": data["title"], "author": data["author"], "file": str(path)}
+    return {"title": data["title"], "author": data["author"], "year": data["year"],
+            "reason": data["reason"], "file": str(path)}
 
 
 # ---------------------------------------------------------------- server
 
-def _download(server):
+def _download(server, lang=None, caption=True):
     parts = urllib.parse.urlsplit(server.strip())
     if parts.scheme not in ("http", "https") or not parts.netloc:
         raise RuntimeError("The server URL must start with http:// or https://")
 
     midnight = datetime.datetime.combine(datetime.date.today(), datetime.time())
-    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query) if k != "ts"]
+    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query) if k not in ("ts", "lang", "caption")]
     query.append(("ts", str(int(midnight.timestamp()))))
+    if lang:
+        query.append(("lang", lang))
+    if not caption:
+        query.append(("caption", "0"))
     url = urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(query)))
 
     try:
         with urllib.request.urlopen(url, timeout=60, context=_ssl_context()) as response:
             answer = json.load(response)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise RuntimeError("The server has no image for today") from e
+        raise RuntimeError(f"The server answered with an error: HTTP {e.code}") from e
     except OSError as e:
         raise RuntimeError(f"Could not connect to the server: {e}") from e
     except ValueError as e:
@@ -95,13 +110,36 @@ def _download(server):
     except ValueError as e:
         raise RuntimeError('The "image" field is not valid base64') from e
 
-    title = str(answer.get("title") or "").strip()
-    date = str(answer.get("date") or "").strip()
-    return {
-        "image": image,
-        "title": f"{title} ({date})" if title and date else title or date,
-        "author": str(answer.get("author") or "").strip(),
-    }
+    def text(name):
+        return str(answer.get(name) or "").strip()
+
+    return {"image": image, "title": text("title"), "author": text("author"), "year": text("date"),
+            "reason": text("reason")}
+
+
+def _system_language():
+    """Language of the system as a code such as "es" or "pt-br" (None if unknown)."""
+    code = None
+    if sys.platform == "win32":
+        import ctypes
+        buffer = ctypes.create_unicode_buffer(85)
+        if ctypes.windll.kernel32.GetUserDefaultLocaleName(buffer, len(buffer)):
+            code = buffer.value
+    elif sys.platform == "darwin":
+        try:
+            code = subprocess.run(["defaults", "read", "-g", "AppleLocale"], capture_output=True,
+                                  text=True, timeout=10).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            code = None
+    if not code:
+        for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+            if os.environ.get(name) and os.environ[name] not in ("C", "POSIX"):
+                code = os.environ[name]
+                break
+    if not code:
+        return None
+    code = code.split(".")[0].split("@")[0].replace("_", "-").lower()
+    return code if re.fullmatch(r"[a-z]{2,3}(-[a-z0-9]+)?", code) else None
 
 
 def _ssl_context():
@@ -319,9 +357,11 @@ if __name__ == "__main__":
     parser.add_argument("--server", default=DEFAULT_SERVER, help=f"server URL (default: {DEFAULT_SERVER})")
     parser.add_argument("--background", default=DEFAULT_BACKGROUND,
                         help='"blur" (default), "average" or a color like "#1f3a5f"')
+    parser.add_argument("--no-caption", action="store_true", help="without the label below the artwork")
+    parser.add_argument("--lang", help="language of the texts (default: that of the system)")
     args = parser.parse_args()
     try:
-        result = set_wallpaper(args.server, args.background)
+        result = set_wallpaper(args.server, args.background, caption=not args.no_caption, lang=args.lang)
     except RuntimeError as e:
         sys.exit(f"Error: {e}")
-    print(" — ".join(filter(None, (result["title"], result["author"]))) or "Wallpaper set")
+    print(" — ".join(filter(None, (result["reason"], result["title"], result["author"]))) or "Wallpaper set")
