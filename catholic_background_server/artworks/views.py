@@ -13,7 +13,7 @@ from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
 from .models import AccessLog, Language
-from .selection import pick
+from .selection import pick, reason
 
 MAX_TS_DISTANCE = 2 * 86400   # do not answer for days far from today
 
@@ -42,7 +42,9 @@ def client_ip(request):
 def background(request):
     """
     GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>]
-    -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language"}
+    -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language",
+        "reason", "reason_type"}
+    "reason" says why the artwork is shown that day (saint, celebration or liturgical season), if it is special.
     The texts are in the requested language (lang, or Accept-Language), or else in the default one.
     """
     now = time.time()
@@ -76,6 +78,7 @@ def background(request):
 
     language = requested_language(request)
     texts = artwork.texts(language)
+    why = reason(artwork, day, language)
     response = JsonResponse({
         "image": image,
         "title": texts["title"],
@@ -86,6 +89,8 @@ def background(request):
         "license": texts["license"],
         "extra": artwork.extra(language),
         "language": texts["language"],
+        "reason": why["text"],
+        "reason_type": why["type"],
     })
     # Several artworks may share a day: never serve a cached answer
     response["Cache-Control"] = "no-store"

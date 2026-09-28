@@ -13,7 +13,7 @@ with the same protocol:
     GET /background?ts=<Unix timestamp of the client's local midnight>
     GET /background?ts=<…>&lang=<language code>     (lang is optional)
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
-        "language": "<language of the texts>"}
+        "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|"}
 
 `date` is the year of the artwork (free text); `extra` contains the additional data.
 
@@ -82,6 +82,11 @@ The texts of the artworks are multilingual, independently of the interface:
   language (all optional). The image, its source and the conditions are common.
 - **Other data**: each value has a language; the names of the kinds of data (Museum,
   Technique…) have a name in each language.
+
+`reason` says why the artwork is shown that day when the reason is special: the saint
+or the celebration of the day, or else the liturgical season (the most specific one if
+the artwork meets several conditions), in the language asked. It is empty for artworks
+shown because of a date or as a reserve.
 
 `/background` returns the texts in the language asked with `?lang=xx` or with the
 `Accept-Language` header, else in the default language; every empty field is taken

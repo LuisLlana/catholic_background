@@ -463,3 +463,36 @@ class ContentLanguageTests(TestCase):
         self.client.force_login(editor)
         self.assertEqual(self.client.get(reverse("admin:artworks_language_add")).status_code, 403)
         self.assertEqual(self.client.get(reverse("admin:artworks_artwork_add")).status_code, 200)
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class ReasonTests(TestCase):
+    def fetch(self, day, lang):
+        ts = local_midnight_ts(day)
+        from unittest import mock
+        with mock.patch("artworks.views.time.time", return_value=ts + 12 * 3600):
+            return self.client.get(reverse("background"), {"ts": ts, "lang": lang}).json()
+
+    def test_saint_wins_over_season(self):
+        joseph = Celebration.objects.get(month=3, day=19)
+        make_artwork("Joseph", {"type": "saint", "celebration": joseph}, {"type": "season", "season": "lent"})
+        data = self.fetch(date(2026, 3, 19), "es")
+        self.assertEqual((data["reason"], data["reason_type"]), ("San José, esposo de la Virgen María", "saint"))
+        data = self.fetch(date(2026, 3, 19), "en")
+        self.assertEqual(data["reason"], "Saint Joseph, Spouse of the Blessed Virgin Mary")
+        data = self.fetch(date(2026, 3, 10), "es")          # another day of Lent: the season
+        self.assertEqual((data["reason"], data["reason_type"]), ("Cuaresma", "season"))
+        self.assertEqual(self.fetch(date(2026, 3, 10), "en")["reason"], "Lent")
+
+    def test_movable_celebration(self):
+        pentecost = Celebration.objects.get(movable="pentecost")
+        make_artwork("Pentecost", {"type": "celebration", "celebration": pentecost})
+        data = self.fetch(date(2026, 5, 24), "es")
+        self.assertEqual((data["reason"], data["reason_type"]), ("Pentecostés", "celebration"))
+
+    def test_no_special_reason(self):
+        make_artwork("Reserve", {"type": "any"})
+        make_artwork("Date", {"type": "date", "date": date(2026, 10, 1)})
+        for day in (date(2026, 10, 1), date(2026, 10, 2)):
+            data = self.fetch(day, "es")
+            self.assertEqual((data["reason"], data["reason_type"]), ("", ""))
