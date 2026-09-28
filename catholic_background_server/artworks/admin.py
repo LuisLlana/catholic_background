@@ -14,7 +14,8 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 from . import liturgy
-from .models import Artwork, ArtworkMetadata, Celebration, Condition, DailyStatistic, MetadataKey
+from .models import (Artwork, ArtworkMetadata, ArtworkTranslation, Celebration, Condition, DailyStatistic, Language,
+                     MetadataKey, MetadataKeyName, current_language)
 from .selection import candidates, celebrations_on
 from .widgets import DropImageWidget
 
@@ -36,10 +37,36 @@ class ConditionInline(admin.TabularInline):
     autocomplete_fields = ["celebration"]
 
 
-class MetadataInline(admin.TabularInline):
+class PlainLanguageMixin:
+    """The language list without the buttons to add, edit or delete languages (they are managed elsewhere)."""
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        widget = formset.form.base_fields["language"].widget
+        for attribute in ("can_add_related", "can_change_related", "can_delete_related", "can_view_related"):
+            setattr(widget, attribute, False)
+        return formset
+
+
+class TranslationInline(PlainLanguageMixin, admin.StackedInline):
+    """One block of texts per language, prepared for every language that the artwork does not have yet."""
+
+    model = ArtworkTranslation
+    fields = ["language", "title", "author", "year", "description", "license"]
+
+    def get_extra(self, request, obj=None, **kwargs):
+        return len(missing_languages(obj))
+
+
+def missing_languages(obj):
+    existing = set(obj.translations.values_list("language_id", flat=True)) if obj and obj.pk else set()
+    return list(Language.objects.exclude(pk__in=existing))
+
+
+class MetadataInline(PlainLanguageMixin, admin.TabularInline):
     model = ArtworkMetadata
     extra = 1
-    fields = ["key", "value"]
+    fields = ["key", "language", "value"]
 
 
 def can_approve(request):
@@ -51,14 +78,12 @@ class ArtworkAdmin(admin.ModelAdmin):
     list_display = ["thumbnail", "__str__", "author", "year", "when", "approved"]
     list_display_links = ["thumbnail", "__str__"]
     list_filter = ["approved", "conditions__type", "conditions__season"]
-    search_fields = ["title", "author", "year", "description", "metadata__value", "conditions__celebration__name",
-                     "conditions__celebration__name_es"]
-    inlines = [ConditionInline, MetadataInline]
+    search_fields = ["translations__title", "translations__author", "translations__year", "translations__description",
+                     "metadata__value", "conditions__celebration__name", "conditions__celebration__name_es"]
+    inlines = [TranslationInline, ConditionInline, MetadataInline]
     readonly_fields = ["approved_by", "approved_at", "created_by", "created_at", "updated_at"]
     fieldsets = [
-        (None, {"fields": ["image"]}),
-        (_("The artwork"), {"fields": ["title", "author", "year", "description"]}),
-        (_("Source"), {"fields": ["source_url", "license"]}),
+        (None, {"fields": ["image", "source_url"]}),
         (_("Review"), {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
     ]
     actions = ["approve"]
@@ -69,12 +94,27 @@ class ArtworkAdmin(admin.ModelAdmin):
     def thumbnail(self, obj):
         return format_html('<img src="{}" style="height:60px;max-width:110px;object-fit:contain">', obj.image.url) if obj.image else ""
 
+    @admin.display(description=_("author"))
+    def author(self, obj):
+        return obj.texts(current_language())["author"]
+
+    @admin.display(description=_("year"))
+    def year(self, obj):
+        return obj.texts(current_language())["year"]
+
     @admin.display(description=_("when"))
     def when(self, obj):
         return "; ".join(str(c) for c in obj.conditions.all())
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related("conditions__celebration")
+        return super().get_queryset(request).prefetch_related("conditions__celebration", "translations__language")
+
+    def get_formset_kwargs(self, request, obj, inline, prefix):
+        kwargs = super().get_formset_kwargs(request, obj, inline, prefix)
+        if isinstance(inline, TranslationInline):
+            # Each new block comes with its language already chosen
+            kwargs["initial"] = [{"language": language.pk} for language in missing_languages(obj)]
+        return kwargs
 
     def get_readonly_fields(self, request, obj=None):
         fields = list(super().get_readonly_fields(request, obj))
@@ -158,11 +198,31 @@ class CelebrationAdmin(admin.ModelAdmin):
     search_fields = ["name", "name_es"]
 
 
+class MetadataKeyNameInline(PlainLanguageMixin, admin.TabularInline):
+    model = MetadataKeyName
+    extra = 1
+    fields = ["language", "name"]
+
+
 @admin.register(MetadataKey)
 class MetadataKeyAdmin(admin.ModelAdmin):
-    list_display = ["name", "order"]
+    list_display = ["name", "names_in_each_language", "order"]
     list_editable = ["order"]
-    search_fields = ["name"]
+    search_fields = ["name", "names__name"]
+    inlines = [MetadataKeyNameInline]
+
+    @admin.display(description=_("names in each language"))
+    def names_in_each_language(self, obj):
+        return "; ".join(f"{n.language.code}: {n.name}" for n in obj.names.select_related("language"))
+
+
+@admin.register(Language)
+class LanguageAdmin(admin.ModelAdmin):
+    """Only administrators (superusers) manage the languages of the content."""
+
+    list_display = ["name", "code", "is_default", "order"]
+    list_editable = ["order"]
+    ordering = ["order", "code"]
 
 
 @admin.register(DailyStatistic)

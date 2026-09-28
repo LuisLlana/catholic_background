@@ -12,10 +12,22 @@ from django.utils import timezone as dj_timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
-from .models import AccessLog
+from .models import AccessLog, Language
 from .selection import pick
 
 MAX_TS_DISTANCE = 2 * 86400   # do not answer for days far from today
+
+
+def requested_language(request):
+    """?lang=xx, else the Accept-Language header, else the default language of the content."""
+    codes = []
+    if request.GET.get("lang"):
+        codes.append(request.GET["lang"])
+    for part in request.META.get("HTTP_ACCEPT_LANGUAGE", "").split(","):
+        code = part.split(";")[0].strip()
+        if code and code != "*":
+            codes.append(code)
+    return Language.best_match(codes) or Language.default()
 
 
 def client_ip(request):
@@ -29,8 +41,9 @@ def client_ip(request):
 @require_GET
 def background(request):
     """
-    GET /background?ts=<Unix timestamp of the client's local midnight>
-    -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra"}
+    GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>]
+    -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language"}
+    The texts are in the requested language (lang, or Accept-Language), or else in the default one.
     """
     now = time.time()
     raw = request.GET.get("ts")
@@ -61,18 +74,23 @@ def background(request):
                              user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
                              artwork=artwork)
 
+    language = requested_language(request)
+    texts = artwork.texts(language)
     response = JsonResponse({
         "image": image,
-        "title": artwork.title,
-        "author": artwork.author,
-        "date": artwork.year,
-        "description": artwork.description,
+        "title": texts["title"],
+        "author": texts["author"],
+        "date": texts["year"],
+        "description": texts["description"],
         "source": artwork.source_url,
-        "license": artwork.license,
-        "extra": artwork.extra(),
+        "license": texts["license"],
+        "extra": artwork.extra(language),
+        "language": texts["language"],
     })
     # Several artworks may share a day: never serve a cached answer
     response["Cache-Control"] = "no-store"
+    response["Content-Language"] = texts["language"]
+    response["Vary"] = "Accept-Language"
     return response
 
 

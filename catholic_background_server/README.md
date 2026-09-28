@@ -11,7 +11,9 @@ It serves the applications of the other projects (`catholic_background_kde`,
 with the same protocol:
 
     GET /background?ts=<Unix timestamp of the client's local midnight>
-    -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...}}
+    GET /background?ts=<…>&lang=<language code>     (lang is optional)
+    -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
+        "language": "<language of the texts>"}
 
 `date` is the year of the artwork (free text); `extra` contains the additional data.
 
@@ -68,6 +70,23 @@ repository, so the server does not need the gettext tools). After changing texts
     sudo apt install gettext
     python manage.py makemessages -l es     # updates django.po; translate the new entries
     python manage.py compilemessages -l es  # updates django.mo
+
+### Languages of the content
+
+The texts of the artworks are multilingual, independently of the interface:
+
+- **Languages** (admin site, only for administrators): Spanish (default) and English
+  to start with; more can be added (e.g. `fr`, `pt-br`). The default language is used
+  when an application does not ask for a language or asks for one that is not available.
+- **Texts of an artwork**: title, author, year, comment and license, in one block per
+  language (all optional). The image, its source and the conditions are common.
+- **Other data**: each value has a language; the names of the kinds of data (Museum,
+  Technique…) have a name in each language.
+
+`/background` returns the texts in the language asked with `?lang=xx` or with the
+`Accept-Language` header, else in the default language; every empty field is taken
+from the default language (or from any other). The answer includes `"language"` and a
+`Content-Language` header.
 
 The celebrations of the calendar are content, not interface: each one has a name and
 a name in Spanish, editable in the admin site (the initial catalogue has both).

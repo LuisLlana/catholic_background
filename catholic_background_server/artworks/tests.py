@@ -18,7 +18,8 @@ from PIL import Image
 
 from accounts.adapters import apply_automatic_roles
 from artworks import liturgy
-from artworks.models import AccessLog, Artwork, ArtworkMetadata, Celebration, Condition, DailyStatistic, MetadataKey
+from artworks.models import (AccessLog, Artwork, ArtworkMetadata, ArtworkTranslation, Celebration, Condition,
+                             DailyStatistic, Language, MetadataKey, MetadataKeyName)
 from artworks.selection import candidates, pick
 
 MEDIA = tempfile.mkdtemp()
@@ -31,11 +32,26 @@ def image_file(width=1600, height=1000, fmt="JPEG", name="artwork.jpg"):
     return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/jpeg")
 
 
+def spanish():
+    return Language.objects.get(code="es")
+
+
+def english():
+    return Language.objects.get(code="en")
+
+
 def make_artwork(title, *conditions, approved=True):
-    artwork = Artwork.objects.create(image=image_file(), title=title, approved=approved)
+    artwork = Artwork.objects.create(image=image_file(), approved=approved)
+    ArtworkTranslation.objects.create(artwork=artwork, language=spanish(), title=title)
     for fields in conditions:
         Condition.objects.create(artwork=artwork, **fields)
     return artwork
+
+
+def management(prefix, total, initial):
+    """Management form of an admin inline formset."""
+    return {f"{prefix}-TOTAL_FORMS": str(total), f"{prefix}-INITIAL_FORMS": str(initial),
+            f"{prefix}-MIN_NUM_FORMS": "0", f"{prefix}-MAX_NUM_FORMS": "1000"}
 
 
 def local_midnight_ts(day, utc_offset_hours=2):
@@ -98,7 +114,7 @@ class SelectionTests(TestCase):
         make_artwork("Not approved", {"type": "season", "season": "lent"}, approved=False)
         self.assertEqual(candidates(date(2026, 3, 19)), [lent, saint, both])
         # 8 December is in Advent: the Advent artwork is also a candidate
-        self.assertEqual([a.title for a in candidates(date(2026, 12, 8))], ["Two conditions", "Advent"])
+        self.assertEqual([str(a) for a in candidates(date(2026, 12, 8))], ["Two conditions", "Advent"])
 
     def test_movable_celebration(self):
         pentecost = Celebration.objects.get(movable="pentecost")
@@ -125,9 +141,8 @@ class ApiTests(TestCase):
     def test_background(self):
         key = MetadataKey.objects.create(name="Museum")
         artwork = make_artwork("The Annunciation", {"type": "any"})
-        artwork.author, artwork.year, artwork.description = "Fra Angelico", "c. 1426", "The angel and the Virgin."
-        artwork.save()
-        ArtworkMetadata.objects.create(artwork=artwork, key=key, value="Museo del Prado")
+        artwork.translations.update(author="Fra Angelico", year="c. 1426", description="The angel and the Virgin.")
+        ArtworkMetadata.objects.create(artwork=artwork, key=key, language=spanish(), value="Museo del Prado")
 
         ts = local_midnight_ts(date.today())
         response = self.client.get(reverse("background"), {"ts": ts}, HTTP_USER_AGENT="test-agent")
@@ -245,16 +260,21 @@ class AccessTests(TestCase):
         page = self.client.get(url)
         self.assertEqual(page.status_code, 200)
         condition = artwork.conditions.get()
+        translation = artwork.translations.get()
         response = self.client.post(url, {
-            "title": "Changed", "author": "", "year": "", "description": "", "source_url": "", "license": "",
-            "conditions-TOTAL_FORMS": "1", "conditions-INITIAL_FORMS": "1", "conditions-MIN_NUM_FORMS": "0",
-            "conditions-MAX_NUM_FORMS": "1000", "conditions-0-id": str(condition.pk), "conditions-0-artwork": str(artwork.pk),
-            "conditions-0-type": "any",
-            "metadata-TOTAL_FORMS": "0", "metadata-INITIAL_FORMS": "0", "metadata-MIN_NUM_FORMS": "0", "metadata-MAX_NUM_FORMS": "1000",
+            "source_url": "",
+            **management("translations", total=2, initial=1),
+            "translations-0-id": str(translation.pk), "translations-0-artwork": str(artwork.pk),
+            "translations-0-language": str(spanish().pk), "translations-0-title": "Changed",
+            "translations-1-language": str(english().pk),          # empty block: not saved
+            **management("conditions", total=1, initial=1),
+            "conditions-0-id": str(condition.pk), "conditions-0-artwork": str(artwork.pk), "conditions-0-type": "any",
+            **management("metadata", total=0, initial=0),
         })
         self.assertEqual(response.status_code, 302, getattr(response, "context_data", {}).get("errors"))
         artwork.refresh_from_db()
-        self.assertEqual(artwork.title, "Changed")
+        self.assertEqual(str(artwork), "Changed")
+        self.assertEqual(artwork.translations.count(), 1)
         self.assertFalse(artwork.approved)
 
     def test_drop_area_in_the_artwork_form(self):
@@ -270,17 +290,18 @@ class AccessTests(TestCase):
     def add_artwork_through_admin(self, user, approved):
         self.client.force_login(user)
         data = {
-            "image": image_file(), "title": f"By {user.username}", "author": "", "year": "", "description": "",
-            "source_url": "", "license": "",
-            "conditions-TOTAL_FORMS": "1", "conditions-INITIAL_FORMS": "0", "conditions-MIN_NUM_FORMS": "0",
-            "conditions-MAX_NUM_FORMS": "1000", "conditions-0-type": "any",
-            "metadata-TOTAL_FORMS": "0", "metadata-INITIAL_FORMS": "0", "metadata-MIN_NUM_FORMS": "0", "metadata-MAX_NUM_FORMS": "1000",
+            "image": image_file(), "source_url": "",
+            **management("translations", total=2, initial=0),
+            "translations-0-language": str(spanish().pk), "translations-0-title": f"By {user.username}",
+            "translations-1-language": str(english().pk),
+            **management("conditions", total=1, initial=0), "conditions-0-type": "any",
+            **management("metadata", total=0, initial=0),
         }
         if approved:
             data["approved"] = "on"
         response = self.client.post(reverse("admin:artworks_artwork_add"), data)
         self.assertEqual(response.status_code, 302, getattr(response, "context_data", {}).get("errors"))
-        return Artwork.objects.get(title=f"By {user.username}")
+        return Artwork.objects.get(translations__title=f"By {user.username}")
 
     def test_reviewer_uploads_are_approved_by_default(self):
         User = get_user_model()
@@ -376,3 +397,69 @@ class LanguageTests(TestCase):
         make_artwork("A", {"type": "any"})
         data = self.client.get(reverse("background"), HTTP_ACCEPT_LANGUAGE="es").json()
         self.assertEqual(data["title"], "A")
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class ContentLanguageTests(TestCase):
+    def setUp(self):
+        self.artwork = make_artwork("La Anunciación", {"type": "any"})
+        self.artwork.translations.update(author="Fra Angelico", description="El ángel anuncia a María.", license="Dominio público")
+        ArtworkTranslation.objects.create(artwork=self.artwork, language=english(), title="The Annunciation", license="Public domain")
+        key = MetadataKey.objects.create(name="Museo")
+        MetadataKeyName.objects.create(key=key, language=spanish(), name="Museo")
+        MetadataKeyName.objects.create(key=key, language=english(), name="Museum")
+        ArtworkMetadata.objects.create(artwork=self.artwork, key=key, language=spanish(), value="Museo del Prado")
+        ArtworkMetadata.objects.create(artwork=self.artwork, key=key, language=english(), value="Prado Museum")
+
+    def get(self, **kwargs):
+        response = self.client.get(reverse("background"), **kwargs)
+        return response, response.json()
+
+    def test_initial_languages(self):
+        self.assertEqual(list(Language.objects.values_list("code", flat=True)), ["es", "en"])
+        self.assertEqual(Language.default().code, "es")
+
+    def test_default_language(self):
+        response, data = self.get()
+        self.assertEqual((data["language"], data["title"], data["extra"]), ("es", "La Anunciación", {"Museo": "Museo del Prado"}))
+        self.assertEqual(response["Content-Language"], "es")
+
+    def test_requested_language_and_fallback_per_field(self):
+        for kwargs in ({"data": {"lang": "en"}}, {"HTTP_ACCEPT_LANGUAGE": "en-GB,en;q=0.9"}, {"HTTP_ACCEPT_LANGUAGE": "fr, en;q=0.5"}):
+            _, data = self.get(**kwargs)
+            self.assertEqual(data["language"], "en", kwargs)
+            self.assertEqual((data["title"], data["license"]), ("The Annunciation", "Public domain"))
+            self.assertEqual(data["description"], "El ángel anuncia a María.")    # no English text: the default one
+            self.assertEqual(data["author"], "Fra Angelico")
+            self.assertEqual(data["extra"], {"Museum": "Prado Museum"})
+
+    def test_unavailable_language(self):
+        _, data = self.get(HTTP_ACCEPT_LANGUAGE="fr-FR")
+        self.assertEqual((data["language"], data["title"]), ("es", "La Anunciación"))
+
+    def test_new_language_added_by_the_administrator(self):
+        french = Language.objects.create(code="fr", name="Français", order=2)
+        ArtworkTranslation.objects.create(artwork=self.artwork, language=french, title="L'Annonciation")
+        _, data = self.get(data={"lang": "fr"})
+        self.assertEqual((data["language"], data["title"], data["license"]), ("fr", "L'Annonciation", "Dominio público"))
+
+    def test_only_one_default_language(self):
+        english_language = english()
+        english_language.is_default = True
+        english_language.save()
+        self.assertEqual(list(Language.objects.filter(is_default=True).values_list("code", flat=True)), ["en"])
+
+    def test_admin_form_has_one_block_per_language(self):
+        admin = get_user_model().objects.create(username="admin", email="a@example.com", is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        page = self.client.get(reverse("admin:artworks_artwork_add")).content.decode()
+        self.assertIn(f'<option value="{spanish().pk}" selected>Español</option>', page)
+        self.assertIn(f'<option value="{english().pk}" selected>English</option>', page)
+        self.assertEqual(self.client.get(reverse("admin:artworks_language_changelist")).status_code, 200)
+
+    def test_languages_are_managed_only_by_administrators(self):
+        editor = get_user_model().objects.create(username="ed", email="ed@example.com", is_staff=True)
+        editor.groups.add(Group.objects.get(name="Reviewers"))
+        self.client.force_login(editor)
+        self.assertEqual(self.client.get(reverse("admin:artworks_language_add")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("admin:artworks_artwork_add")).status_code, 200)

@@ -18,11 +18,14 @@ EDITOR_PERMISSIONS = [
     "view_artwork", "add_artwork", "change_artwork", "delete_artwork",
     "view_condition", "add_condition", "change_condition", "delete_condition",
     "view_artworkmetadata", "add_artworkmetadata", "change_artworkmetadata", "delete_artworkmetadata",
+    "view_artworktranslation", "add_artworktranslation", "change_artworktranslation", "delete_artworktranslation",
     "view_metadatakey", "add_metadatakey",
-    "view_celebration",
+    "view_metadatakeyname", "add_metadatakeyname",
+    "view_celebration", "view_language",
 ]
 REVIEWER_PERMISSIONS = EDITOR_PERMISSIONS + [
-    "approve_artwork", "change_metadatakey", "add_celebration", "change_celebration", "view_dailystatistic",
+    "approve_artwork", "change_metadatakey", "change_metadatakeyname", "delete_metadatakeyname",
+    "add_celebration", "change_celebration", "view_dailystatistic",
 ]
 
 

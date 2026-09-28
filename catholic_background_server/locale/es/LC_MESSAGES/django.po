@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 20:19+0200\n"
+"POT-Creation-Date: 2026-09-28 20:43+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Luis Llana <luis.llana.diaz@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -20,41 +20,41 @@ msgstr ""
 msgid "Access"
 msgstr "Acceso"
 
-#: artworks/admin.py:28
+#: artworks/admin.py:29
 msgid "Say at least when the artwork is shown (it can be “Any day”)."
 msgstr ""
 "Indica al menos cuándo se muestra la obra (puede ser «Cualquier día»)."
 
-#: artworks/admin.py:60
-msgid "The artwork"
-msgstr "La obra"
-
-#: artworks/admin.py:61
-msgid "Source"
-msgstr "Procedencia"
-
-#: artworks/admin.py:62
+#: artworks/admin.py:76
 msgid "Review"
 msgstr "Revisión"
 
-#: artworks/admin.py:68 artworks/models.py:97
+#: artworks/admin.py:82 artworks/models.py:180
 msgid "image"
 msgstr "imagen"
 
-#: artworks/admin.py:72 artworks/models.py:158
+#: artworks/admin.py:86 artworks/models.py:231
+msgid "author"
+msgstr "autor"
+
+#: artworks/admin.py:90 artworks/models.py:232
+msgid "year"
+msgstr "año"
+
+#: artworks/admin.py:94 artworks/models.py:276
 msgid "when"
 msgstr "cuándo"
 
-#: artworks/admin.py:91
+#: artworks/admin.py:120
 msgid "Approve the selected artworks"
 msgstr "Aprobar las obras seleccionadas"
 
-#: artworks/admin.py:94
+#: artworks/admin.py:123
 #, python-format
 msgid "%(count)s artwork(s) approved."
 msgstr "%(count)s obra(s) aprobada(s)."
 
-#: artworks/admin.py:129
+#: artworks/admin.py:158
 msgid ""
 "The image is very tall: on screens it will look narrow, with a lot of "
 "filling at the sides."
@@ -62,7 +62,7 @@ msgstr ""
 "La imagen es muy vertical: en las pantallas se verá estrecha, con mucho "
 "relleno a los lados."
 
-#: artworks/admin.py:131
+#: artworks/admin.py:160
 msgid ""
 "The image is very wide: on screens it will look low, with a lot of filling "
 "above and below."
@@ -70,9 +70,13 @@ msgstr ""
 "La imagen es muy panorámica: en las pantallas se verá baja, con mucho "
 "relleno arriba y abajo."
 
-#: artworks/admin.py:149 templates/admin/artworks/artwork/change_list.html:4
+#: artworks/admin.py:178 templates/admin/artworks/artwork/change_list.html:4
 msgid "Calendar of the next days"
 msgstr "Calendario de los próximos días"
+
+#: artworks/admin.py:203 artworks/models.py:163
+msgid "names in each language"
+msgstr "nombres en cada idioma"
 
 #: artworks/apps.py:10
 msgid "Content"
@@ -178,345 +182,390 @@ msgstr "Primer domingo de Adviento"
 msgid "Holy Family"
 msgstr "Sagrada Familia"
 
-#: artworks/models.py:15
+#: artworks/models.py:16
 msgid "Of the Lord"
 msgstr "Del Señor"
 
-#: artworks/models.py:16
+#: artworks/models.py:17
 msgid "Of the Virgin Mary"
 msgstr "De la Virgen María"
 
-#: artworks/models.py:17
+#: artworks/models.py:18
 msgid "Saint"
 msgstr "Santo o santa"
 
-#: artworks/models.py:18 artworks/models.py:25
+#: artworks/models.py:19 artworks/models.py:26
 msgid "Other"
 msgstr "Otra"
 
-#: artworks/models.py:21
+#: artworks/models.py:22
 msgid "Solemnity"
 msgstr "Solemnidad"
 
-#: artworks/models.py:22
+#: artworks/models.py:23
 msgid "Feast"
 msgstr "Fiesta"
 
-#: artworks/models.py:23
+#: artworks/models.py:24
 msgid "Memorial"
 msgstr "Memoria obligatoria"
 
-#: artworks/models.py:24
+#: artworks/models.py:25
 msgid "Optional memorial"
 msgstr "Memoria libre"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "January"
 msgstr "enero"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "February"
 msgstr "febrero"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "March"
 msgstr "marzo"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "April"
 msgstr "abril"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "May"
 msgstr "mayo"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "June"
 msgstr "junio"
 
-#: artworks/models.py:28
+#: artworks/models.py:29
 msgid "July"
 msgstr "julio"
 
-#: artworks/models.py:29
+#: artworks/models.py:30
 msgid "August"
 msgstr "agosto"
 
-#: artworks/models.py:29
+#: artworks/models.py:30
 msgid "September"
 msgstr "septiembre"
 
-#: artworks/models.py:29
+#: artworks/models.py:30
 msgid "October"
 msgstr "octubre"
 
-#: artworks/models.py:29
+#: artworks/models.py:30
 msgid "November"
 msgstr "noviembre"
 
-#: artworks/models.py:29
+#: artworks/models.py:30
 msgid "December"
 msgstr "diciembre"
 
-#: artworks/models.py:35 artworks/models.py:84
+#: artworks/models.py:37
+msgid "code"
+msgstr "código"
+
+#: artworks/models.py:38
+msgid "Use a code such as “es”, “en” or “pt-br”."
+msgstr "Usa un código como «es», «en» o «pt-br»."
+
+#: artworks/models.py:39
+msgid "Language code: “es”, “en”, “fr”, “pt-br”…"
+msgstr "Código del idioma: «es», «en», «fr», «pt-br»…"
+
+#: artworks/models.py:40 artworks/models.py:88 artworks/models.py:137
+#: artworks/models.py:159
 msgid "name"
 msgstr "nombre"
 
-#: artworks/models.py:36
+#: artworks/models.py:40
+msgid "Name of the language in that language: “Español”, “English”…"
+msgstr "Nombre del idioma en ese mismo idioma: «Español», «English»…"
+
+#: artworks/models.py:41 artworks/models.py:138
+msgid "order"
+msgstr "orden"
+
+#: artworks/models.py:43
+msgid "default"
+msgstr "por defecto"
+
+#: artworks/models.py:44
+msgid ""
+"Used when the application does not ask for a language or asks for one that "
+"is not available."
+msgstr ""
+"Se usa cuando la aplicación no pide ningún idioma o pide uno que no está "
+"disponible."
+
+#: artworks/models.py:47 artworks/models.py:158 artworks/models.py:229
+#: artworks/models.py:250
+#| msgid "Language"
+msgid "language"
+msgstr "idioma"
+
+#: artworks/models.py:48
+#| msgid "Language"
+msgid "languages"
+msgstr "idiomas"
+
+#: artworks/models.py:89
 msgid "name in Spanish"
 msgstr "nombre en español"
 
-#: artworks/models.py:37
+#: artworks/models.py:90
 msgid "Shown when the site is in Spanish (if empty, the name is used)."
 msgstr ""
 "Se muestra cuando el sitio está en español (si está vacío, se usa el "
 "nombre)."
 
-#: artworks/models.py:38
+#: artworks/models.py:91
 msgid "kind"
 msgstr "tipo"
 
-#: artworks/models.py:39
+#: artworks/models.py:92
 msgid "rank"
 msgstr "grado"
 
-#: artworks/models.py:40 artworks/models.py:162
+#: artworks/models.py:93 artworks/models.py:280
 msgid "month"
 msgstr "mes"
 
-#: artworks/models.py:41 artworks/models.py:163 artworks/models.py:218
+#: artworks/models.py:94 artworks/models.py:281 artworks/models.py:336
 msgid "day"
 msgstr "día"
 
-#: artworks/models.py:42
+#: artworks/models.py:95
 msgid "movable celebration"
 msgstr "fiesta móvil"
 
-#: artworks/models.py:43
+#: artworks/models.py:96
 msgid "For celebrations whose date changes every year (computed from Easter)."
 msgstr ""
 "Para fiestas que cambian de fecha cada año (se calculan a partir de la "
 "Pascua)."
 
-#: artworks/models.py:44
+#: artworks/models.py:97
 msgid "notes"
 msgstr "notas"
 
-#: artworks/models.py:47
+#: artworks/models.py:100
 msgid "celebration"
 msgstr "celebración"
 
-#: artworks/models.py:48
+#: artworks/models.py:101
 msgid "calendar of celebrations"
 msgstr "calendario de celebraciones"
 
-#: artworks/models.py:63
+#: artworks/models.py:116
 msgid ""
 "Give either a fixed date (month and day) or a movable celebration, not both."
 msgstr ""
 "Indica una fecha fija (mes y día) o una fiesta móvil, pero no las dos."
 
-#: artworks/models.py:66
+#: artworks/models.py:119
 msgid "Give the month and the day."
 msgstr "Indica el mes y el día."
 
-#: artworks/models.py:70 artworks/models.py:193
+#: artworks/models.py:123 artworks/models.py:311
 msgid "That date does not exist."
 msgstr "Esa fecha no existe."
 
-#: artworks/models.py:74
+#: artworks/models.py:127
 #, python-format
 msgid "%(name)s (movable)"
 msgstr "%(name)s (móvil)"
 
-#: artworks/models.py:76
+#: artworks/models.py:129
 #, python-format
 msgid "%(month)s %(day)s"
 msgstr "%(day)s de %(month)s"
 
-#: artworks/models.py:78 artworks/models.py:164
+#: artworks/models.py:131 artworks/models.py:282
 msgid "date"
 msgstr "fecha"
 
-#: artworks/models.py:85
-msgid "order"
-msgstr "orden"
-
-#: artworks/models.py:88
+#: artworks/models.py:141
 msgid "kind of additional data"
 msgstr "tipo de dato adicional"
 
-#: artworks/models.py:89
+#: artworks/models.py:142
 msgid "kinds of additional data"
 msgstr "tipos de datos adicionales"
 
-#: artworks/models.py:98
+#: artworks/models.py:162
+#| msgid "name in Spanish"
+msgid "name in a language"
+msgstr "nombre en un idioma"
+
+#: artworks/models.py:181
 msgid "JPEG or PNG. Only the artwork, without added frames or backgrounds."
 msgstr "JPEG o PNG. Solo la obra, sin marcos ni fondos añadidos."
 
-#: artworks/models.py:99
-msgid "title"
-msgstr "título"
-
-#: artworks/models.py:100
-msgid "author"
-msgstr "autor"
-
-#: artworks/models.py:101
-msgid "year"
-msgstr "año"
-
-#: artworks/models.py:101
-msgid "Free text: “1426”, “c. 1450”, “1450–1455”…"
-msgstr "Texto libre: «1426», «c. 1450», «1450–1455»…"
-
-#: artworks/models.py:102
-msgid "comment"
-msgstr "comentario"
-
-#: artworks/models.py:102
-msgid "What the artwork shows and any useful explanation."
-msgstr "Qué aparece en la obra y cualquier explicación útil."
-
-#: artworks/models.py:103
+#: artworks/models.py:182
 msgid "source"
 msgstr "procedencia"
 
-#: artworks/models.py:104
+#: artworks/models.py:183
 msgid "Address of the page the image was taken from."
 msgstr "Dirección de la página de donde se ha obtenido la imagen."
 
-#: artworks/models.py:105
-msgid "license"
-msgstr "licencia"
-
-#: artworks/models.py:106
-msgid "For example: “Public domain”, “CC0”, “CC BY 4.0”."
-msgstr "Por ejemplo: «Dominio público», «CC0», «CC BY 4.0»."
-
-#: artworks/models.py:108
+#: artworks/models.py:184
 msgid "approved"
 msgstr "aprobada"
 
-#: artworks/models.py:109
+#: artworks/models.py:185
 msgid "approved by"
 msgstr "aprobada por"
 
-#: artworks/models.py:111
+#: artworks/models.py:187
 msgid "approved at"
 msgstr "aprobada el"
 
-#: artworks/models.py:112
+#: artworks/models.py:188
 msgid "uploaded by"
 msgstr "subida por"
 
-#: artworks/models.py:114
+#: artworks/models.py:190
 msgid "created at"
 msgstr "creada el"
 
-#: artworks/models.py:115
+#: artworks/models.py:191
 msgid "updated at"
 msgstr "modificada el"
 
-#: artworks/models.py:118
+#: artworks/models.py:194
 msgid "artwork"
 msgstr "obra"
 
-#: artworks/models.py:119
+#: artworks/models.py:195
 msgid "artworks"
 msgstr "obras"
 
-#: artworks/models.py:124
+#: artworks/models.py:201
 #, python-format
 msgid "Artwork %(id)s"
 msgstr "Obra %(id)s"
 
-#: artworks/models.py:132
+#: artworks/models.py:230
+msgid "title"
+msgstr "título"
+
+#: artworks/models.py:232
+msgid "Free text: “1426”, “c. 1450”, “1450–1455”…"
+msgstr "Texto libre: «1426», «c. 1450», «1450–1455»…"
+
+#: artworks/models.py:233
+msgid "comment"
+msgstr "comentario"
+
+#: artworks/models.py:233
+msgid "What the artwork shows and any useful explanation."
+msgstr "Qué aparece en la obra y cualquier explicación útil."
+
+#: artworks/models.py:234
+msgid "license"
+msgstr "licencia"
+
+#: artworks/models.py:235
+msgid "For example: “Public domain”, “CC0”, “CC BY 4.0”."
+msgstr "Por ejemplo: «Dominio público», «CC0», «CC BY 4.0»."
+
+#: artworks/models.py:238
+msgid "texts in a language"
+msgstr "textos en un idioma"
+
+#: artworks/models.py:239
+msgid "texts (one block per language)"
+msgstr "textos (un bloque por idioma)"
+
+#: artworks/models.py:249
 msgid "data"
 msgstr "dato"
 
-#: artworks/models.py:133
+#: artworks/models.py:251
 msgid "value"
 msgstr "valor"
 
-#: artworks/models.py:136
+#: artworks/models.py:254
 msgid "additional data"
 msgstr "dato adicional"
 
-#: artworks/models.py:137
+#: artworks/models.py:255
 msgid "other data"
 msgstr "otros datos"
 
-#: artworks/models.py:145 templates/admin/artworks/artwork/calendar.html:8
+#: artworks/models.py:263 templates/admin/artworks/artwork/calendar.html:8
 msgid "Liturgical season"
 msgstr "Tiempo litúrgico"
 
-#: artworks/models.py:146
+#: artworks/models.py:264
 msgid "Celebration (of the Lord, of the Virgin…)"
 msgstr "Celebración (del Señor, de la Virgen…)"
 
-#: artworks/models.py:147
+#: artworks/models.py:265
 msgid "Saint of the day"
 msgstr "Santo del día"
 
-#: artworks/models.py:148
+#: artworks/models.py:266
 msgid "Date of every year"
 msgstr "Fecha de todos los años"
 
-#: artworks/models.py:149
+#: artworks/models.py:267
 msgid "Specific date"
 msgstr "Fecha concreta"
 
-#: artworks/models.py:150
+#: artworks/models.py:268
 msgid "Any day (reserve)"
 msgstr "Cualquier día (de reserva)"
 
-#: artworks/models.py:159
+#: artworks/models.py:277
 msgid "liturgical season"
 msgstr "tiempo litúrgico"
 
-#: artworks/models.py:160
+#: artworks/models.py:278
 msgid "celebration or saint"
 msgstr "celebración o santo"
 
-#: artworks/models.py:167
+#: artworks/models.py:285
 msgid "when it is shown"
 msgstr "cuándo se muestra"
 
-#: artworks/models.py:168
+#: artworks/models.py:286
 msgid "when it is shown (it is enough to meet one)"
 msgstr "cuándo se muestra (basta con que se cumpla una)"
 
-#: artworks/models.py:176
+#: artworks/models.py:294
 #, python-format
 msgid "Every %(month)s %(day)s"
 msgstr "Cada %(day)s de %(month)s"
 
-#: artworks/models.py:186
+#: artworks/models.py:304
 msgid "Required for this kind."
 msgstr "Obligatorio para este tipo."
 
-#: artworks/models.py:211
+#: artworks/models.py:329
 msgid "access"
 msgstr "acceso"
 
-#: artworks/models.py:212
+#: artworks/models.py:330
 msgid "accesses"
 msgstr "accesos"
 
-#: artworks/models.py:219
+#: artworks/models.py:337
 msgid "requests"
 msgstr "peticiones"
 
-#: artworks/models.py:220
+#: artworks/models.py:338
 msgid "different computers"
 msgstr "equipos distintos"
 
-#: artworks/models.py:223
+#: artworks/models.py:341
 msgid "daily statistic"
 msgstr "estadística diaria"
 
-#: artworks/models.py:224
+#: artworks/models.py:342
 msgid "daily statistics"
 msgstr "estadísticas diarias"
 
