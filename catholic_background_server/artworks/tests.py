@@ -326,3 +326,53 @@ class AccessTests(TestCase):
         make_artwork("A", {"type": "any"})
         self.assertEqual(self.client.get(PREFIX).status_code, 200)             # /background/ also works
         self.assertEqual(self.client.get(image_url).status_code, 200)           # /background
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class LanguageTests(TestCase):
+    def test_language_from_the_browser(self):
+        login = reverse("account_login")
+        self.assertContains(self.client.get(login, HTTP_ACCEPT_LANGUAGE="es-ES,es;q=0.9"), 'lang="es"')
+        self.assertContains(self.client.get(login, HTTP_ACCEPT_LANGUAGE="es-ES,es;q=0.9"), "Contraseña")
+        self.assertContains(self.client.get(login, HTTP_ACCEPT_LANGUAGE="en-GB"), "Password")
+        self.assertContains(self.client.get(login, HTTP_ACCEPT_LANGUAGE="fr-FR"), "Password")   # not available: English
+
+    def test_language_selector_stores_a_cookie(self):
+        login = reverse("account_login")
+        self.assertContains(self.client.get(login), 'name="language"')          # the selector is there
+        response = self.client.post(reverse("set_language"), {"language": "es", "next": login})
+        self.assertRedirects(response, login, fetch_redirect_response=False)
+        cookie = response.cookies[settings.LANGUAGE_COOKIE_NAME]
+        self.assertEqual((cookie.value, cookie["path"]), ("es", PREFIX))
+        # The cookie wins over the browser
+        self.assertContains(self.client.get(login, HTTP_ACCEPT_LANGUAGE="en"), "Contraseña")
+
+    def test_cookie_notice(self):
+        login = reverse("account_login")
+        self.assertContains(self.client.get(login), 'id="cb-cookies"')
+        self.client.cookies["cookie_notice"] = "1"
+        self.assertNotContains(self.client.get(login), 'id="cb-cookies"')
+
+    def test_privacy_page_in_both_languages(self):
+        self.assertContains(self.client.get(reverse("privacy"), HTTP_ACCEPT_LANGUAGE="es"), "Política de privacidad")
+        page = self.client.get(reverse("privacy"), HTTP_ACCEPT_LANGUAGE="en")
+        self.assertContains(page, "Privacy Policy")
+        self.assertContains(page, 'id="cookies"')
+
+    def test_admin_in_spanish(self):
+        admin = get_user_model().objects.create(username="admin", email="a@example.com", is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        joseph = Celebration.objects.get(month=3, day=19)
+        make_artwork("Joseph", {"type": "saint", "celebration": joseph})
+        spanish = {"HTTP_ACCEPT_LANGUAGE": "es"}
+        self.assertContains(self.client.get(reverse("admin:index"), **spanish), "Gestión de contenidos")
+        self.assertContains(self.client.get(reverse("admin:artworks_artwork_changelist"), **spanish), "San José, esposo de la Virgen María")
+        self.assertContains(self.client.get(reverse("admin:artworks_artwork_add"), **spanish), "Arrastra una imagen aquí")
+        self.assertContains(self.client.get(reverse("admin:artworks_calendar"), **spanish), "Calendario de los próximos días")
+        self.assertContains(self.client.get(reverse("admin:artworks_artwork_changelist"), HTTP_ACCEPT_LANGUAGE="en"),
+                            "Saint Joseph, Spouse of the Blessed Virgin Mary")
+
+    def test_api_is_not_affected_by_the_language(self):
+        make_artwork("A", {"type": "any"})
+        data = self.client.get(reverse("background"), HTTP_ACCEPT_LANGUAGE="es").json()
+        self.assertEqual(data["title"], "A")

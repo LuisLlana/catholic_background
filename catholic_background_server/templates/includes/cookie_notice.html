@@ -1,0 +1,28 @@
+{% load i18n %}
+{% if not cookie_notice_accepted %}
+<div class="cb-cookies" id="cb-cookies" role="region" aria-label="{% translate 'Cookies' %}">
+  <p>
+    {% blocktranslate trimmed %}
+      This site only uses the cookies needed to log in and, if you choose a language, one to remember it.
+      It does not use cookies for advertising or to track you.
+    {% endblocktranslate %}
+    <a href="{% url 'privacy' %}#cookies">{% translate "More information" %}</a>
+  </p>
+  <button type="button" id="cb-cookies-ok">{% translate "OK" %}</button>
+</div>
+<style>
+  .cb-cookies { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 1000; max-width: 46rem; margin: 0 auto;
+                display: flex; gap: 1rem; align-items: center; padding: .8rem 1rem; border-radius: 10px;
+                background: #263238; color: #fff; box-shadow: 0 4px 16px #0005; font-size: .9rem; line-height: 1.4; }
+  .cb-cookies p { margin: 0; flex: 1; }
+  .cb-cookies a { color: #9fd3ff; }
+  .cb-cookies button { padding: .45rem 1.1rem; border: 0; border-radius: 6px; background: #9fd3ff; color: #102027;
+                       font-weight: bold; cursor: pointer; }
+</style>
+<script>
+  document.getElementById("cb-cookies-ok").addEventListener("click", function () {
+    document.cookie = "{{ cookie_notice_name }}=1; path={{ cookie_path }}; max-age=31536000; SameSite=Lax{% if cookie_secure %}; Secure{% endif %}";
+    document.getElementById("cb-cookies").remove();
+  });
+</script>
+{% endif %}

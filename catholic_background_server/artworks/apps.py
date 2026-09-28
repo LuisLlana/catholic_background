@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_migrate
 
 
 class ArtworksConfig(AppConfig):
     name = "artworks"
-    verbose_name = "Content"
+    verbose_name = _("Content")
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):

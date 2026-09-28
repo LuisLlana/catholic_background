@@ -9,6 +9,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone as dj_timezone
+from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
 from .models import AccessLog
@@ -76,7 +77,8 @@ def background(request):
 
 
 def privacy(request):
-    return render(request, "pages/privacy.html", {"opts": settings.CATHOLIC_BACKGROUND})
+    template = "pages/privacy_es.html" if (get_language() or "").startswith("es") else "pages/privacy.html"
+    return render(request, template, {"opts": settings.CATHOLIC_BACKGROUND})
 
 
 @staff_member_required

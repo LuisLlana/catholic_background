@@ -10,6 +10,7 @@ from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
+from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 from . import liturgy
@@ -24,7 +25,7 @@ class AtLeastOneConditionFormSet(BaseInlineFormSet):
         kept = [f for f in self.forms
                 if f.cleaned_data and not f.cleaned_data.get("DELETE") and f.cleaned_data.get("type")]
         if not kept:
-            raise ValidationError("Say at least when the artwork is shown (it can be “Any day”).")
+            raise ValidationError(_("Say at least when the artwork is shown (it can be “Any day”)."))
 
 
 class ConditionInline(admin.TabularInline):
@@ -50,24 +51,25 @@ class ArtworkAdmin(admin.ModelAdmin):
     list_display = ["thumbnail", "__str__", "author", "year", "when", "approved"]
     list_display_links = ["thumbnail", "__str__"]
     list_filter = ["approved", "conditions__type", "conditions__season"]
-    search_fields = ["title", "author", "year", "description", "metadata__value", "conditions__celebration__name"]
+    search_fields = ["title", "author", "year", "description", "metadata__value", "conditions__celebration__name",
+                     "conditions__celebration__name_es"]
     inlines = [ConditionInline, MetadataInline]
     readonly_fields = ["approved_by", "approved_at", "created_by", "created_at", "updated_at"]
     fieldsets = [
         (None, {"fields": ["image"]}),
-        ("The artwork", {"fields": ["title", "author", "year", "description"]}),
-        ("Source", {"fields": ["source_url", "license"]}),
-        ("Review", {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
+        (_("The artwork"), {"fields": ["title", "author", "year", "description"]}),
+        (_("Source"), {"fields": ["source_url", "license"]}),
+        (_("Review"), {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
     ]
     actions = ["approve"]
     formfield_overrides = {models.ImageField: {"widget": DropImageWidget}}
     change_list_template = "admin/artworks/artwork/change_list.html"
 
-    @admin.display(description="image")
+    @admin.display(description=_("image"))
     def thumbnail(self, obj):
         return format_html('<img src="{}" style="height:60px;max-width:110px;object-fit:contain">', obj.image.url) if obj.image else ""
 
-    @admin.display(description="when")
+    @admin.display(description=_("when"))
     def when(self, obj):
         return "; ".join(str(c) for c in obj.conditions.all())
 
@@ -86,10 +88,10 @@ class ArtworkAdmin(admin.ModelAdmin):
             actions.pop("approve", None)
         return actions
 
-    @admin.action(description="Approve the selected artworks")
+    @admin.action(description=_("Approve the selected artworks"))
     def approve(self, request, queryset):
         count = queryset.filter(approved=False).update(approved=True, approved_by=request.user, approved_at=timezone.now())
-        self.message_user(request, f"{count} artwork(s) approved.")
+        self.message_user(request, _("%(count)s artwork(s) approved.") % {"count": count})
 
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
@@ -124,9 +126,9 @@ class ArtworkAdmin(admin.ModelAdmin):
         except Exception:
             return
         if height > width * 1.6:
-            messages.warning(request, "The image is very tall: on screens it will look narrow, with a lot of filling at the sides.")
+            messages.warning(request, _("The image is very tall: on screens it will look narrow, with a lot of filling at the sides."))
         elif width > height * 3:
-            messages.warning(request, "The image is very wide: on screens it will look low, with a lot of filling above and below.")
+            messages.warning(request, _("The image is very wide: on screens it will look low, with a lot of filling above and below."))
 
     # ------------------------------------------------ calendar of the next days
     def get_urls(self):
@@ -140,20 +142,20 @@ class ArtworkAdmin(admin.ModelAdmin):
             day = today + timedelta(days=offset)
             days.append({
                 "date": day,
-                "seasons": ", ".join(seasons[s] for s in sorted(liturgy.seasons_on(day))),
-                "celebrations": ", ".join(c.name for c in celebrations_on(day)),
+                "seasons": ", ".join(str(seasons[s]) for s in sorted(liturgy.seasons_on(day))),
+                "celebrations": ", ".join(str(c) for c in celebrations_on(day)),
                 "artworks": candidates(day),
             })
-        context = {**self.admin_site.each_context(request), "title": "Calendar of the next days",
+        context = {**self.admin_site.each_context(request), "title": _("Calendar of the next days"),
                    "days": days, "opts": self.model._meta}
         return TemplateResponse(request, "admin/artworks/artwork/calendar.html", context)
 
 
 @admin.register(Celebration)
 class CelebrationAdmin(admin.ModelAdmin):
-    list_display = ["name", "when", "kind", "rank"]
+    list_display = ["name", "name_es", "when", "kind", "rank"]
     list_filter = ["kind", "rank", "month"]
-    search_fields = ["name"]
+    search_fields = ["name", "name_es"]
 
 
 @admin.register(MetadataKey)

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -76,6 +77,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.login_options",
+                "accounts.context_processors.cookie_notice",
             ],
         },
     },
@@ -149,7 +151,13 @@ ADMIN_EMAILS = [e.lower() for e in env_list("ADMIN_EMAILS")]
 AUTO_APPROVE_DOMAINS = [d.lower() for d in env_list("AUTO_APPROVE_DOMAINS")]
 
 # ---------------------------------------------------------------- language and time
-LANGUAGE_CODE = "en-us"
+# The language comes from the language cookie (set with the language selector) or, if
+# there is none, from the browser (Accept-Language); English if it is not available.
+LANGUAGE_CODE = "en"
+LANGUAGES = [("en", "English"), ("es", "Español")]
+LOCALE_PATHS = [BASE_DIR / "locale"]
+LANGUAGE_COOKIE_AGE = 365 * 24 * 3600
+LANGUAGE_COOKIE_SAMESITE = "Lax"
 TIME_ZONE = env("TIME_ZONE", "Europe/Madrid")
 USE_I18N = True
 USE_TZ = True
@@ -165,12 +173,15 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 # Cookies only for this application, not for the rest of the host
 SESSION_COOKIE_PATH = PREFIX
 CSRF_COOKIE_PATH = PREFIX
+LANGUAGE_COOKIE_PATH = PREFIX
+COOKIE_NOTICE_COOKIE = "cookie_notice"
 
 # ---------------------------------------------------------------- behind nginx (HTTPS)
 if env_bool("BEHIND_PROXY", not DEBUG):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    LANGUAGE_COOKIE_SECURE = True
 # Take the client IP from X-Forwarded-For (only if nginx sets it)
 TRUST_X_FORWARDED_FOR = env_bool("TRUST_X_FORWARDED_FOR", not DEBUG)
 

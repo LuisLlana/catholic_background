@@ -1,9 +1,10 @@
 {# Drag and drop area for an image. CSS and JavaScript are inline: no static files needed. #}
+{% load i18n %}
 <div class="cb-drop" data-cb-drop>
   <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
   <img class="cb-drop-preview" alt=""{% if widget.is_initial %} src="{{ widget.value.url }}"{% else %} hidden{% endif %}>
-  <p class="cb-drop-text">{% if widget.is_initial %}Drag another image here to replace it{% else %}Drag an image here{% endif %}, or <span class="cb-drop-link">click to choose a file</span></p>
-  <p class="cb-drop-name">{% if widget.is_initial %}Current: {{ widget.value.name }}{% endif %}</p>
+  <p class="cb-drop-text">{% if widget.is_initial %}{% translate "Drag another image here to replace it, or" %}{% else %}{% translate "Drag an image here, or" %}{% endif %} <span class="cb-drop-link">{% translate "click to choose a file" %}</span></p>
+  <p class="cb-drop-name">{% if widget.is_initial %}{% translate "Current:" %} {{ widget.value.name }}{% endif %}</p>
   <p class="cb-drop-error" hidden></p>
 </div>
 {% if widget.is_initial and not widget.required %}
@@ -26,6 +27,11 @@
 <script>
 (function () {
   var ACCEPTED = ["image/jpeg", "image/png"];
+  var TEXT = {
+    notImage: "{% filter escapejs %}{% translate '“%(name)s” is not a JPEG or PNG image.' %}{% endfilter %}",
+    replace: "{% filter escapejs %}{% translate 'Drag another image here to replace it, or' %}{% endfilter %}",
+    choose: "{% filter escapejs %}{% translate 'click to choose a file' %}{% endfilter %}"
+  };
 
   function setup(zone) {
     if (zone.dataset.cbReady) return;
@@ -44,7 +50,7 @@
     function show(file) {
       if (!file) return;
       if (ACCEPTED.indexOf(file.type) < 0) {
-        showError("“" + file.name + "” is not a JPEG or PNG image.");
+        showError(TEXT.notImage.replace("%(name)s", file.name));
         input.value = "";
         return;
       }
@@ -53,7 +59,11 @@
       preview.hidden = false;
       var size = file.size < 1048576 ? Math.max(1, Math.round(file.size / 1024)) + " KB" : (file.size / 1048576).toFixed(1) + " MB";
       name.textContent = file.name + " (" + size + ")";
-      text.innerHTML = "Drag another image here to replace it, or <span class=\"cb-drop-link\">click to choose a file</span>";
+      text.textContent = TEXT.replace + " ";
+      var link = document.createElement("span");
+      link.className = "cb-drop-link";
+      link.textContent = TEXT.choose;
+      text.appendChild(link);
     }
 
     input.addEventListener("change", function () { show(input.files[0]); });

@@ -1,0 +1,701 @@
+# Spanish translation of Catholic Background.
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 20:19+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Luis Llana <luis.llana.diaz@gmail.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: accounts/apps.py:9
+msgid "Access"
+msgstr "Acceso"
+
+#: artworks/admin.py:28
+msgid "Say at least when the artwork is shown (it can be “Any day”)."
+msgstr ""
+"Indica al menos cuándo se muestra la obra (puede ser «Cualquier día»)."
+
+#: artworks/admin.py:60
+msgid "The artwork"
+msgstr "La obra"
+
+#: artworks/admin.py:61
+msgid "Source"
+msgstr "Procedencia"
+
+#: artworks/admin.py:62
+msgid "Review"
+msgstr "Revisión"
+
+#: artworks/admin.py:68 artworks/models.py:97
+msgid "image"
+msgstr "imagen"
+
+#: artworks/admin.py:72 artworks/models.py:158
+msgid "when"
+msgstr "cuándo"
+
+#: artworks/admin.py:91
+msgid "Approve the selected artworks"
+msgstr "Aprobar las obras seleccionadas"
+
+#: artworks/admin.py:94
+#, python-format
+msgid "%(count)s artwork(s) approved."
+msgstr "%(count)s obra(s) aprobada(s)."
+
+#: artworks/admin.py:129
+msgid ""
+"The image is very tall: on screens it will look narrow, with a lot of "
+"filling at the sides."
+msgstr ""
+"La imagen es muy vertical: en las pantallas se verá estrecha, con mucho "
+"relleno a los lados."
+
+#: artworks/admin.py:131
+msgid ""
+"The image is very wide: on screens it will look low, with a lot of filling "
+"above and below."
+msgstr ""
+"La imagen es muy panorámica: en las pantallas se verá baja, con mucho "
+"relleno arriba y abajo."
+
+#: artworks/admin.py:149 templates/admin/artworks/artwork/change_list.html:4
+msgid "Calendar of the next days"
+msgstr "Calendario de los próximos días"
+
+#: artworks/apps.py:10
+msgid "Content"
+msgstr "Contenidos"
+
+#: artworks/liturgy.py:13
+msgid "Advent"
+msgstr "Adviento"
+
+#: artworks/liturgy.py:14
+msgid "Christmas"
+msgstr "Navidad"
+
+#: artworks/liturgy.py:15
+msgid "Lent"
+msgstr "Cuaresma"
+
+#: artworks/liturgy.py:16
+msgid "Holy Week"
+msgstr "Semana Santa"
+
+#: artworks/liturgy.py:17
+msgid "Easter"
+msgstr "Pascua"
+
+#: artworks/liturgy.py:18
+msgid "Ordinary Time"
+msgstr "Tiempo ordinario"
+
+#: artworks/liturgy.py:22
+msgid "Baptism of the Lord"
+msgstr "Bautismo del Señor"
+
+#: artworks/liturgy.py:23
+msgid "Ash Wednesday"
+msgstr "Miércoles de Ceniza"
+
+#: artworks/liturgy.py:24
+msgid "Palm Sunday"
+msgstr "Domingo de Ramos"
+
+#: artworks/liturgy.py:25
+msgid "Holy Thursday"
+msgstr "Jueves Santo"
+
+#: artworks/liturgy.py:26
+msgid "Good Friday"
+msgstr "Viernes Santo"
+
+#: artworks/liturgy.py:27
+msgid "Holy Saturday"
+msgstr "Sábado Santo"
+
+#: artworks/liturgy.py:28
+msgid "Easter Sunday"
+msgstr "Domingo de Resurrección"
+
+#: artworks/liturgy.py:29
+msgid "Divine Mercy Sunday"
+msgstr "Domingo de la Divina Misericordia"
+
+#: artworks/liturgy.py:30
+msgid "Ascension of the Lord"
+msgstr "Ascensión del Señor"
+
+#: artworks/liturgy.py:31
+msgid "Pentecost"
+msgstr "Pentecostés"
+
+#: artworks/liturgy.py:32
+msgid "Mary, Mother of the Church"
+msgstr "María, Madre de la Iglesia"
+
+#: artworks/liturgy.py:33
+msgid "Christ the Eternal High Priest"
+msgstr "Jesucristo, Sumo y Eterno Sacerdote"
+
+#: artworks/liturgy.py:34
+msgid "Most Holy Trinity"
+msgstr "Santísima Trinidad"
+
+#: artworks/liturgy.py:35
+msgid "Corpus Christi"
+msgstr "Corpus Christi"
+
+#: artworks/liturgy.py:36
+msgid "Sacred Heart of Jesus"
+msgstr "Sagrado Corazón de Jesús"
+
+#: artworks/liturgy.py:37
+msgid "Immaculate Heart of Mary"
+msgstr "Inmaculado Corazón de María"
+
+#: artworks/liturgy.py:38
+msgid "Christ the King"
+msgstr "Jesucristo, Rey del Universo"
+
+#: artworks/liturgy.py:39
+msgid "First Sunday of Advent"
+msgstr "Primer domingo de Adviento"
+
+#: artworks/liturgy.py:40
+msgid "Holy Family"
+msgstr "Sagrada Familia"
+
+#: artworks/models.py:15
+msgid "Of the Lord"
+msgstr "Del Señor"
+
+#: artworks/models.py:16
+msgid "Of the Virgin Mary"
+msgstr "De la Virgen María"
+
+#: artworks/models.py:17
+msgid "Saint"
+msgstr "Santo o santa"
+
+#: artworks/models.py:18 artworks/models.py:25
+msgid "Other"
+msgstr "Otra"
+
+#: artworks/models.py:21
+msgid "Solemnity"
+msgstr "Solemnidad"
+
+#: artworks/models.py:22
+msgid "Feast"
+msgstr "Fiesta"
+
+#: artworks/models.py:23
+msgid "Memorial"
+msgstr "Memoria obligatoria"
+
+#: artworks/models.py:24
+msgid "Optional memorial"
+msgstr "Memoria libre"
+
+#: artworks/models.py:28
+msgid "January"
+msgstr "enero"
+
+#: artworks/models.py:28
+msgid "February"
+msgstr "febrero"
+
+#: artworks/models.py:28
+msgid "March"
+msgstr "marzo"
+
+#: artworks/models.py:28
+msgid "April"
+msgstr "abril"
+
+#: artworks/models.py:28
+msgid "May"
+msgstr "mayo"
+
+#: artworks/models.py:28
+msgid "June"
+msgstr "junio"
+
+#: artworks/models.py:28
+msgid "July"
+msgstr "julio"
+
+#: artworks/models.py:29
+msgid "August"
+msgstr "agosto"
+
+#: artworks/models.py:29
+msgid "September"
+msgstr "septiembre"
+
+#: artworks/models.py:29
+msgid "October"
+msgstr "octubre"
+
+#: artworks/models.py:29
+msgid "November"
+msgstr "noviembre"
+
+#: artworks/models.py:29
+msgid "December"
+msgstr "diciembre"
+
+#: artworks/models.py:35 artworks/models.py:84
+msgid "name"
+msgstr "nombre"
+
+#: artworks/models.py:36
+msgid "name in Spanish"
+msgstr "nombre en español"
+
+#: artworks/models.py:37
+msgid "Shown when the site is in Spanish (if empty, the name is used)."
+msgstr ""
+"Se muestra cuando el sitio está en español (si está vacío, se usa el "
+"nombre)."
+
+#: artworks/models.py:38
+msgid "kind"
+msgstr "tipo"
+
+#: artworks/models.py:39
+msgid "rank"
+msgstr "grado"
+
+#: artworks/models.py:40 artworks/models.py:162
+msgid "month"
+msgstr "mes"
+
+#: artworks/models.py:41 artworks/models.py:163 artworks/models.py:218
+msgid "day"
+msgstr "día"
+
+#: artworks/models.py:42
+msgid "movable celebration"
+msgstr "fiesta móvil"
+
+#: artworks/models.py:43
+msgid "For celebrations whose date changes every year (computed from Easter)."
+msgstr ""
+"Para fiestas que cambian de fecha cada año (se calculan a partir de la "
+"Pascua)."
+
+#: artworks/models.py:44
+msgid "notes"
+msgstr "notas"
+
+#: artworks/models.py:47
+msgid "celebration"
+msgstr "celebración"
+
+#: artworks/models.py:48
+msgid "calendar of celebrations"
+msgstr "calendario de celebraciones"
+
+#: artworks/models.py:63
+msgid ""
+"Give either a fixed date (month and day) or a movable celebration, not both."
+msgstr ""
+"Indica una fecha fija (mes y día) o una fiesta móvil, pero no las dos."
+
+#: artworks/models.py:66
+msgid "Give the month and the day."
+msgstr "Indica el mes y el día."
+
+#: artworks/models.py:70 artworks/models.py:193
+msgid "That date does not exist."
+msgstr "Esa fecha no existe."
+
+#: artworks/models.py:74
+#, python-format
+msgid "%(name)s (movable)"
+msgstr "%(name)s (móvil)"
+
+#: artworks/models.py:76
+#, python-format
+msgid "%(month)s %(day)s"
+msgstr "%(day)s de %(month)s"
+
+#: artworks/models.py:78 artworks/models.py:164
+msgid "date"
+msgstr "fecha"
+
+#: artworks/models.py:85
+msgid "order"
+msgstr "orden"
+
+#: artworks/models.py:88
+msgid "kind of additional data"
+msgstr "tipo de dato adicional"
+
+#: artworks/models.py:89
+msgid "kinds of additional data"
+msgstr "tipos de datos adicionales"
+
+#: artworks/models.py:98
+msgid "JPEG or PNG. Only the artwork, without added frames or backgrounds."
+msgstr "JPEG o PNG. Solo la obra, sin marcos ni fondos añadidos."
+
+#: artworks/models.py:99
+msgid "title"
+msgstr "título"
+
+#: artworks/models.py:100
+msgid "author"
+msgstr "autor"
+
+#: artworks/models.py:101
+msgid "year"
+msgstr "año"
+
+#: artworks/models.py:101
+msgid "Free text: “1426”, “c. 1450”, “1450–1455”…"
+msgstr "Texto libre: «1426», «c. 1450», «1450–1455»…"
+
+#: artworks/models.py:102
+msgid "comment"
+msgstr "comentario"
+
+#: artworks/models.py:102
+msgid "What the artwork shows and any useful explanation."
+msgstr "Qué aparece en la obra y cualquier explicación útil."
+
+#: artworks/models.py:103
+msgid "source"
+msgstr "procedencia"
+
+#: artworks/models.py:104
+msgid "Address of the page the image was taken from."
+msgstr "Dirección de la página de donde se ha obtenido la imagen."
+
+#: artworks/models.py:105
+msgid "license"
+msgstr "licencia"
+
+#: artworks/models.py:106
+msgid "For example: “Public domain”, “CC0”, “CC BY 4.0”."
+msgstr "Por ejemplo: «Dominio público», «CC0», «CC BY 4.0»."
+
+#: artworks/models.py:108
+msgid "approved"
+msgstr "aprobada"
+
+#: artworks/models.py:109
+msgid "approved by"
+msgstr "aprobada por"
+
+#: artworks/models.py:111
+msgid "approved at"
+msgstr "aprobada el"
+
+#: artworks/models.py:112
+msgid "uploaded by"
+msgstr "subida por"
+
+#: artworks/models.py:114
+msgid "created at"
+msgstr "creada el"
+
+#: artworks/models.py:115
+msgid "updated at"
+msgstr "modificada el"
+
+#: artworks/models.py:118
+msgid "artwork"
+msgstr "obra"
+
+#: artworks/models.py:119
+msgid "artworks"
+msgstr "obras"
+
+#: artworks/models.py:124
+#, python-format
+msgid "Artwork %(id)s"
+msgstr "Obra %(id)s"
+
+#: artworks/models.py:132
+msgid "data"
+msgstr "dato"
+
+#: artworks/models.py:133
+msgid "value"
+msgstr "valor"
+
+#: artworks/models.py:136
+msgid "additional data"
+msgstr "dato adicional"
+
+#: artworks/models.py:137
+msgid "other data"
+msgstr "otros datos"
+
+#: artworks/models.py:145 templates/admin/artworks/artwork/calendar.html:8
+msgid "Liturgical season"
+msgstr "Tiempo litúrgico"
+
+#: artworks/models.py:146
+msgid "Celebration (of the Lord, of the Virgin…)"
+msgstr "Celebración (del Señor, de la Virgen…)"
+
+#: artworks/models.py:147
+msgid "Saint of the day"
+msgstr "Santo del día"
+
+#: artworks/models.py:148
+msgid "Date of every year"
+msgstr "Fecha de todos los años"
+
+#: artworks/models.py:149
+msgid "Specific date"
+msgstr "Fecha concreta"
+
+#: artworks/models.py:150
+msgid "Any day (reserve)"
+msgstr "Cualquier día (de reserva)"
+
+#: artworks/models.py:159
+msgid "liturgical season"
+msgstr "tiempo litúrgico"
+
+#: artworks/models.py:160
+msgid "celebration or saint"
+msgstr "celebración o santo"
+
+#: artworks/models.py:167
+msgid "when it is shown"
+msgstr "cuándo se muestra"
+
+#: artworks/models.py:168
+msgid "when it is shown (it is enough to meet one)"
+msgstr "cuándo se muestra (basta con que se cumpla una)"
+
+#: artworks/models.py:176
+#, python-format
+msgid "Every %(month)s %(day)s"
+msgstr "Cada %(day)s de %(month)s"
+
+#: artworks/models.py:186
+msgid "Required for this kind."
+msgstr "Obligatorio para este tipo."
+
+#: artworks/models.py:211
+msgid "access"
+msgstr "acceso"
+
+#: artworks/models.py:212
+msgid "accesses"
+msgstr "accesos"
+
+#: artworks/models.py:219
+msgid "requests"
+msgstr "peticiones"
+
+#: artworks/models.py:220
+msgid "different computers"
+msgstr "equipos distintos"
+
+#: artworks/models.py:223
+msgid "daily statistic"
+msgstr "estadística diaria"
+
+#: artworks/models.py:224
+msgid "daily statistics"
+msgstr "estadísticas diarias"
+
+#: artworks/templates/artworks/widgets/drop_image.html:6
+#: artworks/templates/artworks/widgets/drop_image.html:32
+msgid "Drag another image here to replace it, or"
+msgstr "Arrastra otra imagen aquí para sustituirla, o"
+
+#: artworks/templates/artworks/widgets/drop_image.html:6
+msgid "Drag an image here, or"
+msgstr "Arrastra una imagen aquí, o"
+
+#: artworks/templates/artworks/widgets/drop_image.html:6
+#: artworks/templates/artworks/widgets/drop_image.html:33
+msgid "click to choose a file"
+msgstr "pulsa para elegir un fichero"
+
+#: artworks/templates/artworks/widgets/drop_image.html:7
+msgid "Current:"
+msgstr "Actual:"
+
+#: artworks/templates/artworks/widgets/drop_image.html:31
+#, python-format
+msgid "“%%(name)s” is not a JPEG or PNG image."
+msgstr "«%%(name)s» no es una imagen JPEG ni PNG."
+
+#: artworks/validators.py:12
+#, python-format
+msgid "The image is larger than %(size)s MB."
+msgstr "La imagen ocupa más de %(size)s MB."
+
+#: artworks/validators.py:18
+msgid "The file is not a valid image."
+msgstr "El fichero no es una imagen válida."
+
+#: artworks/validators.py:22
+#, python-format
+msgid "%(format)s is not supported: use JPEG or PNG."
+msgstr "El formato %(format)s no se admite: usa JPEG o PNG."
+
+#: artworks/validators.py:25
+#, python-format
+msgid ""
+"The image is too small (%(width)s×%(height)s): its longest side must have at"
+" least %(min)s pixels."
+msgstr ""
+"La imagen es demasiado pequeña (%(width)s×%(height)s): su lado mayor debe "
+"tener al menos %(min)s píxeles."
+
+#: config/urls.py:27
+msgid "Content management"
+msgstr "Gestión de contenidos"
+
+#: templates/account/login.html:3 templates/account/login.html:25
+msgid "Log in"
+msgstr "Entrar"
+
+#: templates/account/login.html:7
+msgid "Management of the artworks of the wallpaper."
+msgstr "Gestión de las obras del fondo de escritorio."
+
+#: templates/account/login.html:12
+#, python-format
+msgid "Log in with %(name)s"
+msgstr "Entrar con %(name)s"
+
+#: templates/account/login.html:17
+msgid "or"
+msgstr "o"
+
+#: templates/account/login.html:21
+msgid "E-mail"
+msgstr "Correo electrónico"
+
+#: templates/account/login.html:23
+msgid "Password"
+msgstr "Contraseña"
+
+#: templates/account/login.html:27
+msgid "Accounts with a password are created by an administrator."
+msgstr "Las cuentas con contraseña las crea un administrador."
+
+#: templates/account/login.html:29
+msgid ""
+"No login method is configured (GOOGLE_CLIENT_ID, MICROSOFT_CLIENT_ID or "
+"PASSWORD_LOGIN)."
+msgstr ""
+"No hay ningún método de acceso configurado (GOOGLE_CLIENT_ID, "
+"MICROSOFT_CLIENT_ID o PASSWORD_LOGIN)."
+
+#: templates/account/login.html:31
+msgid "No passwords: log in with a Google or Microsoft account."
+msgstr "Sin contraseñas: entra con una cuenta de Google o de Microsoft."
+
+#: templates/account/pending.html:3 templates/account/pending.html:6
+msgid "Waiting for approval"
+msgstr "Pendiente de aprobación"
+
+#: templates/account/pending.html:7
+#, python-format
+msgid ""
+"You are logged in as <strong>%(email)s</strong>, but your account cannot "
+"manage artworks yet. An administrator has to approve it."
+msgstr ""
+"Has entrado como <strong>%(email)s</strong>, pero tu cuenta todavía no puede"
+" gestionar obras. Un administrador tiene que aprobarla."
+
+#: templates/account/pending.html:12
+msgid "Log out"
+msgstr "Salir"
+
+#: templates/admin/artworks/artwork/calendar.html:3
+msgid "Home"
+msgstr "Inicio"
+
+#: templates/admin/artworks/artwork/calendar.html:3
+#: templates/admin/artworks/artwork/calendar.html:8
+msgid "Artworks"
+msgstr "Obras"
+
+#: templates/admin/artworks/artwork/calendar.html:3
+msgid "Calendar"
+msgstr "Calendario"
+
+#: templates/admin/artworks/artwork/calendar.html:5
+msgid ""
+"Approved artworks shown each day. When there are several, they are shown in "
+"turns during the day. If a day has none, the ones marked “Any day” are used."
+msgstr ""
+"Obras aprobadas que se muestran cada día. Si hay varias, se reparten por "
+"turnos a lo largo del día. Si un día no tiene ninguna, se usan las marcadas "
+"como «Cualquier día»."
+
+#: templates/admin/artworks/artwork/calendar.html:8
+msgid "Day"
+msgstr "Día"
+
+#: templates/admin/artworks/artwork/calendar.html:8
+msgid "Celebrations"
+msgstr "Celebraciones"
+
+#: templates/admin/artworks/artwork/calendar.html:15
+msgid "none"
+msgstr "ninguna"
+
+#: templates/admin/base_site.html:3
+msgid "Django site admin"
+msgstr "Sitio de administración de Django"
+
+#: templates/admin/base_site.html:6
+msgid "Django administration"
+msgstr "Administración de Django"
+
+#: templates/includes/cookie_notice.html:3
+msgid "Cookies"
+msgstr "Cookies"
+
+#: templates/includes/cookie_notice.html:5
+msgid ""
+"This site only uses the cookies needed to log in and, if you choose a "
+"language, one to remember it. It does not use cookies for advertising or to "
+"track you."
+msgstr ""
+"Este sitio solo usa las cookies necesarias para iniciar sesión y, si eliges "
+"un idioma, una para recordarlo. No usa cookies publicitarias ni para "
+"seguirte."
+
+#: templates/includes/cookie_notice.html:9
+msgid "More information"
+msgstr "Más información"
+
+#: templates/includes/cookie_notice.html:11
+msgid "OK"
+msgstr "Entendido"
+
+#: templates/includes/language_selector.html:7
+msgid "Language"
+msgstr "Idioma"
+
+#: templates/includes/language_selector.html:14
+msgid "Change"
+msgstr "Cambiar"

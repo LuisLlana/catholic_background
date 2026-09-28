@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,6 +20,8 @@
   </style>
 </head>
 <body>
+<div style="text-align:right">{% include "includes/language_selector.html" %}</div>
 {% block content %}{% endblock %}
+{% include "includes/cookie_notice.html" %}
 </body>
 </html>

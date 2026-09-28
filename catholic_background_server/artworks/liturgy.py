@@ -7,36 +7,37 @@ Fixed-date celebrations and saints are in the Celebration model (editable).
 from datetime import date, timedelta
 
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 SEASONS = [
-    ("advent", "Advent"),
-    ("christmas", "Christmas"),
-    ("lent", "Lent"),
-    ("holy_week", "Holy Week"),
-    ("easter", "Easter"),
-    ("ordinary", "Ordinary Time"),
+    ("advent", _("Advent")),
+    ("christmas", _("Christmas")),
+    ("lent", _("Lent")),
+    ("holy_week", _("Holy Week")),
+    ("easter", _("Easter")),
+    ("ordinary", _("Ordinary Time")),
 ]
 
 MOVABLE = [
-    ("baptism", "Baptism of the Lord"),
-    ("ash_wednesday", "Ash Wednesday"),
-    ("palm_sunday", "Palm Sunday"),
-    ("holy_thursday", "Holy Thursday"),
-    ("good_friday", "Good Friday"),
-    ("holy_saturday", "Holy Saturday"),
-    ("easter_sunday", "Easter Sunday"),
-    ("divine_mercy", "Divine Mercy Sunday"),
-    ("ascension", "Ascension of the Lord"),
-    ("pentecost", "Pentecost"),
-    ("mary_mother_church", "Mary, Mother of the Church"),
-    ("christ_high_priest", "Christ the Eternal High Priest"),
-    ("trinity", "Most Holy Trinity"),
-    ("corpus_christi", "Corpus Christi"),
-    ("sacred_heart", "Sacred Heart of Jesus"),
-    ("immaculate_heart", "Immaculate Heart of Mary"),
-    ("christ_king", "Christ the King"),
-    ("first_advent", "First Sunday of Advent"),
-    ("holy_family", "Holy Family"),
+    ("baptism", _("Baptism of the Lord")),
+    ("ash_wednesday", _("Ash Wednesday")),
+    ("palm_sunday", _("Palm Sunday")),
+    ("holy_thursday", _("Holy Thursday")),
+    ("good_friday", _("Good Friday")),
+    ("holy_saturday", _("Holy Saturday")),
+    ("easter_sunday", _("Easter Sunday")),
+    ("divine_mercy", _("Divine Mercy Sunday")),
+    ("ascension", _("Ascension of the Lord")),
+    ("pentecost", _("Pentecost")),
+    ("mary_mother_church", _("Mary, Mother of the Church")),
+    ("christ_high_priest", _("Christ the Eternal High Priest")),
+    ("trinity", _("Most Holy Trinity")),
+    ("corpus_christi", _("Corpus Christi")),
+    ("sacred_heart", _("Sacred Heart of Jesus")),
+    ("immaculate_heart", _("Immaculate Heart of Mary")),
+    ("christ_king", _("Christ the King")),
+    ("first_advent", _("First Sunday of Advent")),
+    ("holy_family", _("Holy Family")),
 ]
 
 SUNDAY = 6

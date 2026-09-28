@@ -54,9 +54,27 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
   that can be completed from the admin. Precedence between celebrations is not
   applied: every celebration of the day counts.
 
+## Languages
+
+The web site is available in English and Spanish. The language is taken from the
+language cookie, if the user chose one with the language selector (in the header of
+every page), or else from the browser (`Accept-Language`); English if the browser
+language is not available. A notice about cookies is shown until it is acknowledged.
+
+The interface texts are translated with Django's standard system
+(`locale/es/LC_MESSAGES/django.po`, compiled into `django.mo`, both in the
+repository, so the server does not need the gettext tools). After changing texts:
+
+    sudo apt install gettext
+    python manage.py makemessages -l es     # updates django.po; translate the new entries
+    python manage.py compilemessages -l es  # updates django.mo
+
+The celebrations of the calendar are content, not interface: each one has a name and
+a name in Spanish, editable in the admin site (the initial catalogue has both).
+
 ## Privacy
 
-`/background/privacy/` shows the privacy policy. The server stores the IP address of each
+`/background/privacy/` shows the privacy policy (in English or Spanish), which also lists the cookies of the site. The server stores the IP address of each
 request for `ACCESS_LOG_DAYS` days (30); `manage.py process_access_logs` (every
 night, see `deploy/`) turns them into daily statistics without IP addresses and
 deletes the old ones. Uploaded images are only visible to logged-in editors; the

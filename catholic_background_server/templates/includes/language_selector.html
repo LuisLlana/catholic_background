@@ -1,0 +1,20 @@
+{% load i18n %}
+<form action="{% url 'set_language' %}" method="post" class="cb-lang">
+  {% csrf_token %}
+  <input name="next" type="hidden" value="{{ request.get_full_path }}">
+  {% get_current_language as CURRENT %}{% get_available_languages as AVAILABLE %}{% get_language_info_list for AVAILABLE as languages %}
+  <label>
+    <span class="cb-lang-label">{% translate "Language" %}</span>
+    <select name="language" onchange="this.form.submit()">
+      {% for language in languages %}
+        <option value="{{ language.code }}"{% if language.code == CURRENT %} selected{% endif %}>{{ language.name_local|capfirst }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <noscript><button type="submit">{% translate "Change" %}</button></noscript>
+</form>
+<style>
+  .cb-lang { display: inline-flex; align-items: center; gap: .4rem; margin: 0; font-size: .85rem; }
+  .cb-lang label { display: inline-flex; align-items: center; gap: .4rem; }
+  .cb-lang select { font-size: .85rem; padding: .15rem .3rem; }
+</style>

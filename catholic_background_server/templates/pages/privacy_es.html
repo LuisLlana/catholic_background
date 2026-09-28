@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Política de privacidad · Catholic Background{% endblock %}
+{% block content %}
+<h1>Política de privacidad — Catholic Background</h1>
+<p>Catholic Background («la aplicación») está disponible para Windows, KDE Plasma y GNOME. Esta política explica qué datos se tratan cuando la usas.</p>
+<h2>Responsable</h2>
+<p>{{ opts.PRIVACY_CONTROLLER }}. Contacto: <a href="mailto:{{ opts.PRIVACY_CONTACT }}">{{ opts.PRIVACY_CONTACT }}</a></p>
+<h2>Qué hace la aplicación</h2>
+<p>Para mostrar la imagen del día, la aplicación la pide periódicamente a este servidor. La petición solo contiene la fecha de hoy.
+La aplicación no pide, recoge ni envía tu nombre, tu correo, tu ubicación ni ningún otro dato personal, y no tiene cuentas ni inicio de sesión.
+Su configuración se queda en tu ordenador.</p>
+<h2>Qué registra este servidor</h2>
+<p>De cada petición, el servidor registra la dirección IP del ordenador que la hace, la fecha y la hora y la información técnica
+que envía la aplicación (como su versión). Según el RGPD, una dirección IP es un dato personal.</p>
+<h2>Para qué</h2>
+<p>1. Para detectar y corregir problemas del servicio (depuración y seguridad).
+2. Para elaborar estadísticas de cuánta gente usa la aplicación. Las estadísticas son agregadas y no identifican a nadie.
+Base jurídica: nuestro interés legítimo en mantener, proteger y mejorar el servicio (artículo 6.1.f del RGPD).</p>
+<h2>Durante cuánto tiempo</h2>
+<p>Las direcciones IP completas se conservan como máximo {{ opts.ACCESS_LOG_DAYS }} días y después se borran. Las estadísticas se
+conservan sin direcciones IP (solo recuentos diarios) y pueden conservarse indefinidamente.</p>
+<h2>Con quién se comparten</h2>
+<p>Con nadie. Los datos no se venden ni se ceden a terceros y no se usan con fines publicitarios.</p>
+<h2>Tus derechos</h2>
+<p>Puedes solicitar el acceso a tus datos, su rectificación o supresión, la limitación de su tratamiento u oponerte a él
+escribiendo a {{ opts.PRIVACY_CONTACT }}. Como solo se guardan direcciones IP, puede que necesitemos que nos indiques tu dirección IP
+y las fechas en que usaste la aplicación. También puedes presentar una reclamación ante la Agencia Española de Protección de Datos
+(<a href="https://www.aepd.es">www.aepd.es</a>). Si no quieres que se registre tu dirección IP, no uses la aplicación.</p>
+<h2 id="cookies">Cookies</h2>
+<p>Las aplicaciones (Windows, KDE, GNOME) no usan cookies. Este sitio web solo usa estas cookies, que se guardan únicamente para
+este sitio y no se usan con fines publicitarios ni para seguirte:</p>
+<ul>
+  <li><strong>sessionid</strong> y <strong>csrftoken</strong>: necesarias para iniciar sesión y proteger los formularios. Solo para
+      las personas que gestionan el contenido.</li>
+  <li><strong>django_language</strong>: el idioma que eliges con el selector de idioma (un año). Si no eliges ninguno, no se guarda
+      y se usa el idioma de tu navegador.</li>
+  <li><strong>cookie_notice</strong>: recuerda que has leído el aviso sobre las cookies (un año).</li>
+</ul>
+<p>Puedes borrarlas en cualquier momento desde tu navegador.</p>
+<h2>Cambios</h2>
+<p>Cualquier cambio en esta política se publicará en esta página.</p>
+{% endblock %}

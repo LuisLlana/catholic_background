@@ -1,12 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Waiting for approval · Catholic Background{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Waiting for approval" %} · Catholic Background{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>Waiting for approval</h1>
-  <p>You are logged in as <strong>{{ user.email }}</strong>, but your account cannot manage
-     artworks yet. An administrator has to approve it.</p>
+  <h1>{% translate "Waiting for approval" %}</h1>
+  <p>{% blocktranslate trimmed with email=user.email %}
+     You are logged in as <strong>{{ email }}</strong>, but your account cannot manage
+     artworks yet. An administrator has to approve it.
+  {% endblocktranslate %}</p>
   <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}
-    <button class="provider" type="submit">Log out</button>
+    <button class="provider" type="submit">{% translate "Log out" %}</button>
   </form>
 </div>
 {% endblock %}

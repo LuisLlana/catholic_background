@@ -1,34 +1,34 @@
 {% extends "base.html" %}
-{% load socialaccount %}
-{% block title %}Log in · Catholic Background{% endblock %}
+{% load i18n socialaccount %}
+{% block title %}{% translate "Log in" %} · Catholic Background{% endblock %}
 {% block content %}
 <div class="card">
   <h1>Catholic Background</h1>
-  <p>Management of the artworks of the wallpaper.</p>
+  <p>{% translate "Management of the artworks of the wallpaper." %}</p>
   {% get_providers as providers %}
   {% for provider in providers %}
     <form method="post" action="{% provider_login_url provider.id process='login' next=request.GET.next %}">
       {% csrf_token %}
-      <button class="provider" type="submit">Log in with {{ provider.name }}</button>
+      <button class="provider" type="submit">{% blocktranslate with name=provider.name %}Log in with {{ name }}{% endblocktranslate %}</button>
     </form>
   {% endfor %}
 
   {% if password_login %}
-    {% if providers %}<p class="muted">or</p>{% endif %}
+    {% if providers %}<p class="muted">{% translate "or" %}</p>{% endif %}
     <form method="post" action="{% url 'account_login' %}" class="password-form">
       {% csrf_token %}
       {% if form.non_field_errors %}<p class="error">{{ form.non_field_errors|join:" " }}</p>{% endif %}
-      <input class="field" type="email" name="login" placeholder="E-mail" autocomplete="email" required
+      <input class="field" type="email" name="login" placeholder="{% translate 'E-mail' %}" autocomplete="email" required
              value="{{ form.login.value|default:'' }}">
-      <input class="field" type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+      <input class="field" type="password" name="password" placeholder="{% translate 'Password' %}" autocomplete="current-password" required>
       {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
-      <button class="provider" type="submit">Log in</button>
+      <button class="provider" type="submit">{% translate "Log in" %}</button>
     </form>
-    <p class="muted">Accounts with a password are created by an administrator.</p>
+    <p class="muted">{% translate "Accounts with a password are created by an administrator." %}</p>
   {% elif not providers %}
-    <p>No login method is configured (GOOGLE_CLIENT_ID, MICROSOFT_CLIENT_ID or PASSWORD_LOGIN).</p>
+    <p>{% translate "No login method is configured (GOOGLE_CLIENT_ID, MICROSOFT_CLIENT_ID or PASSWORD_LOGIN)." %}</p>
   {% else %}
-    <p class="muted">No passwords: log in with a Google or Microsoft account.</p>
+    <p class="muted">{% translate "No passwords: log in with a Google or Microsoft account." %}</p>
   {% endif %}
 </div>
 {% endblock %}

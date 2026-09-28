@@ -1,17 +1,18 @@
 {% extends "admin/base_site.html" %}
-{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> › <a href="{% url 'admin:artworks_artwork_changelist' %}">Artworks</a> › Calendar</div>{% endblock %}
+{% load i18n %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> › <a href="{% url 'admin:artworks_artwork_changelist' %}">{% translate "Artworks" %}</a> › {% translate "Calendar" %}</div>{% endblock %}
 {% block content %}
-<p>Approved artworks shown each day. When there are several, they are shown in turns during the day.
-If a day has none, the ones marked “Any day” are used.</p>
+<p>{% blocktranslate trimmed %}Approved artworks shown each day. When there are several, they are shown in turns during the day.
+If a day has none, the ones marked “Any day” are used.{% endblocktranslate %}</p>
 <table style="width:100%">
-  <thead><tr><th>Day</th><th>Liturgical season</th><th>Celebrations</th><th>Artworks</th></tr></thead>
+  <thead><tr><th>{% translate "Day" %}</th><th>{% translate "Liturgical season" %}</th><th>{% translate "Celebrations" %}</th><th>{% translate "Artworks" %}</th></tr></thead>
   <tbody>
   {% for d in days %}
     <tr>
       <td style="white-space:nowrap">{{ d.date|date:"D j M Y" }}</td>
       <td>{{ d.seasons }}</td>
       <td>{{ d.celebrations|default:"—" }}</td>
-      <td>{% for a in d.artworks %}<a href="{% url 'admin:artworks_artwork_change' a.pk %}" title="{{ a }}"><img src="{{ a.image.url }}" style="height:48px;margin:2px"></a>{% empty %}<strong style="color:#b00">none</strong>{% endfor %}</td>
+      <td>{% for a in d.artworks %}<a href="{% url 'admin:artworks_artwork_change' a.pk %}" title="{{ a }}"><img src="{{ a.image.url }}" style="height:48px;margin:2px"></a>{% empty %}<strong style="color:#b00">{% translate "none" %}</strong>{% endfor %}</td>
     </tr>
   {% endfor %}
   </tbody>

@@ -9,11 +9,13 @@ Everything hangs from BASE_PATH, read from the environment in settings.py
     /<BASE_PATH>/accounts/    login with Google or Microsoft
     /<BASE_PATH>/privacy/     privacy policy
     /<BASE_PATH>/media/       uploaded images (editors only)
+    /<BASE_PATH>/i18n/        language selector
 """
 from allauth.account.decorators import secure_admin_login
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.utils.translation import gettext_lazy as _
 
 from accounts import views as account_views
 from artworks import views as artwork_views
@@ -22,7 +24,7 @@ from artworks import views as artwork_views
 admin.site.login = secure_admin_login(admin.site.login)
 admin.site.site_header = "Catholic Background"
 admin.site.site_title = "Catholic Background"
-admin.site.index_title = "Content management"
+admin.site.index_title = _("Content management")
 admin.site.site_url = f"{settings.PREFIX}privacy/"
 
 pages = [
@@ -31,6 +33,7 @@ pages = [
     path("privacy/", artwork_views.privacy, name="privacy"),
     path("media/<path:path>", artwork_views.protected_media, name="media"),
     path("accounts/", include("allauth.urls")),
+    path("i18n/", include("django.conf.urls.i18n")),     # set_language: the language selector
     path("admin/", admin.site.urls),
 ]
 
