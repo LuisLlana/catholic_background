@@ -257,6 +257,16 @@ class AccessTests(TestCase):
         self.assertEqual(artwork.title, "Changed")
         self.assertFalse(artwork.approved)
 
+    def test_drop_area_in_the_artwork_form(self):
+        admin = get_user_model().objects.create(username="admin", email="jefe@example.com", is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        page = self.client.get(reverse("admin:artworks_artwork_add"))
+        self.assertContains(page, "data-cb-drop")
+        self.assertContains(page, 'accept="image/jpeg,image/png"')
+        artwork = make_artwork("A", {"type": "any"})
+        page = self.client.get(reverse("admin:artworks_artwork_change", args=[artwork.pk]))
+        self.assertContains(page, f'src="{artwork.image.url}"')   # current image shown in the area
+
     def test_admin_pages(self):
         admin = get_user_model().objects.create(username="admin", email="jefe@example.com", is_staff=True, is_superuser=True)
         make_artwork("A", {"type": "any"})

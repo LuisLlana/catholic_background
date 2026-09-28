@@ -1,0 +1,101 @@
+{# Drag and drop area for an image. CSS and JavaScript are inline: no static files needed. #}
+<div class="cb-drop" data-cb-drop>
+  <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+  <img class="cb-drop-preview" alt=""{% if widget.is_initial %} src="{{ widget.value.url }}"{% else %} hidden{% endif %}>
+  <p class="cb-drop-text">{% if widget.is_initial %}Drag another image here to replace it{% else %}Drag an image here{% endif %}, or <span class="cb-drop-link">click to choose a file</span></p>
+  <p class="cb-drop-name">{% if widget.is_initial %}Current: {{ widget.value.name }}{% endif %}</p>
+  <p class="cb-drop-error" hidden></p>
+</div>
+{% if widget.is_initial and not widget.required %}
+  <label><input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"> {{ widget.clear_checkbox_label }}</label>
+{% endif %}
+<style>
+  .cb-drop { position: relative; box-sizing: border-box; width: min(100%, 36rem); min-height: 11rem; padding: 1rem;
+             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
+             border: 2px dashed var(--border-color, #bbb); border-radius: 10px; background: var(--darkened-bg, #f8f8f8);
+             text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .cb-drop:hover, .cb-drop:focus-within { border-color: var(--link-fg, #447e9b); }
+  .cb-drop.cb-drop-over { border-color: var(--link-fg, #447e9b); background: var(--selected-bg, #e4f0f8); }
+  .cb-drop input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .cb-drop-preview { max-width: 100%; max-height: 18rem; border-radius: 6px; pointer-events: none; }
+  .cb-drop p { margin: 0; pointer-events: none; }
+  .cb-drop-link { color: var(--link-fg, #447e9b); text-decoration: underline; }
+  .cb-drop-name { font-size: .9em; opacity: .8; word-break: break-all; }
+  .cb-drop-error { color: var(--error-fg, #ba2121); font-weight: bold; }
+</style>
+<script>
+(function () {
+  var ACCEPTED = ["image/jpeg", "image/png"];
+
+  function setup(zone) {
+    if (zone.dataset.cbReady) return;
+    zone.dataset.cbReady = "1";
+    var input = zone.querySelector("input[type=file]");
+    var preview = zone.querySelector(".cb-drop-preview");
+    var text = zone.querySelector(".cb-drop-text");
+    var name = zone.querySelector(".cb-drop-name");
+    var error = zone.querySelector(".cb-drop-error");
+
+    function showError(message) {
+      error.textContent = message;
+      error.hidden = !message;
+    }
+
+    function show(file) {
+      if (!file) return;
+      if (ACCEPTED.indexOf(file.type) < 0) {
+        showError("“" + file.name + "” is not a JPEG or PNG image.");
+        input.value = "";
+        return;
+      }
+      showError("");
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+      var size = file.size < 1048576 ? Math.max(1, Math.round(file.size / 1024)) + " KB" : (file.size / 1048576).toFixed(1) + " MB";
+      name.textContent = file.name + " (" + size + ")";
+      text.innerHTML = "Drag another image here to replace it, or <span class=\"cb-drop-link\">click to choose a file</span>";
+    }
+
+    input.addEventListener("change", function () { show(input.files[0]); });
+
+    ["dragenter", "dragover"].forEach(function (type) {
+      zone.addEventListener(type, function (event) {
+        event.preventDefault();
+        zone.classList.add("cb-drop-over");
+      });
+    });
+    ["dragleave", "dragend"].forEach(function (type) {
+      zone.addEventListener(type, function (event) {
+        if (!zone.contains(event.relatedTarget)) zone.classList.remove("cb-drop-over");
+      });
+    });
+    zone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      zone.classList.remove("cb-drop-over");
+      var files = event.dataTransfer && event.dataTransfer.files;
+      if (!files || !files.length) return;
+      var transfer = new DataTransfer();
+      transfer.items.add(files[0]);
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change", {bubbles: true}));
+    });
+  }
+
+  function init() {
+    document.querySelectorAll("[data-cb-drop]").forEach(setup);
+  }
+
+  // A file dropped outside the area must not replace the page with the image
+  if (!window.cbDropGuard) {
+    window.cbDropGuard = true;
+    ["dragover", "drop"].forEach(function (type) {
+      window.addEventListener(type, function (event) {
+        if (!event.target.closest || !event.target.closest("[data-cb-drop]")) event.preventDefault();
+      });
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>

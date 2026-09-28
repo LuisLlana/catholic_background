@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from django.contrib import admin, messages
+from django.db import models
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 from django.template.response import TemplateResponse
@@ -14,6 +15,7 @@ from PIL import Image
 from . import liturgy
 from .models import Artwork, ArtworkMetadata, Celebration, Condition, DailyStatistic, MetadataKey
 from .selection import candidates, celebrations_on
+from .widgets import DropImageWidget
 
 
 class AtLeastOneConditionFormSet(BaseInlineFormSet):
@@ -50,23 +52,20 @@ class ArtworkAdmin(admin.ModelAdmin):
     list_filter = ["approved", "conditions__type", "conditions__season"]
     search_fields = ["title", "author", "year", "description", "metadata__value", "conditions__celebration__name"]
     inlines = [ConditionInline, MetadataInline]
-    readonly_fields = ["preview", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]
+    readonly_fields = ["approved_by", "approved_at", "created_by", "created_at", "updated_at"]
     fieldsets = [
-        (None, {"fields": ["image", "preview"]}),
+        (None, {"fields": ["image"]}),
         ("The artwork", {"fields": ["title", "author", "year", "description"]}),
         ("Source", {"fields": ["source_url", "license"]}),
         ("Review", {"fields": ["approved", "approved_by", "approved_at", "created_by", "created_at", "updated_at"]}),
     ]
     actions = ["approve"]
+    formfield_overrides = {models.ImageField: {"widget": DropImageWidget}}
     change_list_template = "admin/artworks/artwork/change_list.html"
 
     @admin.display(description="image")
     def thumbnail(self, obj):
         return format_html('<img src="{}" style="height:60px;max-width:110px;object-fit:contain">', obj.image.url) if obj.image else ""
-
-    @admin.display(description="preview")
-    def preview(self, obj):
-        return format_html('<img src="{}" style="max-height:320px;max-width:100%">', obj.image.url) if obj.image else "—"
 
     @admin.display(description="when")
     def when(self, obj):
