@@ -157,7 +157,7 @@ class ApiTests(TestCase):
 
     def test_errors(self):
         self.assertEqual(self.client.get(reverse("background"), {"ts": "abc"}).status_code, 400)
-        self.assertEqual(self.client.get(reverse("background"), {"ts": int(time.time()) + 5 * 86400}).status_code, 400)
+        self.assertEqual(self.client.get(reverse("background"), {"ts": 10 ** 20}).status_code, 400)
         self.assertEqual(self.client.get(reverse("background")).status_code, 404)   # no artworks
 
     def test_access_logs_become_statistics(self):
@@ -554,3 +554,40 @@ class LabelTests(TestCase):
         _, data = self.fetch(caption="1")
         with Image.open(io.BytesIO(data)) as image:
             self.assertGreater(image.size[1], 1000)
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class OtherDaysAndEditTests(TestCase):
+    def test_any_day_can_be_asked_for(self):
+        make_artwork("Reserve", {"type": "any"})
+        joseph = Celebration.objects.get(month=3, day=19)
+        make_artwork("Joseph", {"type": "saint", "celebration": joseph})
+        for day, title in ((date(1990, 3, 19), "Joseph"), (date(2040, 3, 19), "Joseph"), (date(2040, 3, 20), "Reserve")):
+            response = self.client.get(reverse("background"), {"ts": local_midnight_ts(day), "caption": "0"})
+            self.assertEqual(response.status_code, 200, day)
+            self.assertEqual(response.json()["title"], title, day)
+
+    def test_turns_follow_the_time_of_day_for_other_days(self):
+        from unittest import mock
+        first = make_artwork("First", {"type": "any"})
+        second = make_artwork("Second", {"type": "any"})
+        other_day = local_midnight_ts(date(2031, 5, 5))
+        today = local_midnight_ts(date(2026, 9, 28))
+        for hour, title in ((3, "First"), (15, "Second")):
+            with mock.patch("artworks.views.time.time", return_value=today + hour * 3600):
+                data = self.client.get(reverse("background"), {"ts": other_day, "caption": "0"}).json()
+            self.assertEqual(data["title"], title, hour)
+
+    def test_edit_link(self):
+        artwork = make_artwork("A", {"type": "any"})
+        data = self.client.get(reverse("background"), {"caption": "0"}).json()
+        self.assertEqual(data["id"], artwork.pk)
+        self.assertEqual(data["edit_url"], f"http://testserver{PREFIX}admin/artworks/artwork/{artwork.pk}/change/")
+
+    def test_languages(self):
+        Language.objects.create(code="fr", name="Français", order=5)
+        data = self.client.get(reverse("languages")).json()
+        self.assertEqual(data["default"], "es")
+        self.assertEqual([l["code"] for l in data["languages"]], ["es", "en", "fr"])
+        self.assertEqual(data["languages"][0]["name"], "Español")
+        self.assertEqual(reverse("languages"), f"{PREFIX}languages")

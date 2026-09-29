@@ -13,7 +13,17 @@ with the same protocol:
     GET /background?ts=<Unix timestamp of the client's local midnight>
     GET /background?ts=<…>&lang=<language code>&caption=0     (lang and caption are optional)
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
-        "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|"}
+        "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|",
+        "id": <artwork>, "edit_url": "<page of the admin site to edit it>"}
+
+Any day can be asked for with `ts` (past or future): the settings applications use it
+to show the image of another day. When a day has several artworks, the one of the
+current time of day is sent, also for other days.
+
+    GET /background/languages
+    -> {"default": "es", "languages": [{"code": "es", "name": "Español"}, …]}
+
+The languages of the content, for the language selector of the applications.
 
 `date` is the year of the artwork (free text); `extra` contains the additional data.
 
@@ -24,6 +34,7 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 | Address | |
 |---|---|
 | `/background?ts=…` | the image of the day (used by the applications) |
+| `/background/languages` | languages of the content (used by the applications) |
 | `/background/home/` | start page after logging in |
 | `/background/admin/` | content management |
 | `/background/accounts/…` | login with Google or Microsoft |

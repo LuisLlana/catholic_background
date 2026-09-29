@@ -4,6 +4,7 @@
 Everything hangs from BASE_PATH, read from the environment in settings.py
 (os.environ["BASE_PATH"], "background" if it is not set):
     /<BASE_PATH>              the image of the day (the address used by the applications)
+    /<BASE_PATH>/languages    languages of the content (for the applications)
     /<BASE_PATH>/home/        start page after logging in
     /<BASE_PATH>/admin/       content management
     /<BASE_PATH>/accounts/    login with Google or Microsoft
@@ -29,6 +30,7 @@ admin.site.site_url = f"{settings.PREFIX}privacy/"
 
 pages = [
     path("", artwork_views.background),          # also answers /background/
+    path("languages", artwork_views.languages, name="languages"),
     path("home/", account_views.home, name="home"),
     path("privacy/", artwork_views.privacy, name="privacy"),
     path("media/<path:path>", artwork_views.protected_media, name="media"),
