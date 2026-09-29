@@ -33,6 +33,21 @@
     </key>
 
     <!-- Communication between the preferences window and the extension -->
+    <key name="language" type="s">
+      <default>''</default>
+      <summary>Language of the texts</summary>
+      <description>Language code asked to the server (e.g. "es"). Empty: the language of the system.</description>
+    </key>
+    <key name="show-label" type="b">
+      <default>true</default>
+      <summary>Label below the artwork</summary>
+      <description>The server adds a label with the reason, title, author and year.</description>
+    </key>
+    <key name="show-date" type="s">
+      <default>''</default>
+      <summary>Day used as wallpaper</summary>
+      <description>"YYYY-MM-DD" chosen with "Use as wallpaper"; the next automatic check returns to today. Empty: today.</description>
+    </key>
     <key name="refresh-request" type="x">
       <default>0</default>
       <summary>Changed by the preferences window to download the image again</summary>

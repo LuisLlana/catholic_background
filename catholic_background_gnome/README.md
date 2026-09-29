@@ -15,7 +15,10 @@ Debian 13).
 
 - At login and every 30 minutes (adjustable in the preferences, from 5
   minutes to 24 hours) it downloads
-  `GET <server-url>?ts=<Unix timestamp of today's local midnight>`. The
+  `GET <server-url>?ts=<Unix timestamp of today's local midnight>&lang=<language>`,
+  in the language of the system or the one chosen in the preferences. The
+  server adds a label below the artwork with the reason (saint, celebration
+  or liturgical season), title, author and year; it can be turned off. The
   server may have several images for the same day: the wallpaper changes
   only when the SHA-1 of the image is different from the current one. If the
   server fails, the current wallpaper is kept and it retries later.
@@ -34,11 +37,22 @@ leaves the wallpaper as it is.
 ## Preferences
 
 Open them from the Extensions application, or with
-`gnome-extensions prefs catholic-background@luis.llana.diaz`:
-today's image with title and author, the result of the last check, a
-refresh button, the server URL (with
-Test and Restore default), how often to check the server and how to fill
-the screen around the image.
+`gnome-extensions prefs catholic-background@luis.llana.diaz`. Two pages:
+
+- **Image of the Day**: the image of any day, as big as the window allows, with
+  its data (reason, title, author, year, comment, other data, license and
+  source). Previous and next day, a calendar and Today (any day, past or
+  future); **Use as Wallpaper** (the day shown becomes the wallpaper until the
+  next automatic check, which returns to today); **Edit this Image** (opens the
+  page of the artwork in the content manager of the server; editors must log
+  in); **Refresh Wallpaper** and the result of the last check.
+- **Settings**: server URL (with Test and Restore default), how often to check
+  the server, language of the texts (by default that of the system; the list
+  comes from the server), label below the artwork, and how to fill the screen
+  around the image.
+
+The extension and the preferences build the address of the image in the same
+way (`wallpaperUrl` in `lib/server.js`: day, `lang` and `caption`).
 
 ## Install from source
 

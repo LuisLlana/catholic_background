@@ -9,7 +9,7 @@ import Soup from 'gi://Soup?version=3.0';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {fetchWallpaper, pixbufFromBytes} from './lib/server.js';
+import {fetchWallpaper, pixbufFromBytes, wallpaperUrl} from './lib/server.js';
 import {compose, colorToHex} from './lib/compose.js';
 
 Gio._promisify(Gio.File.prototype, 'load_contents_async');
@@ -36,6 +36,9 @@ export default class CatholicBackgroundExtension extends Extension {
         this._settingsIds = [
             this._settings.connect('changed::server-url', () => this._schedule(true)),
             this._settings.connect('changed::refresh-request', () => this._schedule(true)),
+            // The label is drawn by the server in the language asked: both change the image
+            this._settings.connect('changed::language', () => this._schedule(true)),
+            this._settings.connect('changed::show-label', () => this._schedule(true)),
             this._settings.connect('changed::background', () => this._scheduleCompose()),
             this._settings.connect('changed::background-color', () => this._scheduleCompose()),
             this._settings.connect('changed::check-interval', () => this._startTimer()),
@@ -45,7 +48,7 @@ export default class CatholicBackgroundExtension extends Extension {
 
         this._startupId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, STARTUP_DELAY_SECONDS, () => {
             this._startupId = 0;
-            this._schedule(false);
+            this._schedule(false, true);
             return GLib.SOURCE_REMOVE;
         });
         this._startTimer();
@@ -57,7 +60,7 @@ export default class CatholicBackgroundExtension extends Extension {
             GLib.source_remove(this._timerId);
         const minutes = this._settings.get_uint('check-interval');
         this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, minutes * 60, () => {
-            this._schedule(false);
+            this._schedule(false, true);
             return GLib.SOURCE_CONTINUE;
         });
     }
@@ -101,8 +104,9 @@ export default class CatholicBackgroundExtension extends Extension {
         });
     }
 
-    _schedule(force) {
-        this._enqueue(cancellable => this._update(force, cancellable));
+    /** automatic: a periodic check, which also ends a day chosen with "Use as wallpaper". */
+    _schedule(force, automatic = false) {
+        this._enqueue(cancellable => this._update(force, automatic, cancellable));
     }
 
     /** Recompose soon (several monitor/work area signals usually arrive together). */
@@ -116,10 +120,15 @@ export default class CatholicBackgroundExtension extends Extension {
         });
     }
 
-    async _update(force, cancellable) {
+    async _update(force, automatic, cancellable) {
+        if (automatic && this._settings.get_string('show-date') !== '') {
+            // Back to today's image
+            this._settings.set_string('show-date', '');
+            force = true;
+        }
         let result;
         try {
-            result = await fetchWallpaper(this._session, this._settings.get_string('server-url'), cancellable);
+            result = await fetchWallpaper(this._session, wallpaperUrl(this._settings), cancellable);
         } catch (e) {
             if (e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
                 throw e;
@@ -140,7 +149,7 @@ export default class CatholicBackgroundExtension extends Extension {
             Gio.FileCreateFlags.REPLACE_DESTINATION, cancellable);
 
         this._pixbuf = result.pixbuf;
-        this._settings.set_string('title', result.title);
+        this._settings.set_string('title', result.titleWithYear);
         this._settings.set_string('author', result.author);
         this._settings.set_string('image-hash', hash);
         await this._composeAndSet(cancellable);
