@@ -4,6 +4,10 @@
 #pragma once
 
 #include <QColor>
+#include <QDate>
+#include <QPointer>
+#include <QVariantList>
+#include <QVariantMap>
 #include <QFileSystemWatcher>
 #include <QNetworkAccessManager>
 #include <QObject>
@@ -39,6 +43,24 @@ class Backend : public QObject
     Q_PROPERTY(QString problem READ problem NOTIFY problemChanged)
     Q_PROPERTY(QString lastCheck READ lastCheck NOTIFY lastCheckChanged)
     Q_PROPERTY(bool canRestartPlasma READ canRestartPlasma NOTIFY problemChanged)
+    // Language of the texts ("" = the language of the system) and languages offered by the server
+    Q_PROPERTY(QString language READ language NOTIFY languageChanged)
+    Q_PROPERTY(QString systemLanguageName READ systemLanguageName CONSTANT)
+    Q_PROPERTY(QVariantList languages READ languages NOTIFY languagesChanged)
+    Q_PROPERTY(bool showLabel READ showLabel NOTIFY showLabelChanged)
+    // The day shown in the window (any day) and the day used as wallpaper
+    Q_PROPERTY(QDate viewDate READ viewDate NOTIFY dayChanged)
+    Q_PROPERTY(QString viewDateText READ viewDateText NOTIFY dayChanged)
+    Q_PROPERTY(int viewYear READ viewYear NOTIFY dayChanged)
+    Q_PROPERTY(int viewMonth READ viewMonth NOTIFY dayChanged)   // 1–12
+    Q_PROPERTY(int viewDay READ viewDay NOTIFY dayChanged)
+    Q_PROPERTY(bool viewIsToday READ viewIsToday NOTIFY dayChanged)
+    Q_PROPERTY(bool viewIsWallpaper READ viewIsWallpaper NOTIFY dayChanged)
+    Q_PROPERTY(QString wallpaperDateText READ wallpaperDateText NOTIFY dayChanged)
+    Q_PROPERTY(bool dayLoading READ dayLoading NOTIFY dayChanged)
+    Q_PROPERTY(QString dayError READ dayError NOTIFY dayChanged)
+    Q_PROPERTY(QUrl dayImage READ dayImage NOTIFY dayChanged)
+    Q_PROPERTY(QVariantMap dayInfo READ dayInfo NOTIFY dayChanged)
 
 public:
     explicit Backend(QObject *parent = nullptr);
@@ -61,12 +83,40 @@ public:
     /// Description of the last automatic check of the server.
     QString lastCheck() const;
     bool canRestartPlasma() const;
+    QString language() const;
+    QString systemLanguageName() const;
+    QVariantList languages() const;
+    bool showLabel() const;
+    QDate viewDate() const;
+    QString viewDateText() const;
+    int viewYear() const;
+    int viewMonth() const;
+    int viewDay() const;
+    bool viewIsToday() const;
+    bool viewIsWallpaper() const;
+    QString wallpaperDateText() const;
+    bool dayLoading() const;
+    QString dayError() const;
+    QUrl dayImage() const;
+    QVariantMap dayInfo() const;
+
+    /// Loads the languages and today's image (only for the window, not for the command line).
+    void startInteractive();
+    /// Shows the image and texts of any day (it does not change the wallpaper).
+    Q_INVOKABLE void loadDay(const QDate &day);
+    Q_INVOKABLE void shiftDay(int days);
+    /// Dates from QML as numbers (a JavaScript Date may move a day with some time zones)
+    Q_INVOKABLE void loadDate(int year, int month, int day);
+    Q_INVOKABLE void goToToday();
+    /// Makes the day shown the wallpaper until the next automatic check, which returns to today.
+    Q_INVOKABLE void useViewedDayAsWallpaper();
 
     /// Saves the URL (an empty string restores the default). Returns false if it is not valid.
     Q_INVOKABLE bool setServerUrl(const QString &url);
     /// Saves URL and background settings and, if something changed, refreshes the wallpaper.
     /// Returns false if the URL is not valid.
-    Q_INVOKABLE bool applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval);
+    Q_INVOKABLE bool applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval,
+                                   const QString &language, bool showLabel);
     /// Downloads today's image from the given URL without touching Plasma. Emits testFinished().
     Q_INVOKABLE void testConnection(const QString &url);
     /// Deletes the cached image and makes Plasma download it again. Emits refreshFinished().
@@ -89,6 +139,10 @@ Q_SIGNALS:
     void lastCheckChanged();
     void testFinished(bool ok, const QString &message);
     void refreshFinished(bool ok, const QString &message);
+    void languageChanged();
+    void languagesChanged();
+    void showLabelChanged();
+    void dayChanged();
 
 private:
     void setBusy(bool busy);
@@ -98,7 +152,9 @@ private:
     void finishRefresh(bool ok, const QString &message);
     void evaluateScript(const QString &script, const std::function<void(bool, const QString &)> &callback);
     /// callback(ok, message, SHA-1 of the image in hex)
-    void checkServer(const QString &url, const std::function<void(bool, const QString &, const QByteArray &)> &callback);
+    void checkServer(const QUrl &url, const std::function<void(bool, const QString &, const QByteArray &)> &callback);
+    void loadLanguages();
+    void setDayResult(const QString &error, const QUrl &image, const QVariantMap &info);
     void doRefresh(bool automatic);
     void doSetAsWallpaper();
     void updatePanelMargins(const std::function<void()> &done);
@@ -119,4 +175,12 @@ private:
     bool m_canRestartPlasma = false;
     bool m_recordCheck = false;
     QTimer m_lastCheckTimer;
+    QVariantList m_languages;
+    QDate m_viewDate;
+    bool m_dayLoading = false;
+    QString m_dayError;
+    QUrl m_dayImage;
+    QVariantMap m_dayInfo;
+    int m_dayVersion = 0;
+    QPointer<QNetworkReply> m_dayReply;
 };

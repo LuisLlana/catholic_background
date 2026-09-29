@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "backend.h"
+#include "catholicbackground_request.h"
 
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QDate>
+#include <QJsonArray>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -62,17 +64,6 @@ QString describeInterval(int minutes)
 KConfigGroup configGroup()
 {
     return KSharedConfig::openConfig(u"catholicbackgroundrc"_s)->group(u"General"_s);
-}
-
-/// Same URL the provider requests: base URL + ts = today's local midnight.
-QUrl urlForToday(const QString &base)
-{
-    QUrl url(base);
-    QUrlQuery query(url);
-    query.removeAllQueryItems(u"ts"_s);
-    query.addQueryItem(u"ts"_s, QString::number(QDate::currentDate().startOfDay().toSecsSinceEpoch()));
-    url.setQuery(query);
-    return url;
 }
 
 bool isValidServerUrl(const QUrl &url)
@@ -252,8 +243,24 @@ void Backend::setCheckInterval(int minutes)
     Q_EMIT lastCheckChanged();
 }
 
-bool Backend::applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval)
+bool Backend::applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval,
+                            const QString &language, bool showLabel)
 {
+    // Language and label change the image (the label is drawn by the server)
+    const bool languageChanged = language != this->language();
+    const bool labelChanged = showLabel != this->showLabel();
+    if (languageChanged || labelChanged) {
+        KConfigGroup group = configGroup();
+        if (language.isEmpty()) {
+            group.deleteEntry("Language");
+        } else {
+            group.writeEntry("Language", language);
+        }
+        group.writeEntry("ShowLabel", showLabel);
+        group.sync();
+        Q_EMIT this->languageChanged();
+        Q_EMIT this->showLabelChanged();
+    }
     if (checkInterval != this->checkInterval()) {
         setCheckInterval(checkInterval);
     }
@@ -270,10 +277,238 @@ bool Backend::applySettings(const QString &url, const QString &background, const
         group.sync();
         Q_EMIT this->backgroundChanged();
     }
-    if (urlChanged || backgroundChanged) {
+    if (urlChanged) {
+        loadLanguages();
+    }
+    if (urlChanged || languageChanged) {
+        loadDay(m_viewDate.isValid() ? m_viewDate : QDate::currentDate());
+    }
+    if (urlChanged || backgroundChanged || languageChanged || labelChanged) {
         refreshWallpaper();
     }
     return true;
+}
+
+// ---------------------------------------------------------------- language, label and days
+
+QString Backend::language() const
+{
+    return configGroup().readEntry("Language", QString());
+}
+
+QString Backend::systemLanguageName() const
+{
+    const QString name = QLocale::system().nativeLanguageName();
+    return name.isEmpty() ? QLocale::system().bcp47Name() : name.left(1).toUpper() + name.mid(1);
+}
+
+QVariantList Backend::languages() const
+{
+    return m_languages;
+}
+
+bool Backend::showLabel() const
+{
+    return CatholicBackground::showLabel(configGroup());
+}
+
+QDate Backend::viewDate() const
+{
+    return m_viewDate;
+}
+
+QString Backend::viewDateText() const
+{
+    return QLocale().toString(m_viewDate, QLocale::LongFormat);
+}
+
+int Backend::viewYear() const
+{
+    return m_viewDate.year();
+}
+
+int Backend::viewMonth() const
+{
+    return m_viewDate.month();
+}
+
+int Backend::viewDay() const
+{
+    return m_viewDate.day();
+}
+
+void Backend::loadDate(int year, int month, int day)
+{
+    loadDay(QDate(year, month, day));
+}
+
+void Backend::goToToday()
+{
+    loadDay(QDate::currentDate());
+}
+
+bool Backend::viewIsToday() const
+{
+    return m_viewDate == QDate::currentDate();
+}
+
+bool Backend::viewIsWallpaper() const
+{
+    return m_viewDate == CatholicBackground::wallpaperDay(configGroup());
+}
+
+QString Backend::wallpaperDateText() const
+{
+    const QDate day = CatholicBackground::wallpaperDay(configGroup());
+    return day == QDate::currentDate() ? QString() : QLocale().toString(day, QLocale::LongFormat);
+}
+
+bool Backend::dayLoading() const
+{
+    return m_dayLoading;
+}
+
+QString Backend::dayError() const
+{
+    return m_dayError;
+}
+
+QUrl Backend::dayImage() const
+{
+    return m_dayImage;
+}
+
+QVariantMap Backend::dayInfo() const
+{
+    return m_dayInfo;
+}
+
+void Backend::startInteractive()
+{
+    loadLanguages();
+    loadDay(QDate::currentDate());
+}
+
+void Backend::loadLanguages()
+{
+    QNetworkRequest request(CatholicBackground::languagesUrl(serverUrl()));
+    request.setTransferTimeout(DOWNLOAD_TIMEOUT_MS);
+    QNetworkReply *reply = m_network.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+        reply->deleteLater();
+        QVariantList found;
+        const QJsonArray list = QJsonDocument::fromJson(reply->readAll()).object().value("languages"_L1).toArray();
+        for (const QJsonValue &value : list) {
+            const QJsonObject language = value.toObject();
+            if (!language.value("code"_L1).toString().isEmpty()) {
+                found.append(QVariantMap{{u"code"_s, language.value("code"_L1).toString()},
+                                         {u"name"_s, language.value("name"_L1).toString()}});
+            }
+        }
+        if (found.isEmpty()) {
+            // Server unreachable or old: the two initial languages
+            found = {QVariantMap{{u"code"_s, u"es"_s}, {u"name"_s, u"Español"_s}},
+                     QVariantMap{{u"code"_s, u"en"_s}, {u"name"_s, u"English"_s}}};
+        }
+        m_languages = found;
+        Q_EMIT languagesChanged();
+    });
+}
+
+void Backend::shiftDay(int days)
+{
+    loadDay((m_viewDate.isValid() ? m_viewDate : QDate::currentDate()).addDays(days));
+}
+
+void Backend::loadDay(const QDate &day)
+{
+    if (!day.isValid()) {
+        return;
+    }
+    if (m_dayReply) {
+        m_dayReply->abort();
+    }
+    m_viewDate = day;
+    m_dayLoading = true;
+    m_dayError.clear();
+    Q_EMIT dayChanged();
+
+    // The artwork alone (the window shows the texts next to it), in the chosen language
+    const QUrl address = CatholicBackground::requestUrl(serverUrl(), day, CatholicBackground::languageCode(configGroup()), false);
+    QNetworkRequest request(address);
+    request.setTransferTimeout(DOWNLOAD_TIMEOUT_MS);
+    QNetworkReply *reply = m_network.get(request);
+    m_dayReply = reply;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, day] {
+        reply->deleteLater();
+        if (reply != m_dayReply || day != m_viewDate) {
+            return;   // another day was asked for meanwhile
+        }
+        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status == 404) {
+            setDayResult(u"There is no image for this day."_s, {}, {});
+            return;
+        }
+        if (reply->error() != QNetworkReply::NoError) {
+            setDayResult(u"Could not connect to the server: %1"_s.arg(reply->errorString()), {}, {});
+            return;
+        }
+        const QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
+        const auto decoded = QByteArray::fromBase64Encoding(obj.value("image"_L1).toString().toLatin1());
+        if (!decoded || QImage::fromData(*decoded).isNull()) {
+            setDayResult(u"The server did not send a valid image."_s, {}, {});
+            return;
+        }
+        // A new file every time, so that QML does not show the previous one from its cache
+        const QString dir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+        QDir().mkpath(dir);
+        for (const QFileInfo &old : QDir(dir).entryInfoList({u"day-*.img"_s}, QDir::Files)) {
+            QFile::remove(old.filePath());
+        }
+        QFile file(dir + u"/day-%1.img"_s.arg(++m_dayVersion));
+        if (!file.open(QIODevice::WriteOnly) || file.write(*decoded) != (*decoded).size()) {
+            setDayResult(u"Could not save the image."_s, {}, {});
+            return;
+        }
+        file.close();
+
+        QVariantList extra;
+        const QJsonObject extraObject = obj.value("extra"_L1).toObject();
+        for (auto it = extraObject.begin(); it != extraObject.end(); ++it) {
+            extra.append(QVariantMap{{u"name"_s, it.key()}, {u"value"_s, it.value().toVariant().toString()}});
+        }
+        QVariantMap info;
+        for (const char *key : {"reason", "reason_type", "title", "author", "date", "description", "license", "source", "edit_url", "language"}) {
+            info.insert(QString::fromLatin1(key), obj.value(QLatin1String(key)).toVariant().toString());
+        }
+        info.insert(u"extra"_s, extra);
+        setDayResult({}, QUrl::fromLocalFile(file.fileName()), info);
+    });
+}
+
+void Backend::setDayResult(const QString &error, const QUrl &image, const QVariantMap &info)
+{
+    m_dayLoading = false;
+    m_dayError = error;
+    m_dayImage = image;
+    m_dayInfo = info;
+    Q_EMIT dayChanged();
+}
+
+void Backend::useViewedDayAsWallpaper()
+{
+    if (m_busy || !m_viewDate.isValid()) {
+        return;
+    }
+    KConfigGroup group = configGroup();
+    if (m_viewDate == QDate::currentDate()) {
+        group.deleteEntry("ShowDate");
+    } else {
+        group.writeEntry("ShowDate", m_viewDate.toString(Qt::ISODate));
+    }
+    group.sync();
+    Q_EMIT dayChanged();
+    refreshWallpaper();
 }
 
 QString Backend::cachePath() const
@@ -366,21 +601,22 @@ void Backend::testConnection(const QString &url)
         return;
     }
     setBusy(true);
-    checkServer(url, [this](bool ok, const QString &message, const QByteArray &) {
+    const QString base = url.trimmed().isEmpty() ? defaultUrl() : url.trimmed();
+    const QUrl address = CatholicBackground::requestUrl(base, QDate::currentDate(), CatholicBackground::languageCode(configGroup()), false);
+    checkServer(address, [this](bool ok, const QString &message, const QByteArray &) {
         setBusy(false);
         Q_EMIT testFinished(ok, message);
     });
 }
 
-void Backend::checkServer(const QString &url, const std::function<void(bool, const QString &, const QByteArray &)> &callback)
+void Backend::checkServer(const QUrl &url, const std::function<void(bool, const QString &, const QByteArray &)> &callback)
 {
-    const QUrl base(url.trimmed().isEmpty() ? defaultUrl() : url.trimmed());
-    if (!isValidServerUrl(base)) {
+    if (!isValidServerUrl(url)) {
         callback(false, u"The URL is not valid. It must start with http:// or https://."_s, {});
         return;
     }
 
-    QNetworkRequest request(urlForToday(base.toString()));
+    QNetworkRequest request(url);
     request.setTransferTimeout(DOWNLOAD_TIMEOUT_MS);
     QNetworkReply *reply = m_network.get(request);
     connect(reply, &QNetworkReply::finished, this, [reply, callback] {
@@ -451,8 +687,8 @@ void Backend::refreshWallpaper()
     setBusy(true);
 
     // Check the server before touching Plasma, so that a server that is down
-    // does not leave the desktop without today's image.
-    checkServer(serverUrl(), [this](bool ok, const QString &message, const QByteArray &) {
+    // does not leave the desktop without today's image. Same address as the provider.
+    checkServer(CatholicBackground::wallpaperUrl(configGroup(), defaultUrl()), [this](bool ok, const QString &message, const QByteArray &) {
         if (!ok) {
             finishRefresh(false, message + u" The current wallpaper has been kept."_s);
             return;
@@ -471,9 +707,27 @@ void Backend::updateIfChanged()
     setBusy(true);
     m_recordCheck = true;
 
-    checkServer(serverUrl(), [this](bool ok, const QString &message, const QByteArray &hash) {
+    // A day chosen with "Use as wallpaper" lasts until this check: back to today
+    bool backToToday = false;
+    {
+        KConfigGroup group = configGroup();
+        if (group.hasKey("ShowDate")) {
+            group.deleteEntry("ShowDate");
+            group.sync();
+            backToToday = true;
+            Q_EMIT dayChanged();
+        }
+    }
+
+    checkServer(CatholicBackground::wallpaperUrl(configGroup(), defaultUrl()), [this, backToToday](bool ok, const QString &message, const QByteArray &hash) {
         if (!ok) {
             finishRefresh(false, message + u" The current wallpaper has been kept."_s);
+            return;
+        }
+        if (backToToday) {
+            updatePanelMargins([this] {
+                doRefresh(true);
+            });
             return;
         }
         KSharedConfigPtr config = KSharedConfig::openConfig(u"catholicbackgroundrc"_s);

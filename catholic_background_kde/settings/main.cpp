@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
     }
 
     qmlRegisterSingletonInstance("CatholicBackground", 1, 0, "Backend", &backend);
+    backend.startInteractive();
 
     QQmlApplicationEngine engine;
     engine.load(QUrl(u"qrc:/Main.qml"_s));

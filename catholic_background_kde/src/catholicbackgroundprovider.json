@@ -10,7 +10,7 @@
         "Name": "Catholic background of the day",
         "Description": "Daily wallpaper from your own Catholic background of the day server",
         "License": "GPL-3.0-or-later",
-        "Version": "0.4.1"
+        "Version": "0.5.0"
     },
     "X-KDE-PlasmaPoTDProvider-Identifier": "catholicbackground"
 }

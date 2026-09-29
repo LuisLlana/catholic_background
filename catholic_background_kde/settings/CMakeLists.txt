@@ -17,6 +17,8 @@ target_compile_definitions(catholic-background-settings PRIVATE
     APP_VERSION="${PROJECT_VERSION}"
 )
 
+target_include_directories(catholic-background-settings PRIVATE ${PROJECT_SOURCE_DIR}/common)
+
 target_link_libraries(catholic-background-settings
     Qt6::Widgets
     Qt6::Quick

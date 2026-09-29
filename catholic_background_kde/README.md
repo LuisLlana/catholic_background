@@ -95,20 +95,42 @@ installing.
 
 ## Catholic Background Settings
 
-`catholic-background-settings` is a small Kirigami application to:
+`catholic-background-settings` is a small Kirigami application. Its main page
+shows the image of a day, as big as the window allows, with its data: the reason
+why it is shown (saint, celebration or liturgical season), title, author, year,
+comment, other data, license and source. From there:
 
-- show today's image with its title and author,
-- change and test the server URL,
-- choose how to fill the screen around the image (blurred image, average
-  color or a chosen color),
-- refresh the wallpaper (download today's image again),
-- use Catholic background of the day as the wallpaper of every desktop.
+- **choose the day**: previous and next day, a calendar and "Today" (any day,
+  past or future);
+- **Use as wallpaper**: the day shown becomes the wallpaper until the next
+  automatic check, which returns to today;
+- **Edit this image**: opens the page of the artwork in the content manager of
+  the server (editors must log in);
+- **Refresh wallpaper**.
+
+**Settings** (in their own dialog): server URL (with Test), language of the
+texts (by default that of the system; the list comes from the server), label
+below the artwork (reason, title, author; drawn by the server), how to fill the
+screen around the image, and how often to check the server.
 
 It can also be used from the command line:
 
     catholic-background-settings --refresh         # download the image again
     catholic-background-settings --set-wallpaper   # use it as wallpaper
     catholic-background-settings --update          # refresh only if the image changed
+
+Before refreshing, it checks that the server answers with a valid image, so
+a server that is down never leaves the desktop without today's image.
+
+The Plasma provider and the application build the address of the image in the
+same way (`common/catholicbackground_request.h`: day, `lang` and `caption`), so
+that both get exactly the same image.
+
+How the refresh works: Plasma only downloads a new image when there is no
+cached one and the wallpaper is loaded again. The application deletes the
+cache, switches the desktops that use the provider to a plain color and,
+half a second later, back again (both steps in the same script are not
+enough), using plasmashell's D-Bus scripting API.
 
 ## Several images a day
 
@@ -147,6 +169,12 @@ enough), using plasmashell's D-Bus scripting API.
     [General]
     Url=https://my-server.example/background
     InfoUrl=https://my-server.example/
+
+Other keys, written by the settings application:
+
+    Language=en          # language of the texts (none: the language of the system)
+    ShowLabel=false      # without the label below the artwork
+    ShowDate=2026-03-19  # day used as wallpaper until the next automatic check
 
 `Url` overrides the URL set at build time (by default
 https://simba.fdi.ucm.es/background).

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "catholicbackgroundprovider.h"
+#include "catholicbackground_request.h"
 
 #include <QColor>
 #include <QCryptographicHash>
@@ -123,22 +124,14 @@ CatholicBackgroundProvider::CatholicBackgroundProvider(QObject *parent, const KP
     // plasmashell may keep this configuration open: read the latest values
     config->reparseConfiguration();
     const KConfigGroup group = config->group(QStringLiteral("General"));
-    QUrl url(group.readEntry("Url", QStringLiteral(DEFAULT_WALLPAPER_URL)));
+    // Day (today, or the one chosen with "Use as wallpaper"), language and label: see common/
+    const QUrl url = CatholicBackground::wallpaperUrl(group, QStringLiteral(DEFAULT_WALLPAPER_URL));
 
-    if (!url.isValid()) {
+    if (!url.isValid() || url.scheme().isEmpty()) {
         // Queued so that whoever created us is already connected to the signal
         QMetaObject::invokeMethod(this, [this] { Q_EMIT error(this); }, Qt::QueuedConnection);
         return;
     }
-
-    // Timestamp of today's midnight in the user's local time
-    const qint64 ts = QDate::currentDate().startOfDay().toSecsSinceEpoch();
-
-    // Keep any query parameters already present in the configured URL
-    QUrlQuery query(url);
-    query.removeAllQueryItems(QStringLiteral("ts"));
-    query.addQueryItem(QStringLiteral("ts"), QString::number(ts));
-    url.setQuery(query);
 
     m_background = group.readEntry("Background", QStringLiteral("blur"));
     m_backgroundColor = QColor::fromString(group.readEntry("BackgroundColor", QStringLiteral("#000000")));

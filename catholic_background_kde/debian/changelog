@@ -1,3 +1,15 @@
+catholic-background (0.5.0) trixie; urgency=medium
+
+  * The texts of the label are requested in the language of the system, or
+    in the one chosen in the settings; the label can be turned off.
+  * Settings application: big image of any day with its data (reason,
+    title, author, year, comment, other data, license and source), a
+    calendar to choose the day, "Use as wallpaper" (until the next automatic
+    check) and "Edit this image" (opens the content manager).
+  * Settings in their own dialog, with the language and the label.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Tue, 29 Sep 2026 10:00:00 +0200
+
 catholic-background (0.4.1) trixie; urgency=medium
 
   * Default server: https://simba.fdi.ucm.es/background

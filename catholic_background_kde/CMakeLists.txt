@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.18)
-project(catholic-background-potd-provider VERSION 0.4.1)
+project(catholic-background-potd-provider VERSION 0.5.0)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF6_MIN_VERSION "6.0.0")

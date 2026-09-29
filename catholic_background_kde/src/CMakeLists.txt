@@ -7,6 +7,8 @@ target_compile_definitions(plasma_potd_catholicbackgroundprovider PRIVATE
     DEFAULT_WALLPAPER_URL="${WALLPAPER_URL}"
 )
 
+target_include_directories(plasma_potd_catholicbackgroundprovider PRIVATE ${PROJECT_SOURCE_DIR}/common)
+
 target_link_libraries(plasma_potd_catholicbackgroundprovider
     Plasma::PotdProvider
     Qt6::Gui
