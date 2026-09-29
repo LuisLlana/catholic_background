@@ -12,14 +12,15 @@ Requirements: Windows 10 (1809) or later, x64 (arm64 can be built with `ARCH=arm
 
 ## What it does
 
-- Runs in the notification area. Left click opens the settings; the menu has
-  Settings, Refresh wallpaper and Exit.
+- Runs in the notification area. Left click opens the main window; the menu has
+  Open, Refresh wallpaper and Exit.
 - Shortly after starting, every N minutes (5–1440, 30 by default) and after
-  resuming from sleep, it downloads
-  `GET <server-url>?ts=<Unix timestamp of today's local midnight>`. The
-  wallpaper changes only when the SHA-1 of the image is different, so the
-  server may have several images a day. If the server fails, the current
-  wallpaper is kept.
+  resuming from sleep, it downloads the image of the day in the language of
+  Windows (or the one chosen in the settings). The wallpaper changes only when
+  the SHA-1 of the image is different, so the server may have several images a
+  day. If the server fails, the current wallpaper is kept.
+- The server adds a label below the artwork with the reason (saint, celebration
+  or liturgical season), title, author and year; it can be turned off.
 - For each monitor (`IDesktopWallpaper`) it composes a wallpaper of its size:
   the whole artwork, as big as possible without cropping it, in the area not
   covered by the taskbar, and the rest filled with a blurred copy of it, its
@@ -28,8 +29,25 @@ Requirements: Windows 10 (1809) or later, x64 (arm64 can be built with `ARCH=arm
 - Starts with Windows (without opening the window): Run registry key for the
   standalone `.exe` (enabled on first run), startup task for the MSIX package.
   It can be turned off in the settings.
-- Files: `%LOCALAPPDATA%\CatholicBackground` (standalone) or the package's
-  local folder (MSIX): `settings.json`, `original` and `wallpapers\`.
+
+### Main window
+
+The image of a day, as big as the window allows, with its data: reason, title,
+author, year, comment, other data, license and source. From there:
+
+- **choose the day**: previous and next day, a calendar and Today (any day, past
+  or future);
+- **Use as wallpaper**: the day shown becomes the wallpaper until the next
+  automatic check, which returns to today;
+- **Edit this image**: opens the page of the artwork in the content manager of
+  the server (editors must log in);
+- **Settings…**: server URL (with Test), check interval, language of the texts
+  (by default that of Windows; the list comes from the server), label below the
+  artwork, how to fill the screen and start with Windows;
+- **Refresh wallpaper**.
+
+Files: `%LOCALAPPDATA%\CatholicBackground` (standalone) or the package's local
+folder (MSIX): `settings.json`, `original` and `wallpapers\`.
 
 Server images: JPEG or PNG (Windows' GDI+ cannot read WebP).
 

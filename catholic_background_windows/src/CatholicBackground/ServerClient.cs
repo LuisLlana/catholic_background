@@ -7,31 +7,54 @@ using System.Text.Json;
 
 namespace CatholicBackground;
 
-public sealed record DownloadedImage(byte[] Bytes, string Hash, string Title, string Author, Size Size);
+public sealed record DownloadedImage(
+    byte[] Bytes, string Hash, Size Size,
+    string Title, string Author, string Year, string Description, string Reason,
+    string License, string Source, string EditUrl, string Language,
+    IReadOnlyList<KeyValuePair<string, string>> Extra)
+{
+    /// <summary>"Title (year)", as shown in the tooltip of the tray icon.</summary>
+    public string TitleWithYear => ServerClient.FormatTitle(Title, Year);
+}
+
+public sealed record ContentLanguage(string Code, string Name);
 
 /// <summary>
 /// Access to the Catholic background of the day server.
-/// Protocol: GET &lt;url&gt;?ts=&lt;Unix timestamp of today's local midnight&gt;
-///   -> {"image": "&lt;base64&gt;", "title": ..., "author": ..., "date": ...}
+/// Protocol: GET &lt;url&gt;?ts=&lt;Unix timestamp of the local midnight of the day&gt;&amp;lang=&lt;language&gt;[&amp;caption=0]
+///   -> {"image": "&lt;base64&gt;", "title", "author", "date", "description", "reason", "license", "source",
+///       "extra", "language", "edit_url", ...}
 /// </summary>
 public static class ServerClient
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
-    /// <summary>Base URL with ts=&lt;timestamp&gt;, keeping any other query parameters.</summary>
-    public static Uri UrlForToday(string baseUrl)
+    private static Uri ParseBase(string baseUrl)
     {
         if (!Uri.TryCreate(baseUrl.Trim(), UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             throw new ServerException("The URL must start with http:// or https://.");
+        return uri;
+    }
 
-        long ts = new DateTimeOffset(DateTime.Today).ToUnixTimeSeconds();
+    /// <summary>Address of the image of a day, keeping any other query parameters of the base URL.</summary>
+    public static Uri RequestUrl(string baseUrl, DateTime day, string language, bool label)
+    {
+        var uri = ParseBase(baseUrl);
+        long ts = new DateTimeOffset(day.Date).ToUnixTimeSeconds();
         var parameters = uri.Query.TrimStart('?')
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Where(p => p.Split('=')[0] != "ts")
+            .Where(p => p.Split('=')[0] is not ("ts" or "lang" or "caption"))
             .Append($"ts={ts}");
+        if (language.Length > 0)
+            parameters = parameters.Append($"lang={Uri.EscapeDataString(language)}");
+        if (!label)
+            parameters = parameters.Append("caption=0");
         return new UriBuilder(uri) { Query = string.Join("&", parameters) }.Uri;
     }
+
+    /// <summary>Throws ServerException if the URL is not valid.</summary>
+    public static void Validate(string baseUrl) => ParseBase(baseUrl);
 
     public static string FormatTitle(string title, string date)
     {
@@ -42,17 +65,16 @@ public static class ServerClient
         return title.Length > 0 ? title : date;
     }
 
-    public static async Task<DownloadedImage> FetchAsync(string baseUrl, CancellationToken cancellationToken = default)
+    private static async Task<string> GetAsync(Uri url, CancellationToken cancellationToken)
     {
-        var url = UrlForToday(baseUrl);
-
-        string body;
         try
         {
             using var response = await Http.GetAsync(url, cancellationToken);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                throw new ServerException("There is no image for this day.");
             if (!response.IsSuccessStatusCode)
                 throw new ServerException($"The server answered with HTTP {(int)response.StatusCode} {response.ReasonPhrase}.");
-            body = await response.Content.ReadAsStringAsync(cancellationToken);
+            return await response.Content.ReadAsStringAsync(cancellationToken);
         }
         catch (HttpRequestException e)
         {
@@ -62,7 +84,11 @@ public static class ServerClient
         {
             throw new ServerException("The server did not answer in time.");
         }
+    }
 
+    public static async Task<DownloadedImage> FetchAsync(Uri url, CancellationToken cancellationToken = default)
+    {
+        var body = await GetAsync(url, cancellationToken);
         JsonElement root;
         try
         {
@@ -101,23 +127,53 @@ public static class ServerClient
             throw new ServerException("The \"image\" field does not contain an image that Windows can read (use JPEG or PNG).");
         }
 
+        var extra = new List<KeyValuePair<string, string>>();
+        if (root.TryGetProperty("extra", out var extraElement) && extraElement.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in extraElement.EnumerateObject())
+            {
+                var value = Text(property.Value);
+                if (value.Length > 0)
+                    extra.Add(new(property.Name, value));
+            }
+        }
+
         return new DownloadedImage(
-            bytes,
-            Convert.ToHexString(SHA1.HashData(bytes)).ToLowerInvariant(),
-            FormatTitle(GetText(root, "title"), GetText(root, "date")),
-            GetText(root, "author").Trim(),
-            size);
+            bytes, Convert.ToHexString(SHA1.HashData(bytes)).ToLowerInvariant(), size,
+            Get(root, "title"), Get(root, "author"), Get(root, "date"), Get(root, "description"), Get(root, "reason"),
+            Get(root, "license"), Get(root, "source"), Get(root, "edit_url"), Get(root, "language"), extra);
     }
 
-    private static string GetText(JsonElement root, string name) =>
-        root.TryGetProperty(name, out var value)
-            ? value.ValueKind switch
-            {
-                JsonValueKind.String => value.GetString() ?? "",
-                JsonValueKind.Number => value.GetRawText(),
-                _ => "",
-            }
-            : "";
+    /// <summary>Languages of the content offered by the server (Spanish and English if it cannot be asked).</summary>
+    public static async Task<IReadOnlyList<ContentLanguage>> LanguagesAsync(string baseUrl, CancellationToken cancellationToken = default)
+    {
+        var fallback = new[] { new ContentLanguage("es", "Español"), new ContentLanguage("en", "English") };
+        try
+        {
+            var uri = ParseBase(baseUrl);
+            var address = new UriBuilder(uri) { Path = uri.AbsolutePath.TrimEnd('/') + "/languages", Query = "" }.Uri;
+            var root = JsonDocument.Parse(await GetAsync(address, cancellationToken)).RootElement;
+            var found = root.GetProperty("languages").EnumerateArray()
+                .Select(l => new ContentLanguage(Get(l, "code"), Get(l, "name")))
+                .Where(l => l.Code.Length > 0)
+                .ToList();
+            return found.Count > 0 ? found : fallback;
+        }
+        catch (Exception e) when (e is ServerException or JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            return fallback;
+        }
+    }
+
+    private static string Get(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) ? Text(value).Trim() : "";
+
+    private static string Text(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.String => value.GetString() ?? "",
+        JsonValueKind.Number => value.GetRawText(),
+        _ => "",
+    };
 }
 
 public sealed class ServerException(string message) : Exception(message);

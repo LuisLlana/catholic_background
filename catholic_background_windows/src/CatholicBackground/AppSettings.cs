@@ -20,6 +20,12 @@ public sealed class AppSettings
     public string Background { get; set; } = "blur";
     public string BackgroundColor { get; set; } = "#000000";
     public int CheckIntervalMinutes { get; set; } = DefaultCheckInterval;
+    /// <summary>Language of the texts ("" = the language of Windows).</summary>
+    public string Language { get; set; } = "";
+    /// <summary>Label below the artwork (drawn by the server).</summary>
+    public bool ShowLabel { get; set; } = true;
+    /// <summary>Day used as wallpaper ("yyyy-MM-dd") until the next automatic check; "" = today.</summary>
+    public string ShowDate { get; set; } = "";
 
     // State
     public string ImageHash { get; set; } = "";
@@ -34,6 +40,17 @@ public sealed class AppSettings
 
     [JsonIgnore]
     public int CheckInterval => Math.Clamp(CheckIntervalMinutes, MinCheckInterval, MaxCheckInterval);
+
+    /// <summary>Language asked to the server: the chosen one or that of Windows ("es-es").</summary>
+    public string LanguageCode() =>
+        Language.Length > 0 ? Language : System.Globalization.CultureInfo.CurrentUICulture.Name.ToLowerInvariant();
+
+    /// <summary>Day of the wallpaper: the one chosen with "Use as wallpaper", or today.</summary>
+    public DateTime WallpaperDay() =>
+        DateTime.TryParseExact(ShowDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var day) ? day.Date : DateTime.Today;
+
+    public Uri WallpaperUrl() => ServerClient.RequestUrl(ServerUrl, WallpaperDay(), LanguageCode(), ShowLabel);
 
     private static string FilePath => Path.Combine(Paths.DataDirectory, "settings.json");
 

@@ -18,19 +18,27 @@ public sealed class Updater
     public event EventHandler? Changed;
 
     /// <summary>
-    /// Downloads today's image and changes the wallpaper if it is different from the
-    /// current one (or always, if force is true). The server may have several images a day.
+    /// Downloads the image of the wallpaper day and changes the wallpaper if it is different
+    /// from the current one (or always, if force is true). The server may have several images a
+    /// day. An automatic check also ends a day chosen with "Use as wallpaper": back to today.
     /// </summary>
-    public async Task<(bool Ok, string Message)> CheckAsync(bool force)
+    public async Task<(bool Ok, string Message)> CheckAsync(bool force, bool automatic = false)
     {
         await _lock.WaitAsync();
         SetBusy(true);
         try
         {
+            if (automatic && Settings.ShowDate.Length > 0)
+            {
+                Settings.ShowDate = "";
+                Settings.Save();
+                force = true;
+            }
+
             DownloadedImage image;
             try
             {
-                image = await ServerClient.FetchAsync(Settings.ServerUrl);
+                image = await ServerClient.FetchAsync(Settings.WallpaperUrl());
             }
             catch (ServerException e)
             {
@@ -43,7 +51,7 @@ public sealed class Updater
             Directory.CreateDirectory(Paths.DataDirectory);
             await File.WriteAllBytesAsync(Paths.OriginalImage, image.Bytes);
             Settings.ImageHash = image.Hash;
-            Settings.Title = image.Title;
+            Settings.Title = image.TitleWithYear;
             Settings.Author = image.Author;
 
             var error = await ComposeAndSetAsync();
@@ -54,6 +62,14 @@ public sealed class Updater
             SetBusy(false);
             _lock.Release();
         }
+    }
+
+    /// <summary>Makes a day the wallpaper until the next automatic check (today: back to normal).</summary>
+    public Task<(bool Ok, string Message)> UseDayAsWallpaperAsync(DateTime day)
+    {
+        Settings.ShowDate = day.Date == DateTime.Today ? "" : day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        Settings.Save();
+        return CheckAsync(force: true);
     }
 
     /// <summary>Composes again from the saved image (options, monitors or taskbar changed).</summary>

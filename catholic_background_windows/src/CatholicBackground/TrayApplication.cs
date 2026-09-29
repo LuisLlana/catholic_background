@@ -14,7 +14,7 @@ public sealed class TrayApplication : ApplicationContext
     private readonly System.Windows.Forms.Timer _startupTimer = new() { Interval = 5000 };
     private readonly System.Windows.Forms.Timer _recomposeTimer = new() { Interval = 1500 };
     private readonly Control _invoker = new();
-    private SettingsForm? _settingsForm;
+    private MainWindow? _window;
 
     public Updater Updater => _updater;
 
@@ -23,7 +23,7 @@ public sealed class TrayApplication : ApplicationContext
         _invoker.CreateControl();
 
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Settings\u2026", null, (_, _) => ShowSettings());
+        menu.Items.Add("Open\u2026", null, (_, _) => ShowSettings());
         menu.Items.Add("Refresh wallpaper", null, async (_, _) => await _updater.CheckAsync(force: true));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitThread());
@@ -50,10 +50,10 @@ public sealed class TrayApplication : ApplicationContext
         {
             _startupTimer.Stop();
             await EnsureAutostartInitializedAsync();
-            await _updater.CheckAsync(force: false);
+            await _updater.CheckAsync(force: false, automatic: true);
         };
         _startupTimer.Start();
-        _checkTimer.Tick += async (_, _) => await _updater.CheckAsync(force: false);
+        _checkTimer.Tick += async (_, _) => await _updater.CheckAsync(force: false, automatic: true);
         RestartTimer();
 
         // Monitors, resolution or taskbar changed: compose again (after they settle)
@@ -79,12 +79,12 @@ public sealed class TrayApplication : ApplicationContext
 
     public void ShowSettings()
     {
-        if (_settingsForm is null || _settingsForm.IsDisposed)
-            _settingsForm = new SettingsForm(this);
-        _settingsForm.Show();
-        if (_settingsForm.WindowState == FormWindowState.Minimized)
-            _settingsForm.WindowState = FormWindowState.Normal;
-        _settingsForm.Activate();
+        if (_window is null || _window.IsDisposed)
+            _window = new MainWindow(this);
+        _window.Show();
+        if (_window.WindowState == FormWindowState.Minimized)
+            _window.WindowState = FormWindowState.Normal;
+        _window.Activate();
     }
 
     public void ShowSettingsFromAnyThread() => _invoker.BeginInvoke(ShowSettings);
@@ -120,7 +120,7 @@ public sealed class TrayApplication : ApplicationContext
     private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode == PowerModes.Resume)
-            _invoker.BeginInvoke(async () => await _updater.CheckAsync(force: false));
+            _invoker.BeginInvoke(async () => await _updater.CheckAsync(force: false, automatic: true));
     }
 
     private void ScheduleRecompose()
@@ -135,7 +135,7 @@ public sealed class TrayApplication : ApplicationContext
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         _icon.Visible = false;
-        _settingsForm?.Close();
+        _window?.Close();
         base.ExitThreadCore();
     }
 
