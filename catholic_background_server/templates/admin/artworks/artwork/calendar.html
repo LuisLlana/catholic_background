@@ -2,8 +2,8 @@
 {% load i18n %}
 {% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> › <a href="{% url 'admin:artworks_artwork_changelist' %}">{% translate "Artworks" %}</a> › {% translate "Calendar" %}</div>{% endblock %}
 {% block content %}
-<p>{% blocktranslate trimmed %}Approved artworks shown each day. When there are several, they are shown in turns during the day.
-If a day has none, the ones marked “Any day” are used.{% endblocktranslate %}</p>
+<p>{% filter force_escape %}{% blocktranslate trimmed %}Approved artworks shown each day. When there are several, they are shown in turns during the day.
+If a day has none, the ones marked “Any day” are used.{% endblocktranslate %}{% endfilter %}</p>
 <table style="width:100%">
   <thead><tr><th>{% translate "Day" %}</th><th>{% translate "Liturgical season" %}</th><th>{% translate "Celebrations" %}</th><th>{% translate "Artworks" %}</th></tr></thead>
   <tbody>

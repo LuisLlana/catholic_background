@@ -101,7 +101,7 @@ def background(request):
         "description": texts["description"],
         "source": artwork.source_url,
         "license": texts["license"],
-        "extra": artwork.extra(language),
+        "extra": artwork.additional_data(language),
         "language": texts["language"],
         "reason": why["text"],
         "reason_type": why["type"],

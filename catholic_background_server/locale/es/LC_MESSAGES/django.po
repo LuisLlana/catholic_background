@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 20:43+0200\n"
+"POT-Creation-Date: 2026-09-30 14:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Luis Llana <luis.llana.diaz@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -25,36 +25,36 @@ msgid "Say at least when the artwork is shown (it can be “Any day”)."
 msgstr ""
 "Indica al menos cuándo se muestra la obra (puede ser «Cualquier día»)."
 
-#: artworks/admin.py:76
+#: artworks/admin.py:87
 msgid "Review"
 msgstr "Revisión"
 
-#: artworks/admin.py:82 artworks/models.py:180
+#: artworks/admin.py:93 artworks/models.py:180
 msgid "image"
 msgstr "imagen"
 
-#: artworks/admin.py:86 artworks/models.py:231
+#: artworks/admin.py:97 artworks/models.py:231
 msgid "author"
 msgstr "autor"
 
-#: artworks/admin.py:90 artworks/models.py:232
+#: artworks/admin.py:101 artworks/models.py:232
 msgid "year"
 msgstr "año"
 
-#: artworks/admin.py:94 artworks/models.py:276
+#: artworks/admin.py:105 artworks/models.py:276
 msgid "when"
 msgstr "cuándo"
 
-#: artworks/admin.py:120
+#: artworks/admin.py:131
 msgid "Approve the selected artworks"
 msgstr "Aprobar las obras seleccionadas"
 
-#: artworks/admin.py:123
+#: artworks/admin.py:134
 #, python-format
 msgid "%(count)s artwork(s) approved."
 msgstr "%(count)s obra(s) aprobada(s)."
 
-#: artworks/admin.py:158
+#: artworks/admin.py:169
 msgid ""
 "The image is very tall: on screens it will look narrow, with a lot of "
 "filling at the sides."
@@ -62,7 +62,7 @@ msgstr ""
 "La imagen es muy vertical: en las pantallas se verá estrecha, con mucho "
 "relleno a los lados."
 
-#: artworks/admin.py:160
+#: artworks/admin.py:171
 msgid ""
 "The image is very wide: on screens it will look low, with a lot of filling "
 "above and below."
@@ -70,11 +70,11 @@ msgstr ""
 "La imagen es muy panorámica: en las pantallas se verá baja, con mucho "
 "relleno arriba y abajo."
 
-#: artworks/admin.py:178 templates/admin/artworks/artwork/change_list.html:4
+#: artworks/admin.py:189 templates/admin/artworks/artwork/change_list.html:4
 msgid "Calendar of the next days"
 msgstr "Calendario de los próximos días"
 
-#: artworks/admin.py:203 artworks/models.py:163
+#: artworks/admin.py:214 artworks/models.py:163
 msgid "names in each language"
 msgstr "nombres en cada idioma"
 
@@ -301,12 +301,10 @@ msgstr ""
 
 #: artworks/models.py:47 artworks/models.py:158 artworks/models.py:229
 #: artworks/models.py:250
-#| msgid "Language"
 msgid "language"
 msgstr "idioma"
 
 #: artworks/models.py:48
-#| msgid "Language"
 msgid "languages"
 msgstr "idiomas"
 
@@ -395,7 +393,6 @@ msgid "kinds of additional data"
 msgstr "tipos de datos adicionales"
 
 #: artworks/models.py:162
-#| msgid "name in Spanish"
 msgid "name in a language"
 msgstr "nombre en un idioma"
 
@@ -615,7 +612,7 @@ msgstr ""
 "La imagen es demasiado pequeña (%(width)s×%(height)s): su lado mayor debe "
 "tener al menos %(min)s píxeles."
 
-#: config/urls.py:27
+#: config/urls.py:28
 msgid "Content management"
 msgstr "Gestión de contenidos"
 
@@ -667,11 +664,11 @@ msgstr "Pendiente de aprobación"
 #: templates/account/pending.html:7
 #, python-format
 msgid ""
-"You are logged in as <strong>%(email)s</strong>, but your account cannot "
-"manage artworks yet. An administrator has to approve it."
+"You are logged in as %(email)s, but your account cannot manage artworks yet."
+" An administrator has to approve it."
 msgstr ""
-"Has entrado como <strong>%(email)s</strong>, pero tu cuenta todavía no puede"
-" gestionar obras. Un administrador tiene que aprobarla."
+"Has entrado como %(email)s, pero tu cuenta todavía no puede gestionar obras."
+" Un administrador tiene que aprobarla."
 
 #: templates/account/pending.html:12
 msgid "Log out"

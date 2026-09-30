@@ -4,12 +4,12 @@
 {% block content %}
 <div class="card">
   <h1>Catholic Background</h1>
-  <p>{% translate "Management of the artworks of the wallpaper." %}</p>
+  <p>{% filter force_escape %}{% translate "Management of the artworks of the wallpaper." %}{% endfilter %}</p>
   {% get_providers as providers %}
   {% for provider in providers %}
     <form method="post" action="{% provider_login_url provider.id process='login' next=request.GET.next %}">
       {% csrf_token %}
-      <button class="provider" type="submit">{% blocktranslate with name=provider.name %}Log in with {{ name }}{% endblocktranslate %}</button>
+      <button class="provider" type="submit">{% filter force_escape %}{% blocktranslate with name=provider.name|safe %}Log in with {{ name }}{% endblocktranslate %}{% endfilter %}</button>
     </form>
   {% endfor %}
 
