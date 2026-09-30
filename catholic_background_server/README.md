@@ -16,6 +16,11 @@ with the same protocol:
         "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|",
         "id": <artwork>, "edit_url": "<page of the admin site to edit it>"}
 
+With `raw=1` (any non null value; `0`, `false`, `no`, `off` or empty are null) the
+answer is the image itself (`image/jpeg` or `image/png`, with the label unless
+`caption=0`) instead of the JSON document: useful to show it directly in a web page
+or to download it, e.g. `https://simba.fdi.ucm.es/background?raw=1&lang=en`.
+
 Any day can be asked for with `ts` (past or future): the settings applications use it
 to show the image of another day. When a day has several artworks, the one of the
 current time of day is sent, also for other days.

@@ -591,3 +591,37 @@ class OtherDaysAndEditTests(TestCase):
         self.assertEqual([l["code"] for l in data["languages"]], ["es", "en", "fr"])
         self.assertEqual(data["languages"][0]["name"], "Español")
         self.assertEqual(reverse("languages"), f"{PREFIX}languages")
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class RawTests(TestCase):
+    def test_raw_image(self):
+        artwork = make_artwork("La Anunciación", {"type": "any"})
+        labelled = base64.b64decode(self.client.get(reverse("background")).json()["image"])
+        response = self.client.get(reverse("background"), {"raw": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertEqual(response.content, labelled)                       # the same image as in the JSON
+        self.assertEqual(response["Content-Disposition"], f'inline; filename="artwork-{artwork.pk}.jpg"')
+        self.assertEqual(response["Cache-Control"], "no-store")
+        with artwork.image.open("rb") as f:
+            original = f.read()
+        self.assertEqual(self.client.get(reverse("background"), {"raw": "yes", "caption": "0"}).content, original)
+
+    def test_png_keeps_its_type(self):
+        buffer = io.BytesIO()
+        Image.new("RGB", (1600, 1000), (10, 20, 30)).save(buffer, "PNG")
+        artwork = Artwork.objects.create(image=SimpleUploadedFile("a.png", buffer.getvalue()), approved=True)
+        Condition.objects.create(artwork=artwork, type="any")
+        response = self.client.get(reverse("background"), {"raw": "true", "caption": "0"})
+        self.assertEqual(response["Content-Type"], "image/png")
+
+    def test_null_values_give_json(self):
+        make_artwork("A", {"type": "any"})
+        for value in ("", "0", "false", "no", "off"):
+            response = self.client.get(reverse("background"), {"raw": value})
+            self.assertEqual(response["Content-Type"], "application/json", value)
+
+    def test_no_image_is_still_json(self):
+        response = self.client.get(reverse("background"), {"raw": "1"})
+        self.assertEqual((response.status_code, response["Content-Type"]), (404, "application/json"))
