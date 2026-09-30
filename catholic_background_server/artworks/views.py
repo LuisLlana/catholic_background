@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone as dj_timezone
@@ -28,11 +28,24 @@ def requested_language(request):
     return Language.best_match([request.GET.get("lang", "")]) or Language.default()
 
 
+NULL_VALUES = ("", "0", "false", "no", "off")
+
+
 def wants_caption(request):
     value = request.GET.get("caption")
     if value is None:
         return settings.CATHOLIC_BACKGROUND["CAPTION_DEFAULT"]
-    return value.lower() not in ("0", "false", "no", "off")
+    return value.lower() not in NULL_VALUES
+
+
+def wants_raw(request):
+    """raw=<non null value>: the image itself instead of the JSON document."""
+    return request.GET.get("raw", "").lower() not in NULL_VALUES
+
+
+def image_type(data):
+    """Only JPEG and PNG images are accepted (see validators)."""
+    return ("image/png", "png") if data.startswith(b"\x89PNG\r\n\x1a\n") else ("image/jpeg", "jpg")
 
 
 def client_ip(request):
@@ -46,12 +59,13 @@ def client_ip(request):
 @require_GET
 def background(request):
     """
-    GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>][&caption=0]
+    GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>][&caption=0][&raw=1]
     -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language",
         "reason", "reason_type"}
     "reason" says why the artwork is shown that day (saint, celebration or liturgical season), if it is special.
     "id" and "edit_url" identify the artwork and give the page of the admin site to edit it.
     Any day can be asked for with ts, past or future.
+    raw=<non null value> sends the image itself (image/jpeg or image/png) instead of the JSON document.
     The texts are in the requested language (lang), or else in the default one. The image has a
     label below the artwork with the reason, title and author (unless caption=0).
     """
@@ -87,11 +101,20 @@ def background(request):
                 data = f.read()
     except (FileNotFoundError, ValueError, OSError):
         return JsonResponse({"error": "image file missing"}, status=500)
-    image = base64.b64encode(data).decode("ascii")
 
     AccessLog.objects.create(day=dj_timezone.localdate(), ip=client_ip(request),
                              user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
                              artwork=artwork)
+
+    if wants_raw(request):
+        content_type, extension = image_type(data)
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'inline; filename="artwork-{artwork.pk}.{extension}"'
+        response["Cache-Control"] = "no-store"
+        response["Content-Language"] = texts["language"]
+        return response
+
+    image = base64.b64encode(data).decode("ascii")
 
     response = JsonResponse({
         "image": image,
