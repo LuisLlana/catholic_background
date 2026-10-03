@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-30 14:37+0200\n"
+"POT-Creation-Date: 2026-10-03 22:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Luis Llana <luis.llana.diaz@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -612,7 +612,7 @@ msgstr ""
 "La imagen es demasiado pequeña (%(width)s×%(height)s): su lado mayor debe "
 "tener al menos %(min)s píxeles."
 
-#: config/urls.py:28
+#: config/urls.py:29
 msgid "Content management"
 msgstr "Gestión de contenidos"
 
@@ -697,6 +697,7 @@ msgstr ""
 "como «Cualquier día»."
 
 #: templates/admin/artworks/artwork/calendar.html:8
+#: templates/pages/browser.html:37
 msgid "Day"
 msgstr "Día"
 
@@ -745,3 +746,51 @@ msgstr "Idioma"
 #: templates/includes/language_selector.html:14
 msgid "Change"
 msgstr "Cambiar"
+
+#: templates/pages/browser.html:3 templates/pages/browser.html:58
+#| msgid "title"
+msgid "Untitled"
+msgstr "Sin título"
+
+#: templates/pages/browser.html:34
+#| msgid "Saint of the day"
+msgid "Choice of the day"
+msgstr "Elección del día"
+
+#: templates/pages/browser.html:35
+msgid "Previous day"
+msgstr "Día anterior"
+
+#: templates/pages/browser.html:38
+msgid "Texts in"
+msgstr "Textos en"
+
+#: templates/pages/browser.html:43
+msgid "Show"
+msgstr "Mostrar"
+
+#: templates/pages/browser.html:45
+msgid "Next day"
+msgstr "Día siguiente"
+
+#: templates/pages/browser.html:46
+msgid "Today"
+msgstr "Hoy"
+
+#: templates/pages/browser.html:48
+msgid "Edit this image"
+msgstr "Editar esta imagen"
+
+#: templates/pages/browser.html:64
+#| msgid "license"
+msgid "License"
+msgstr "Licencia"
+
+#: templates/pages/browser.html:65
+#| msgid "source"
+msgid "Source"
+msgstr "Procedencia"
+
+#: templates/pages/browser.html:71
+msgid "There is no image for this day."
+msgstr "No hay ninguna imagen para este día."

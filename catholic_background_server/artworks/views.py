@@ -2,19 +2,20 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import base64
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils import timezone as dj_timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
 from .caption import labelled_jpeg
-from .models import AccessLog, Language
+from .models import AccessLog, Artwork, Language, current_language
 from .selection import pick, reason
 
 
@@ -161,4 +162,66 @@ def languages(request):
         "languages": [{"code": language.code, "name": language.name} for language in Language.objects.all()],
     })
     response["Cache-Control"] = "no-store"
+    return response
+
+
+def source_link(url):
+    """Link to the source of an artwork: only http(s) addresses become links (never javascript: and the like)."""
+    if url.lower().startswith(("http://", "https://")):
+        return format_html('<a href="{}" rel="noopener noreferrer">{}</a>', url, url)
+    return url
+
+
+def _browser_day(value):
+    """Day asked for in the browser (?date=YYYY-MM-DD); today if missing or not valid."""
+    try:
+        return datetime.strptime(value or "", "%Y-%m-%d").date()
+    except ValueError:
+        return dj_timezone.localdate()
+
+
+@require_GET
+def browser(request):
+    """
+    Web page with the image of any day and its data, like the desktop applications.
+    ?date=YYYY-MM-DD (default: today) and ?lang=<language of the texts> (default: that of the page).
+    """
+    day = _browser_day(request.GET.get("date"))
+    language = Language.best_match([request.GET.get("lang", "")]) or current_language()
+    now = dj_timezone.localtime()
+    seconds = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+    artwork = pick(day, seconds)
+
+    context = {
+        "day": day,
+        "today": dj_timezone.localdate(),
+        "previous": day - timedelta(days=1) if day > date.min else None,
+        "next": day + timedelta(days=1) if day < date.max else None,
+        "language": language,
+        "languages": Language.objects.all(),
+        "artwork": artwork,
+    }
+    if artwork is not None:
+        context.update({
+            "texts": artwork.texts(language),
+            "reason": reason(artwork, day, language)["text"],
+            "additional": artwork.additional_data(language),
+            "source": source_link(artwork.source_url),
+            "can_edit": request.user.is_active and request.user.is_staff,
+        })
+    return render(request, "pages/browser.html", context)
+
+
+@require_GET
+def browser_image(request, pk):
+    """The image of an approved artwork, for the browser page (without label)."""
+    artwork = get_object_or_404(Artwork, pk=pk, approved=True)
+    try:
+        with artwork.image.open("rb") as f:
+            data = f.read()
+    except (FileNotFoundError, ValueError, OSError):
+        raise Http404
+    content_type, _ = image_type(data)
+    response = HttpResponse(data, content_type=content_type)
+    response["Cache-Control"] = "public, max-age=3600"
     return response
