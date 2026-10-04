@@ -89,7 +89,7 @@ def _download(server, lang=None, caption=True):
     url = urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(query)))
 
     try:
-        with urllib.request.urlopen(url, timeout=60, context=_ssl_context()) as response:
+        with _open_http(url) as response:
             answer = json.load(response)
     except urllib.error.HTTPError as e:
         if e.code == 404:
@@ -140,6 +140,21 @@ def _system_language():
         return None
     code = code.split(".")[0].split("@")[0].replace("_", "-").lower()
     return code if re.fullmatch(r"[a-z]{2,3}(-[a-z0-9]+)?", code) else None
+
+
+def _open_http(url):
+    """
+    Opens an http(s) address with an opener that only knows HTTP and HTTPS: unlike
+    urllib.request.urlopen, it cannot read local files (file://) or use other schemes.
+    """
+    if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
+        raise RuntimeError("The server URL must start with http:// or https://")
+    opener = urllib.request.OpenerDirector()
+    for handler in (urllib.request.HTTPHandler(), urllib.request.HTTPSHandler(context=_ssl_context()),
+                    urllib.request.HTTPRedirectHandler(), urllib.request.HTTPDefaultErrorHandler(),
+                    urllib.request.HTTPErrorProcessor()):
+        opener.add_handler(handler)
+    return opener.open(url, timeout=60)
 
 
 def _ssl_context():

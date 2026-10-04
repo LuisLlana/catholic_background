@@ -12,7 +12,6 @@ manager by people without technical knowledge.
 Author: Luis Llana <luis.llana.diaz@gmail.com>
 License: GPL-3.0-or-later (each project has its `LICENSE`)
 
-
 ## Projects
 
 Each project is a git subtree of this repository, with its own README:
@@ -21,8 +20,9 @@ Each project is a git subtree of this repository, with its own README:
 |---|---|---|---|
 | [`catholic_background_server`](catholic_background_server) | Server and content manager | Python, Django | — |
 | [`catholic_background_kde`](catholic_background_kde) | KDE Plasma: wallpaper provider and settings application | C++, Qt 6, KDE Frameworks 6, QML | 0.5.0 |
-| [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.4.1 |
+| [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.5.0 |
 | [`catholic_background_windows`](catholic_background_windows) | Windows application (standalone `.exe` and MSIX for the Microsoft Store) | C#, .NET 10, Windows Forms | 0.5.0 |
+| [`catholic_background_android`](catholic_background_android) | Android application, with a daily notification | Kotlin, Jetpack Compose | 0.5.0 |
 
 ## How it works
 
@@ -33,11 +33,11 @@ Each project is a git subtree of this repository, with its own README:
                                              ▼
                         server  /background?ts=…&lang=…
                                              │  image of the day (with its label) + data
-             ┌───────────────────────────────┼───────────────────────────────┐
-             ▼                               ▼                               ▼
-        KDE Plasma                      GNOME Shell                       Windows
-  provider + settings app                extension                  notification area app
-             └───────── compose the wallpaper for each screen and set it ────┘
+        ┌──────────────────┬─────────────────┼─────────────────┬──────────────────┐
+        ▼                  ▼                 ▼                 ▼                  ▼
+   KDE Plasma         GNOME Shell        Windows           Android           web browser
+ provider + app        extension     notification app   app + daily      /background/browser/
+        └───── compose the wallpaper for each screen and set it ─────┘    notification
 ```
 
 ### The server
@@ -73,7 +73,7 @@ All of them:
   color or a color;
 - keep the current wallpaper if the server is down.
 
-The KDE and Windows applications (and GNOME, in progress) also have a window with
+They also have a window (the preferences, in GNOME; the main screen, in Android) with
 the image of any day and all its data, a calendar to choose the day, **Use as
 wallpaper** (until the next automatic check, which returns to today) and **Edit this
 image** (opens the page of the artwork in the content manager).
@@ -128,8 +128,37 @@ PostgreSQL or MariaDB) see [its README](catholic_background_server/README.md).
     make install          # then log out and in
     gnome-extensions enable catholic-background@luis.llana.diaz
 
+**Android** (JDK 17+ and the Android SDK):
+
+    cd catholic_background_android
+    sh gradlew assembleDebug    # app/build/outputs/apk/debug/app-debug.apk
+
 **Windows** (built on Linux with the .NET 10 SDK):
 
     cd catholic_background_windows
     sh build.sh exe       # dist/CatholicBackground-<version>-x64.exe
     sh build.sh msix      # package for the Microsoft Store (see its README)
+
+## Working with this repository
+
+The projects are git subtrees. To create the repository from the bundles of each
+project:
+
+    git init -b main
+    git commit --allow-empty -m "Start the repository"
+    git subtree add --prefix=catholic_background_server  ../catholic_background_server.bundle  main
+    git subtree add --prefix=catholic_background_kde     ../catholic_background_kde.bundle     main
+    git subtree add --prefix=catholic_background_gnome   ../catholic_background_gnome.bundle   main
+    git subtree add --prefix=catholic_background_windows ../catholic_background_windows.bundle main
+    git subtree add --prefix=catholic_background_android ../catholic_background_android.bundle main
+
+To bring changes of a project, either from a new bundle:
+
+    git subtree pull --prefix=catholic_background_kde path/catholic_background_kde.bundle main
+
+or from a patch of that project:
+
+    git am --directory=catholic_background_kde path/change.patch
+
+Patches must be applied in order: if one fails, `git am --abort` and check that the
+previous ones are applied (`git log --oneline -- <folder>`).
