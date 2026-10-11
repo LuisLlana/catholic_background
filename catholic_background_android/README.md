@@ -1,8 +1,8 @@
 # Catholic Background — Android
 
-Sets a work of Catholic sacred art as the wallpaper of the phone every day, and
-shows a daily notification with it. It uses the server of the
-`catholic_background_server` project (by default
+Shows a work of Catholic sacred art every day, with a daily notification, and
+sets it as the wallpaper of the phone only when the user says so. It uses the
+server of the `catholic_background_server` project (by default
 `https://simba.fdi.ucm.es/background`).
 
 Author: Luis Llana <luis.llana.diaz@gmail.com>
@@ -16,27 +16,29 @@ Requirements: Android 8.0 (API 26) or later.
   (saint, celebration or liturgical season), title, author and year of the
   artwork of the day and its picture. Tapping it opens the application. On
   Android 13 or later the application asks for permission to show it.
+- **Question of the day**: the first time the application is opened each day
+  (for example from the notification) it asks what to do with the image of
+  today: set it as the wallpaper of the home screen, of the lock screen, of both,
+  or only see it. Nothing is preselected and it must be answered. The
+  application **never changes the wallpaper by itself**.
 - **Main screen**: the image of any day with its data (reason, title, author,
   year, comment, other data, license and source); previous and next day, a
-  calendar and Today. **Use as wallpaper** (the day shown becomes the wallpaper
-  until the next automatic check, which returns to today), **Edit this image**
-  (opens the page of the artwork in the content manager; editors must log in)
-  and **Refresh wallpaper**.
-- **Automatic wallpaper** (optional): every hour by default it checks the server
-  and changes the wallpaper of the home screen, the lock screen or both when the
-  image changes. The artwork is shown complete and as big as possible, and the
-  rest of the screen is filled with a blurred copy of it, its average color or a
-  color. The server adds a label with the reason, title, author and year (it can
-  be turned off).
+  calendar and Today. **Use as wallpaper…** asks the same question for the day
+  shown; **Edit this image** opens the page of the artwork in the content
+  manager (editors must log in).
+- **The wallpaper**: the artwork complete and as big as possible, the rest of the
+  screen filled with a blurred copy of it, its average color or a color. The
+  server adds a label with the reason, title, author and year (it can be turned
+  off).
 - **Settings**: server, language of the texts (by default that of the phone;
-  the list comes from the server), label, notification and its time, automatic
-  wallpaper, where, how to fill the screen and how often to check.
+  the list comes from the server), label, notification and its time, and how to
+  fill the screen.
 - Interface in English and Spanish, following the language of the phone.
 
-The periodic work uses WorkManager: it survives reboots and respects the battery
-savings of Android, so checks and the notification may be a few minutes late
-when the phone is idle. Checks are not done more often than every 15 minutes
-(minimum of Android).
+The notification uses WorkManager: it survives reboots and respects the battery
+savings of Android, so it may be a few minutes late when the phone is idle.
+Version 0.6.0 removed the automatic wallpaper of 0.5.0: updating cancels its
+periodic check.
 
 ## Build
 

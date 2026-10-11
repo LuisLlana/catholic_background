@@ -24,9 +24,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.DateFormat
 import java.time.LocalDate
-import java.util.Date
 
 /** State of the main screen: the day shown, its artwork and the actions on the wallpaper. */
 class DayViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,8 +37,10 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
     var artwork by mutableStateOf<Artwork?>(null); private set
     var image by mutableStateOf<ImageBitmap?>(null); private set
     var busy by mutableStateOf(false); private set
-    var wallpaperDay by mutableStateOf(settings.wallpaperDay()); private set
-    var status by mutableStateOf(""); private set
+    /** Day of the image this application last set as wallpaper, if any. */
+    var lastSetDay by mutableStateOf(parseDay(settings.lastSetDay)); private set
+    /** Ask what to do with the image of today (once a day, when it is shown). */
+    var askToday by mutableStateOf(false); private set
     var languages by mutableStateOf(ServerClient.FALLBACK_LANGUAGES); private set
 
     /** Short messages for the snackbar. */
@@ -49,9 +49,26 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
     private var loadingJob: Job? = null
 
     init {
-        updateStatus()
         load(LocalDate.now())
         loadLanguages()
+    }
+
+    /** When the application is shown: the first time each day, today's image and the question. */
+    fun resumed() {
+        val today = LocalDate.now()
+        if (settings.answeredDay == today.toString()) return
+        askToday = true
+        if (day != today || (artwork == null && !loading)) load(today)
+    }
+
+    /** The question about today must be shown now (its image is ready). */
+    val questionVisible: Boolean get() = askToday && day == LocalDate.now() && artwork != null
+
+    /** Answer about the image of today: "home", "lock", "both" or "none" (only see it). */
+    fun answerToday(choice: String) {
+        askToday = false
+        settings.answeredDay = LocalDate.now().toString()
+        if (choice in Settings.TARGETS) setWallpaper(choice)
     }
 
     fun load(newDay: LocalDate) {
@@ -87,46 +104,36 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
 
     fun today() = load(LocalDate.now())
 
-    /** The day shown becomes the wallpaper until the next automatic check (today: back to normal). */
-    fun useAsWallpaper() = changeWallpaper {
-        settings.showDate = if (day == LocalDate.now()) "" else day.toString()
-    }
-
-    fun refreshWallpaper() = changeWallpaper {}
-
-    private fun changeWallpaper(before: () -> Unit) {
+    /** The day shown becomes the wallpaper of target ("home", "lock" or "both"). */
+    fun setWallpaper(target: String) {
         if (busy) return
         busy = true
-        before()
-        wallpaperDay = settings.wallpaperDay()
+        val shown = day
         viewModelScope.launch {
-            val (_, message) = updater.update(force = true)
+            val (_, message) = updater.set(shown, target)
             messages.emit(message)
+            lastSetDay = parseDay(settings.lastSetDay)
             busy = false
-            wallpaperDay = settings.wallpaperDay()
-            updateStatus()
         }
     }
 
-    /** After the settings changed: texts in the new language, new server, new schedules. */
-    fun settingsChanged(reloadDay: Boolean, rescheduleUpdates: Boolean) {
-        Scheduler.scheduleUpdates(getApplication(), replace = rescheduleUpdates)
+    private fun parseDay(text: String): LocalDate? = try {
+        if (text.isEmpty()) null else LocalDate.parse(text)
+    } catch (e: java.time.format.DateTimeParseException) {
+        null
+    }
+
+    /** After the settings changed: texts in the new language, new server, new notification time. */
+    fun settingsChanged(reloadDay: Boolean) {
         Scheduler.scheduleNotification(getApplication())
         if (reloadDay) {
             load(day)
             loadLanguages()
         }
-        updateStatus()
     }
 
     private fun loadLanguages() {
         viewModelScope.launch { languages = ServerClient.fetchLanguages(settings.serverUrl) }
     }
 
-    fun updateStatus() {
-        val app = getApplication<Application>()
-        status = if (settings.lastCheck == 0L) app.getString(R.string.never_checked)
-        else app.getString(R.string.last_check,
-            DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(settings.lastCheck)), settings.lastResult)
-    }
 }

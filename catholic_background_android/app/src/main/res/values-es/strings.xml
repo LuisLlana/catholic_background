@@ -2,17 +2,11 @@
 <resources>
     <string name="settings">Ajustes</string>
     <string name="today">Hoy</string>
-    <string name="use_as_wallpaper">Usar como fondo</string>
-    <string name="this_is_your_wallpaper">Tu fondo</string>
+    <string name="use_as_wallpaper">Usar como fondo…</string>
     <string name="edit_image">Editar esta imagen</string>
-    <string name="refresh_wallpaper">Actualizar el fondo</string>
     <string name="untitled">Sin título</string>
     <string name="license">Licencia</string>
     <string name="source">Procedencia</string>
-    <string name="wallpaper_note">El fondo muestra la imagen del %1$s hasta la próxima comprobación automática, que vuelve a la de hoy.</string>
-    <string name="last_check">Última comprobación a las %1$s: %2$s</string>
-    <string name="never_checked">Todavía no se ha comprobado el fondo.</string>
-    <string name="result_unchanged">La imagen no ha cambiado.</string>
     <string name="result_updated">Se ha actualizado el fondo.</string>
     <string name="result_failed">No se ha podido poner el fondo: %1$s</string>
     <string name="problem_invalid_url">La dirección debe empezar por http:// o https://.</string>
@@ -36,20 +30,18 @@
     <string name="notifications_title">Notificación diaria</string>
     <string name="notifications_summary">Con la obra del día</string>
     <string name="notification_time">Hora: %1$s</string>
-    <string name="auto_wallpaper_title">Cambiar el fondo automáticamente</string>
-    <string name="auto_wallpaper_summary">Pone la imagen del día como fondo de pantalla</string>
-    <string name="wallpaper_target">Dónde</string>
-    <string name="target_both">Pantallas de inicio y de bloqueo</string>
-    <string name="target_home">Pantalla de inicio</string>
-    <string name="target_lock">Pantalla de bloqueo</string>
+    <string name="target_both">Ponerla en las dos pantallas</string>
+    <string name="target_home">Ponerla de fondo en la pantalla de inicio</string>
+    <string name="target_lock">Ponerla de fondo en la pantalla de bloqueo</string>
     <string name="around_image">Alrededor de la imagen</string>
     <string name="blur">Imagen difuminada</string>
     <string name="average">Color medio de la imagen</string>
     <string name="color">Color</string>
     <string name="color_hex">Color (#rrggbb)</string>
-    <string name="check_every">Comprobar el servidor cada</string>
-    <string name="minutes">%1$d minutos</string>
-    <string name="hours">%1$d h</string>
-    <string name="apply_note">Los cambios en las opciones del fondo se aplican en la siguiente actualización (o con «Actualizar el fondo»).</string>
+    <string name="apply_note">Estas opciones se aplican la próxima vez que pongas una imagen como fondo.</string>
     <string name="about">Catholic Background %1$s · © 2026 Luis Llana · GPL-3.0 o posterior</string>
+    <string name="target_none">Solo verla</string>
+    <string name="image_question_title">Imagen del día</string>
+    <string name="image_question_text">¿Qué quieres hacer con la imagen del %1$s?</string>
+    <string name="set_as_wallpaper_note">Es la última imagen que has puesto como fondo.</string>
 </resources>

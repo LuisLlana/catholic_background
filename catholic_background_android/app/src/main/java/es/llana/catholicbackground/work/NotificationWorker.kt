@@ -23,7 +23,7 @@ import es.llana.catholicbackground.data.Settings
 import es.llana.catholicbackground.ui.MainActivity
 import java.time.LocalDate
 
-/** Daily notification with the artwork of the day; tapping it opens the application. */
+/** Daily notification with the artwork of the day; tapping it opens the application, which asks what to do with it. */
 class NotificationWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val settings = Settings(applicationContext)

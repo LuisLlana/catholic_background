@@ -53,8 +53,6 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val INTERVALS = listOf(15, 30, 60, 120, 360, 720, 1440)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
@@ -69,11 +67,8 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
     var label by remember { mutableStateOf(settings.showLabel) }
     var notifications by remember { mutableStateOf(settings.notifications) }
     var minutes by remember { mutableStateOf(settings.notificationMinutes) }
-    var auto by remember { mutableStateOf(settings.autoWallpaper) }
-    var target by remember { mutableStateOf(settings.wallpaperTarget) }
     var background by remember { mutableStateOf(settings.background) }
     var color by remember { mutableStateOf(settings.backgroundColor) }
-    var interval by remember { mutableStateOf(settings.checkIntervalMinutes) }
     var choosingTime by remember { mutableStateOf(false) }
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 
@@ -96,7 +91,7 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                         val changed = url.trim() != settings.serverUrl
                         settings.serverUrl = url.trim()
                         toast(resources.getString(R.string.server_saved))
-                        model.settingsChanged(reloadDay = changed, rescheduleUpdates = false)
+                        model.settingsChanged(reloadDay = changed)
                     } catch (e: ServerException) {
                         toast(problemText(context, e))
                     }
@@ -134,7 +129,7 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                             if (code != settings.language) {
                                 language = code
                                 settings.language = code
-                                model.settingsChanged(reloadDay = true, rescheduleUpdates = false)
+                                model.settingsChanged(reloadDay = true)
                             }
                         })
                     }
@@ -150,7 +145,7 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
             SwitchRow(stringResource(R.string.notifications_title), stringResource(R.string.notifications_summary), notifications) {
                 notifications = it
                 settings.notifications = it
-                model.settingsChanged(reloadDay = false, rescheduleUpdates = false)
+                model.settingsChanged(reloadDay = false)
             }
             if (notifications) {
                 val time = LocalTime.of(minutes / 60, minutes % 60)
@@ -161,16 +156,6 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
             HorizontalDivider()
 
             // ---- wallpaper
-            SwitchRow(stringResource(R.string.auto_wallpaper_title), stringResource(R.string.auto_wallpaper_summary), auto) {
-                auto = it
-                settings.autoWallpaper = it
-                model.settingsChanged(reloadDay = false, rescheduleUpdates = true)
-            }
-            Text(stringResource(R.string.wallpaper_target), style = MaterialTheme.typography.titleSmall)
-            Choice(listOf("both" to R.string.target_both, "home" to R.string.target_home, "lock" to R.string.target_lock), target) {
-                target = it
-                settings.wallpaperTarget = it
-            }
             Text(stringResource(R.string.around_image), style = MaterialTheme.typography.titleSmall)
             Choice(listOf("blur" to R.string.blur, "average" to R.string.average, "color" to R.string.color), background) {
                 background = it
@@ -181,14 +166,6 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                     color = it
                     if (Regex("#[0-9a-fA-F]{6}").matches(it)) settings.backgroundColor = it
                 }, label = { Text(stringResource(R.string.color_hex)) }, singleLine = true)
-            }
-            Text(stringResource(R.string.check_every), style = MaterialTheme.typography.titleSmall)
-            Choice(INTERVALS.map { it to it }, interval, labelOf = { m ->
-                if (m < 60) resources.getString(R.string.minutes, m) else resources.getString(R.string.hours, m / 60)
-            }) {
-                interval = it
-                settings.checkIntervalMinutes = it
-                model.settingsChanged(reloadDay = false, rescheduleUpdates = true)
             }
             Text(stringResource(R.string.apply_note), style = MaterialTheme.typography.bodySmall)
             HorizontalDivider()
@@ -204,7 +181,7 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                 TextButton(onClick = {
                     minutes = state.hour * 60 + state.minute
                     settings.notificationMinutes = minutes
-                    model.settingsChanged(reloadDay = false, rescheduleUpdates = false)
+                    model.settingsChanged(reloadDay = false)
                     choosingTime = false
                 }) { Text(stringResource(android.R.string.ok)) }
             },
@@ -226,7 +203,7 @@ private fun SwitchRow(title: String, summary: String, checked: Boolean, onChange
 }
 
 @Composable
-private fun <T> Choice(options: List<Pair<T, Int>>, selected: T, labelOf: ((Int) -> String)? = null, onSelect: (T) -> Unit) {
+private fun <T> Choice(options: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
     Column {
         options.forEach { (value, text) ->
             Row(
@@ -234,7 +211,7 @@ private fun <T> Choice(options: List<Pair<T, Int>>, selected: T, labelOf: ((Int)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(selected = value == selected, onClick = { onSelect(value) })
-                Text(labelOf?.invoke(text) ?: stringResource(text))
+                Text(stringResource(text))
             }
         }
     }
