@@ -9,6 +9,7 @@ Everything hangs from BASE_PATH, read from the environment in settings.py
     /<BASE_PATH>/admin/       content management
     /<BASE_PATH>/accounts/    login with Google or Microsoft
     /<BASE_PATH>/privacy/     privacy policy
+    /<BASE_PATH>/browser/     web page with the image of any day and its data
     /<BASE_PATH>/media/       uploaded images (editors only)
     /<BASE_PATH>/i18n/        language selector
 """
@@ -33,6 +34,8 @@ pages = [
     path("languages", artwork_views.languages, name="languages"),
     path("home/", account_views.home, name="home"),
     path("privacy/", artwork_views.privacy, name="privacy"),
+    path("browser/", artwork_views.browser, name="browser"),
+    path("browser/image/<int:pk>", artwork_views.browser_image, name="browser_image"),
     path("media/<path:path>", artwork_views.protected_media, name="media"),
     path("accounts/", include("allauth.urls")),
     path("i18n/", include("django.conf.urls.i18n")),     # set_language: the language selector

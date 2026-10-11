@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% if artwork %}{{ texts.title|default:_("Untitled") }} · {% endif %}Catholic Background{% endblock %}
+{% block head %}
+<style>
+  body { max-width: 82rem; margin: 1.2rem auto; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .8rem 0 1.2rem; }
+  .bar form { display: contents; }
+  .bar .spacer { flex: 1; }
+  .button { display: inline-block; padding: .4rem .8rem; border: 1px solid #8886; border-radius: 8px;
+            background: Canvas; color: CanvasText; text-decoration: none; font: inherit; cursor: pointer; }
+  .button:hover { border-color: var(--accent); }
+  .button.disabled { opacity: .45; pointer-events: none; }
+  .bar input, .bar select { font: inherit; padding: .35rem .5rem; border: 1px solid #8886; border-radius: 8px;
+                            background: Canvas; color: CanvasText; }
+  .view { display: grid; grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: 2rem; align-items: start; }
+  @media (max-width: 52rem) { .view { grid-template-columns: 1fr; } }
+  .picture { background: #8881; border-radius: 12px; display: flex; justify-content: center; align-items: center;
+             min-height: 20rem; overflow: hidden; }
+  .picture img { display: block; max-width: 100%; max-height: 80vh; object-fit: contain; }
+  .reason { color: #b07a14; font-weight: bold; margin: 0 0 .3rem; }
+  h1 { margin: 0 0 .3rem; line-height: 1.25; }
+  .author { font-size: 1.15rem; margin: 0 0 1rem; }
+  .description { white-space: pre-line; }
+  dl.data { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; margin-top: 1.2rem; }
+  dl.data dt { font-weight: bold; opacity: .8; }
+  dl.data dd { margin: 0; overflow-wrap: anywhere; }
+  .empty { text-align: center; padding: 4rem 1rem; opacity: .75; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 style="margin:0">Catholic Background</h2>
+
+<nav class="bar" aria-label="{% translate 'Choice of the day' %}">
+  {% if previous %}<a class="button" href="?date={{ previous|date:'Y-m-d' }}&amp;lang={{ language.code }}" title="{% translate 'Previous day' %}">&#9664;</a>{% endif %}
+  <form method="get">
+    <input type="date" name="date" value="{{ day|date:'Y-m-d' }}" onchange="this.form.submit()" aria-label="{% translate 'Day' %}">
+    <label>{% translate "Texts in" %}
+      <select name="lang" onchange="this.form.submit()">
+        {% for item in languages %}<option value="{{ item.code }}"{% if item.pk == language.pk %} selected{% endif %}>{{ item.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button class="button" type="submit">{% translate "Show" %}</button></noscript>
+  </form>
+  {% if next %}<a class="button" href="?date={{ next|date:'Y-m-d' }}&amp;lang={{ language.code }}" title="{% translate 'Next day' %}">&#9654;</a>{% endif %}
+  <a class="button{% if day == today %} disabled{% endif %}" href="?lang={{ language.code }}">{% translate "Today" %}</a>
+  <span class="spacer"></span>
+  {% if can_edit %}<a class="button" href="{% url 'admin:artworks_artwork_change' artwork.pk %}">{% translate "Edit this image" %}</a>{% endif %}
+</nav>
+
+{% if artwork %}
+<div class="view">
+  <div class="picture">
+    <img src="{% url 'browser_image' artwork.pk %}" alt="{{ texts.title }}">
+  </div>
+  <div>
+    {% if reason %}<p class="reason">{{ reason }}</p>{% endif %}
+    <h1>{{ texts.title|default:_("Untitled") }}</h1>
+    {% if texts.author or texts.year %}<p class="author">{{ texts.author }}{% if texts.author and texts.year %}, {% endif %}{{ texts.year }}</p>{% endif %}
+    {% if texts.description %}<p class="description">{{ texts.description }}</p>{% endif %}
+    {% if additional or texts.license or source %}
+    <dl class="data">
+      {% for name, value in additional.items %}<dt>{{ name }}</dt><dd>{{ value }}</dd>{% endfor %}
+      {% if texts.license %}<dt>{% translate "License" %}</dt><dd>{{ texts.license }}</dd>{% endif %}
+      {% if source %}<dt>{% translate "Source" %}</dt><dd>{{ source }}</dd>{% endif %}
+    </dl>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="empty">{% translate "There is no image for this day." %}</p>
+{% endif %}
+{% endblock %}

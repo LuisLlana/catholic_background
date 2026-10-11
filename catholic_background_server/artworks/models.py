@@ -211,7 +211,7 @@ class Artwork(models.Model):
         result["language"] = ordered[0].language.code if ordered else getattr(language, "code", "")
         return result
 
-    def extra(self, language=None):
+    def additional_data(self, language=None):
         """Additional data in a language (each value falls back like the texts)."""
         rows = _by_preference(list(self.metadata.select_related("key", "language").prefetch_related("key__names")), language)
         result = {}

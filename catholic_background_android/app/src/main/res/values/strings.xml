@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Catholic Background</string>
+    <string name="settings">Settings</string>
+    <string name="today">Today</string>
+    <string name="use_as_wallpaper">Use as wallpaper</string>
+    <string name="this_is_your_wallpaper">Your wallpaper</string>
+    <string name="edit_image">Edit this image</string>
+    <string name="refresh_wallpaper">Refresh wallpaper</string>
+    <string name="untitled">Untitled</string>
+    <string name="license">License</string>
+    <string name="source">Source</string>
+    <string name="wallpaper_note">The wallpaper shows the image of %1$s until the next automatic check, which returns to today.</string>
+    <string name="last_check">Last check at %1$s: %2$s</string>
+    <string name="never_checked">The wallpaper has not been checked yet.</string>
+    <string name="result_unchanged">The image has not changed.</string>
+    <string name="result_updated">The wallpaper has been updated.</string>
+    <string name="result_failed">Could not set the wallpaper: %1$s</string>
+    <string name="problem_invalid_url">The URL must start with http:// or https://.</string>
+    <string name="problem_no_image">There is no image for this day.</string>
+    <string name="problem_connection">Could not connect to the server: %1$s</string>
+    <string name="problem_http">The server answered with an error (%1$s).</string>
+    <string name="problem_invalid_answer">The server did not send a valid image.</string>
+    <string name="channel_name">Image of the day</string>
+    <string name="channel_description">A daily notification with the artwork of the day.</string>
+    <string name="notification_title">Image of the day</string>
+    <string name="server_url">Server URL</string>
+    <string name="save">Save</string>
+    <string name="test">Test</string>
+    <string name="default_server">Default</string>
+    <string name="server_saved">Server saved.</string>
+    <string name="connection_ok">Connection OK: %1$s</string>
+    <string name="language">Language of the texts</string>
+    <string name="system_language">System language (%1$s)</string>
+    <string name="label_title">Label below the artwork</string>
+    <string name="label_summary">Why it is shown that day, its title, author and year</string>
+    <string name="notifications_title">Daily notification</string>
+    <string name="notifications_summary">With the artwork of the day</string>
+    <string name="notification_time">Time: %1$s</string>
+    <string name="auto_wallpaper_title">Change the wallpaper automatically</string>
+    <string name="auto_wallpaper_summary">Sets the image of the day as wallpaper</string>
+    <string name="wallpaper_target">Where</string>
+    <string name="target_both">Home and lock screens</string>
+    <string name="target_home">Home screen</string>
+    <string name="target_lock">Lock screen</string>
+    <string name="around_image">Around the image</string>
+    <string name="blur">Blurred image</string>
+    <string name="average">Average color of the image</string>
+    <string name="color">Color</string>
+    <string name="color_hex">Color (#rrggbb)</string>
+    <string name="check_every">Check the server every</string>
+    <string name="minutes">%1$d minutes</string>
+    <string name="hours">%1$d h</string>
+    <string name="apply_note">Changes of the wallpaper options are applied in the next update (or with Refresh wallpaper).</string>
+    <string name="about">Catholic Background %1$s · © 2026 Luis Llana · GPL-3.0-or-later</string>
+</resources>

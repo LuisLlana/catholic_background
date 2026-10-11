@@ -2,10 +2,10 @@
 {% if not cookie_notice_accepted %}
 <div class="cb-cookies" id="cb-cookies" role="region" aria-label="{% translate 'Cookies' %}">
   <p>
-    {% blocktranslate trimmed %}
+    {% filter force_escape %}{% blocktranslate trimmed %}
       This site only uses the cookies needed to log in and, if you choose a language, one to remember it.
       It does not use cookies for advertising or to track you.
-    {% endblocktranslate %}
+    {% endblocktranslate %}{% endfilter %}
     <a href="{% url 'privacy' %}#cookies">{% translate "More information" %}</a>
   </p>
   <button type="button" id="cb-cookies-ok">{% translate "OK" %}</button>

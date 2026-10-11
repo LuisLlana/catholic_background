@@ -4,10 +4,10 @@
 {% block content %}
 <div class="card">
   <h1>{% translate "Waiting for approval" %}</h1>
-  <p>{% blocktranslate trimmed with email=user.email %}
-     You are logged in as <strong>{{ email }}</strong>, but your account cannot manage
+  <p>{% filter force_escape %}{% blocktranslate trimmed with email=user.email|safe %}
+     You are logged in as {{ email }}, but your account cannot manage
      artworks yet. An administrator has to approve it.
-  {% endblocktranslate %}</p>
+  {% endblocktranslate %}{% endfilter %}</p>
   <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}
     <button class="provider" type="submit">{% translate "Log out" %}</button>
   </form>

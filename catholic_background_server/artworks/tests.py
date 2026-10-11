@@ -625,3 +625,72 @@ class RawTests(TestCase):
     def test_no_image_is_still_json(self):
         response = self.client.get(reverse("background"), {"raw": "1"})
         self.assertEqual((response.status_code, response["Content-Type"]), (404, "application/json"))
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class BrowserTests(TestCase):
+    def setUp(self):
+        self.reserve = make_artwork("Obra de reserva", {"type": "any"})
+        joseph = Celebration.objects.get(month=3, day=19)
+        self.joseph = make_artwork("San José con el Niño", {"type": "saint", "celebration": joseph})
+        self.joseph.translations.update(author="Guido Reni", year="c. 1635", description="Una escena del taller.")
+        ArtworkTranslation.objects.create(artwork=self.joseph, language=english(), title="Saint Joseph with the Child")
+        key = MetadataKey.objects.create(name="Museo")
+        ArtworkMetadata.objects.create(artwork=self.joseph, key=key, language=spanish(), value="Museo del Prado")
+        self.joseph.source_url = "https://example.com/san-jose"
+        self.joseph.save()
+
+    def test_day_with_its_data(self):
+        page = self.client.get(reverse("browser"), {"date": "2026-03-19", "lang": "es"})
+        self.assertEqual(page.status_code, 200)
+        for text in ("San José, esposo de la Virgen María", "San José con el Niño", "Guido Reni, c. 1635",
+                     "Una escena del taller.", "Museo del Prado", "https://example.com/san-jose",
+                     reverse("browser_image", args=[self.joseph.pk]), 'value="2026-03-19"',
+                     "?date=2026-03-18&amp;lang=es", "?date=2026-03-20&amp;lang=es"):
+            self.assertContains(page, text)
+        self.assertNotContains(page, "Edit this image")          # only for editors
+
+    def test_language_of_the_texts(self):
+        page = self.client.get(reverse("browser"), {"date": "2026-03-19", "lang": "en"})
+        self.assertContains(page, "Saint Joseph with the Child")
+        self.assertContains(page, "Saint Joseph, Spouse of the Blessed Virgin Mary")
+        self.assertContains(page, "Guido Reni")                   # fallback to the default language
+
+    def test_today_and_invalid_dates(self):
+        for params in ({}, {"date": "not-a-date"}, {"date": "2026-02-30"}):
+            page = self.client.get(reverse("browser"), params)
+            self.assertEqual(page.status_code, 200)
+            self.assertContains(page, f'value="{date.today():%Y-%m-%d}"')
+
+    def test_day_without_artwork(self):
+        self.reserve.delete()
+        page = self.client.get(reverse("browser"), {"date": "2026-10-01"})
+        self.assertContains(page, "There is no image for this day.")
+
+    def test_edit_link_for_editors(self):
+        editor = get_user_model().objects.create(username="ed", email="ed@example.com", is_staff=True)
+        self.client.force_login(editor)
+        page = self.client.get(reverse("browser"), {"date": "2026-03-19"})
+        self.assertContains(page, reverse("admin:artworks_artwork_change", args=[self.joseph.pk]))
+
+    def test_image_only_of_approved_artworks(self):
+        response = self.client.get(reverse("browser_image", args=[self.joseph.pk]))
+        self.assertEqual((response.status_code, response["Content-Type"]), (200, "image/jpeg"))
+        with self.joseph.image.open("rb") as f:
+            self.assertEqual(response.content, f.read())
+        hidden = make_artwork("Hidden", {"type": "any"}, approved=False)
+        self.assertEqual(self.client.get(reverse("browser_image", args=[hidden.pk])).status_code, 404)
+
+    def test_page_in_spanish(self):
+        page = self.client.get(reverse("browser"), {"date": "2026-03-19"}, HTTP_ACCEPT_LANGUAGE="es")
+        self.assertContains(page, "Textos en")
+        self.assertContains(page, "San José con el Niño")         # content language follows the page
+
+
+class SourceLinkTests(TestCase):
+    def test_only_http_addresses_become_links(self):
+        from artworks.views import source_link
+        self.assertEqual(source_link("https://example.com/a?b=1&c=2"),
+                         '<a href="https://example.com/a?b=1&amp;c=2" rel="noopener noreferrer">https://example.com/a?b=1&amp;c=2</a>')
+        self.assertEqual(source_link("javascript:alert(1)"), "javascript:alert(1)")   # shown as text (escaped by the template)
+        self.assertEqual(source_link(""), "")

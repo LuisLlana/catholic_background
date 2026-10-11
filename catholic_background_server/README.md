@@ -40,11 +40,23 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 |---|---|
 | `/background?ts=…` | the image of the day (used by the applications) |
 | `/background/languages` | languages of the content (used by the applications) |
+| `/background/browser/` | web page with the image of any day and its data |
 | `/background/home/` | start page after logging in |
 | `/background/admin/` | content management |
 | `/background/accounts/…` | login with Google or Microsoft |
 | `/background/privacy/` | privacy policy |
 | `/background/static/`, `/background/media/` | files of the admin site and uploaded images |
+
+## Browser (`/background/browser/`)
+
+A public web page with the image of any day and its data, like the desktop
+applications: the image (without the label), the reason, title, author and year,
+comment, other data, license and source. Previous and next day, a date picker,
+Today and the language of the texts (by default that of the page).
+Parameters: `?date=YYYY-MM-DD` (default: today) and `?lang=<code>`. Logged-in
+editors also get an "Edit this image" link. Its images come from
+`/background/browser/image/<id>`, which only serves approved artworks, and its
+visits are not counted in the statistics of the applications.
 
 ## Content manager (`/background/admin/`)
 
