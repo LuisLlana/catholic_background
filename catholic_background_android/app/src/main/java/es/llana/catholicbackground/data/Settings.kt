@@ -4,8 +4,6 @@ package es.llana.catholicbackground.data
 
 import android.content.Context
 import androidx.core.content.edit
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
 import java.util.Locale
 
 /** Settings and state of the application. */
@@ -37,14 +35,19 @@ class Settings(context: Context) {
         get() = prefs.getInt("notification_minutes", 9 * 60)
         set(value) = prefs.edit { putInt("notification_minutes", value.coerceIn(0, 24 * 60 - 1)) }
 
-    var autoWallpaper: Boolean
-        get() = prefs.getBoolean("auto_wallpaper", true)
-        set(value) = prefs.edit { putBoolean("auto_wallpaper", value) }
+    /**
+     * Day (ISO date) whose image the user already decided what to do with: set it as the
+     * wallpaper of the home screen, of the lock screen, of both, or only see it.
+     * The application asks once a day, and never changes the wallpaper by itself.
+     */
+    var answeredDay: String
+        get() = string("answered_day", "")
+        set(value) = setString("answered_day", value)
 
-    /** "both", "home" or "lock". */
-    var wallpaperTarget: String
-        get() = string("wallpaper_target", "both")
-        set(value) = setString("wallpaper_target", value)
+    /** Day of the image this application last set as wallpaper (ISO date); "" = none. */
+    var lastSetDay: String
+        get() = string("last_set_day", "")
+        set(value) = setString("last_set_day", value)
 
     /** "blur", "average" or "color". */
     var background: String
@@ -55,39 +58,10 @@ class Settings(context: Context) {
         get() = string("background_color", "#000000")
         set(value) = setString("background_color", value)
 
-    var checkIntervalMinutes: Int
-        get() = prefs.getInt("check_interval", 60)
-        set(value) = prefs.edit { putInt("check_interval", value.coerceIn(MIN_INTERVAL, 24 * 60)) }
-
-    /** Day used as wallpaper (ISO date) until the next automatic check; "" = today. */
-    var showDate: String
-        get() = string("show_date", "")
-        set(value) = setString("show_date", value)
-
-    var imageHash: String
-        get() = string("image_hash", "")
-        set(value) = setString("image_hash", value)
-
-    var lastCheck: Long
-        get() = prefs.getLong("last_check", 0)
-        set(value) = prefs.edit { putLong("last_check", value) }
-
-    var lastResult: String
-        get() = string("last_result", "")
-        set(value) = setString("last_result", value)
-
     fun languageCode(): String = language.ifEmpty { Locale.getDefault().toLanguageTag().lowercase() }
 
-    fun wallpaperDay(): LocalDate = try {
-        if (showDate.isEmpty()) LocalDate.now() else LocalDate.parse(showDate)
-    } catch (e: DateTimeParseException) {
-        LocalDate.now()
-    }
-
-    fun wallpaperUrl(): String = ServerClient.requestUrl(serverUrl, wallpaperDay(), languageCode(), showLabel)
-
     companion object {
-        /** WorkManager does not run periodic work more often than every 15 minutes. */
-        const val MIN_INTERVAL = 15
+        /** Where an image can be set as wallpaper. */
+        val TARGETS = listOf("home", "lock", "both")
     }
 }

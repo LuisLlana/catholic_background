@@ -18,30 +18,23 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.time.LocalDate
 
-/** Downloads the image of the wallpaper day, composes it for the screen and sets it. */
+/** Downloads the image of a day, composes it for the screen and sets it as wallpaper. */
 class WallpaperUpdater(private val context: Context) {
     private val settings = Settings(context)
 
     /**
-     * force: set it even if it did not change. automatic: a periodic check, which also ends a day
-     * chosen with "Use as wallpaper" (back to today). Returns (ok, message).
+     * Sets the image of day as the wallpaper of target: "home", "lock" or "both".
+     * Only when the user asks for it. Returns (ok, message).
      */
-    suspend fun update(force: Boolean, automatic: Boolean = false): Pair<Boolean, String> = lock.withLock {
-        var force = force
-        if (automatic && settings.showDate.isNotEmpty()) {
-            settings.showDate = ""
-            force = true
-        }
-        val result = try {
-            val artwork = ServerClient.fetchArtwork(settings.wallpaperUrl())
-            if (!force && artwork.hash == settings.imageHash) {
-                true to context.getString(R.string.result_unchanged)
-            } else {
-                setWallpaper(artwork.bytes)
-                settings.imageHash = artwork.hash
-                true to context.getString(R.string.result_updated)
-            }
+    suspend fun set(day: LocalDate, target: String): Pair<Boolean, String> = lock.withLock {
+        try {
+            val url = ServerClient.requestUrl(settings.serverUrl, day, settings.languageCode(), settings.showLabel)
+            val artwork = ServerClient.fetchArtwork(url)
+            setWallpaper(artwork.bytes, target)
+            settings.lastSetDay = day.toString()
+            true to context.getString(R.string.result_updated)
         } catch (e: ServerException) {
             false to problemText(context, e)
         } catch (e: IOException) {
@@ -49,19 +42,16 @@ class WallpaperUpdater(private val context: Context) {
         } catch (e: SecurityException) {
             false to context.getString(R.string.result_failed, e.message ?: "")
         }
-        settings.lastCheck = System.currentTimeMillis()
-        settings.lastResult = result.second
-        result
     }
 
-    private suspend fun setWallpaper(bytes: ByteArray) = withContext(Dispatchers.Default) {
+    private suspend fun setWallpaper(bytes: ByteArray, where: String) = withContext(Dispatchers.Default) {
         val image = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             ?: throw IOException(context.getString(R.string.problem_invalid_answer))
         val size = screenSize()
         val composed = Composer.compose(image, size.width, size.height, settings.background,
             Composer.parseColor(settings.backgroundColor))
         image.recycle()
-        val flags = when (settings.wallpaperTarget) {
+        val flags = when (where) {
             "home" -> WallpaperManager.FLAG_SYSTEM
             "lock" -> WallpaperManager.FLAG_LOCK
             else -> WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
@@ -83,7 +73,7 @@ class WallpaperUpdater(private val context: Context) {
     }
 
     companion object {
-        /** One update at a time (the worker and the window may ask at the same moment). */
+        /** One wallpaper at a time. */
         private val lock = Mutex()
     }
 }

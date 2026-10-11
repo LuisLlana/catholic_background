@@ -4,41 +4,26 @@ package es.llana.catholicbackground.work
 
 import android.content.Context
 import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import es.llana.catholicbackground.data.Settings
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
-/** Background work: periodic wallpaper checks and the daily notification (WorkManager survives reboots). */
+/** The daily notification (WorkManager survives reboots). The wallpaper is never changed in the background. */
 object Scheduler {
-    private const val UPDATE = "wallpaper-update"
+    /** Periodic wallpaper check of versions up to 0.5.0, cancelled. */
+    private const val OLD_UPDATE = "wallpaper-update"
     private const val NOTIFICATION = "daily-notification"
 
     private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    fun scheduleAll(context: Context, replace: Boolean = false) {
-        scheduleUpdates(context, replace)
+    fun scheduleAll(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(OLD_UPDATE)
         scheduleNotification(context)
-    }
-
-    fun scheduleUpdates(context: Context, replace: Boolean = false) {
-        val settings = Settings(context)
-        val manager = WorkManager.getInstance(context)
-        if (!settings.autoWallpaper) {
-            manager.cancelUniqueWork(UPDATE)
-            return
-        }
-        val request = PeriodicWorkRequestBuilder<UpdateWorker>(settings.checkIntervalMinutes.toLong(), TimeUnit.MINUTES)
-            .setConstraints(network)
-            .build()
-        manager.enqueueUniquePeriodicWork(UPDATE,
-            if (replace) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
     /** The next notification, at the chosen time (today if it has not passed yet, else tomorrow). */

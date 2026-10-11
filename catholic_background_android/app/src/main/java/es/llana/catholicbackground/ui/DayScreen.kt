@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import es.llana.catholicbackground.R
 import es.llana.catholicbackground.data.ServerClient
+import es.llana.catholicbackground.data.Settings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -67,6 +68,7 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     var choosingDay by remember { mutableStateOf(false) }
+    var choosingTarget by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { model.messages.collect { snackbar.showSnackbar(it) } }
 
     fun open(url: String) {
@@ -99,16 +101,12 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
                     Text(stringResource(R.string.today))
                 }
                 Spacer(Modifier.weight(1f))
-                val isWallpaper = model.day == model.wallpaperDay
-                Button(onClick = { model.useAsWallpaper() }, enabled = !isWallpaper && !model.busy && model.artwork != null) {
-                    Text(stringResource(if (isWallpaper) R.string.this_is_your_wallpaper else R.string.use_as_wallpaper))
+                Button(onClick = { choosingTarget = true }, enabled = !model.busy && model.artwork != null) {
+                    Text(stringResource(R.string.use_as_wallpaper))
                 }
             }
-            if (model.wallpaperDay != LocalDate.now()) {
-                Text(
-                    stringResource(R.string.wallpaper_note, model.wallpaperDay.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))),
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            if (model.day == model.lastSetDay) {
+                Text(stringResource(R.string.set_as_wallpaper_note), style = MaterialTheme.typography.bodySmall)
             }
 
             // ---- the image
@@ -170,12 +168,20 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
                     if (artwork.editUrl.isNotEmpty()) {
                         OutlinedButton(onClick = { open(artwork.editUrl) }) { Text(stringResource(R.string.edit_image)) }
                     }
-                    OutlinedButton(onClick = { model.refreshWallpaper() }, enabled = !model.busy) {
-                        Text(stringResource(R.string.refresh_wallpaper))
-                    }
                 }
             }
-            Text(model.status, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 16.dp))
+            Spacer(Modifier.padding(bottom = 8.dp))
+        }
+    }
+
+    if (choosingTarget) {
+        ImageChoiceDialog(
+            dayText = model.day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
+            required = false,
+            onDismiss = { choosingTarget = false },
+        ) { choice ->
+            choosingTarget = false
+            if (choice in Settings.TARGETS) model.setWallpaper(choice)
         }
     }
 
