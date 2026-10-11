@@ -22,7 +22,7 @@ Each project is a git subtree of this repository, with its own README:
 | [`catholic_background_kde`](catholic_background_kde) | KDE Plasma: wallpaper provider and settings application | C++, Qt 6, KDE Frameworks 6, QML | 0.5.0 |
 | [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.5.0 |
 | [`catholic_background_windows`](catholic_background_windows) | Windows application (standalone `.exe` and MSIX for the Microsoft Store) | C#, .NET 10, Windows Forms | 0.5.0 |
-| [`catholic_background_android`](catholic_background_android) | Android application, with a daily notification | Kotlin, Jetpack Compose | 0.5.0 |
+| [`catholic_background_android`](catholic_background_android) | Android application, with a daily notification | Kotlin, Jetpack Compose | 0.6.0 |
 
 ## How it works
 
@@ -37,7 +37,8 @@ Each project is a git subtree of this repository, with its own README:
         ▼                  ▼                 ▼                 ▼                  ▼
    KDE Plasma         GNOME Shell        Windows           Android           web browser
  provider + app        extension     notification app   app + daily      /background/browser/
-        └───── compose the wallpaper for each screen and set it ─────┘    notification
+        └── compose the wallpaper and set it ──┘          notification;
+                                                       asks before setting it
 ```
 
 ### The server
@@ -63,7 +64,7 @@ Each project is a git subtree of this repository, with its own README:
 
 ### The applications
 
-All of them:
+The desktop applications (KDE, GNOME and Windows):
 
 - check the server periodically (every 30 minutes by default) and change the
   wallpaper only when the image changes (the server may have several a day);
@@ -73,10 +74,16 @@ All of them:
   color or a color;
 - keep the current wallpaper if the server is down.
 
-They also have a window (the preferences, in GNOME; the main screen, in Android) with
-the image of any day and all its data, a calendar to choose the day, **Use as
-wallpaper** (until the next automatic check, which returns to today) and **Edit this
-image** (opens the page of the artwork in the content manager).
+They also have a window (the preferences, in GNOME) with the image of any day and
+all its data, a calendar to choose the day, **Use as wallpaper** (until the next
+automatic check, which returns to today) and **Edit this image** (opens the page of
+the artwork in the content manager).
+
+The Android application never changes the wallpaper by itself: the first time it is
+opened each day (for example from its daily notification) it asks whether to set the
+image of today as the wallpaper of the home screen, of the lock screen, of both, or
+only see it. Its main screen shows any day, with **Use as wallpaper…** (the same
+question) and **Edit this image**.
 
 ## Protocol
 
