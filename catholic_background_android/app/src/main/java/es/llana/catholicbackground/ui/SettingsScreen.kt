@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package es.llana.catholicbackground.ui
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,8 @@ import es.llana.catholicbackground.BuildConfig
 import es.llana.catholicbackground.R
 import es.llana.catholicbackground.data.ServerClient
 import es.llana.catholicbackground.data.ServerException
+import es.llana.catholicbackground.work.NotificationWorker
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -70,6 +73,12 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
     var background by remember { mutableStateOf(settings.background) }
     var color by remember { mutableStateOf(settings.backgroundColor) }
     var choosingTime by remember { mutableStateOf(false) }
+    // The system may block the notifications (permission not given, or switched off): checked on each return
+    var notificationsAllowed by remember { mutableStateOf(NotificationWorker.allowed(context)) }
+    LifecycleResumeEffect(Unit) {
+        notificationsAllowed = NotificationWorker.allowed(context)
+        onPauseOrDispose {}
+    }
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 
     Scaffold(topBar = {
@@ -149,8 +158,28 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
             }
             if (notifications) {
                 val time = LocalTime.of(minutes / 60, minutes % 60)
-                OutlinedButton(onClick = { choosingTime = true }) {
-                    Text(stringResource(R.string.notification_time, time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { choosingTime = true }) {
+                        Text(stringResource(R.string.notification_time, time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))))
+                    }
+                    OutlinedButton(onClick = {
+                        scope.launch {
+                            try {
+                                val url = ServerClient.requestUrl(settings.serverUrl, LocalDate.now(), settings.languageCode(), label = false)
+                                NotificationWorker.notify(context, ServerClient.fetchArtwork(url))
+                            } catch (e: ServerException) {
+                                toast(problemText(context, e))
+                            }
+                        }
+                    }, enabled = notificationsAllowed) { Text(stringResource(R.string.notification_test)) }
+                }
+                if (!notificationsAllowed) {
+                    Text(stringResource(R.string.notifications_blocked), color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(onClick = {
+                        context.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName))
+                    }) { Text(stringResource(R.string.notifications_open_settings)) }
                 }
             }
             HorizontalDivider()

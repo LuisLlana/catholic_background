@@ -35,8 +35,15 @@ Requirements: Android 8.0 (API 26) or later.
   fill the screen.
 - Interface in English and Spanish, following the language of the phone.
 
-The notification uses WorkManager: it survives reboots and respects the battery
-savings of Android, so it may be a few minutes late when the phone is idle.
+The notification uses an alarm of the system (`setAndAllowWhileIdle`, no special
+permission): it goes off even when the phone is idle, at most a few minutes late,
+and it is set again after a reboot, an update or a change of the clock. If the
+phone was off at that time, it is shown as soon as possible that day. If the
+server cannot be reached then, WorkManager tries again when there is network.
+**Settings → Show it now** tests it, and Settings warns when the system has the
+notifications of the application turned off. Some manufacturers (Xiaomi, Huawei,
+Samsung…) stop the alarms of applications with battery restrictions: in that case,
+set the battery use of the application to "Unrestricted".
 Version 0.6.0 removed the automatic wallpaper of 0.5.0: updating cancels its
 periodic check.
 

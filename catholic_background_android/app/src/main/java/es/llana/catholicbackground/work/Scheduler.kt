@@ -2,45 +2,59 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package es.llana.catholicbackground.work
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
-import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
+import android.content.Intent
 import androidx.work.WorkManager
 import es.llana.catholicbackground.data.Settings
-import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
+import java.time.ZoneId
 
-/** The daily notification (WorkManager survives reboots). The wallpaper is never changed in the background. */
+/**
+ * The daily notification, with an alarm of the system at the chosen time (setAndAllowWhileIdle:
+ * it also goes off when the phone is idle, at most a few minutes late, and needs no permission).
+ * The wallpaper is never changed in the background.
+ */
 object Scheduler {
-    /** Periodic wallpaper check of versions up to 0.5.0, cancelled. */
-    private const val OLD_UPDATE = "wallpaper-update"
-    private const val NOTIFICATION = "daily-notification"
-
-    private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+    /** Work of older versions, cancelled: the periodic wallpaper check (up to 0.5.0) and the notification (up to 0.6.0). */
+    private val OLD_WORK = listOf("wallpaper-update", "daily-notification")
 
     fun scheduleAll(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(OLD_UPDATE)
+        val manager = WorkManager.getInstance(context)
+        OLD_WORK.forEach { manager.cancelUniqueWork(it) }
         scheduleNotification(context)
     }
 
-    /** The next notification, at the chosen time (today if it has not passed yet, else tomorrow). */
+    /** Sets (or cancels) the alarm of the next notification. It can be called any number of times. */
     fun scheduleNotification(context: Context) {
         val settings = Settings(context)
-        val manager = WorkManager.getInstance(context)
+        val alarms = context.getSystemService(AlarmManager::class.java)
+        val intent = PendingIntent.getBroadcast(context, 0, Intent(context, AlarmReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         if (!settings.notifications) {
-            manager.cancelUniqueWork(NOTIFICATION)
+            alarms.cancel(intent)
             return
         }
-        val now = LocalDateTime.now()
-        var next = now.toLocalDate().atStartOfDay().plusMinutes(settings.notificationMinutes.toLong())
-        if (!next.isAfter(now)) next = next.plusDays(1)
-        val request = OneTimeWorkRequestBuilder<NotificationWorker>()
-            .setInitialDelay(Duration.between(now, next).toMillis(), TimeUnit.MILLISECONDS)
-            .setConstraints(network)
-            .build()
-        manager.enqueueUniqueWork(NOTIFICATION, ExistingWorkPolicy.REPLACE, request)
+        val next = nextTime(LocalDateTime.now(), settings.notificationMinutes, settings.lastAttemptDay)
+        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), intent)
     }
+
+    /**
+     * When the next notification goes: today at the chosen time if it has not passed yet; if it
+     * passed and today's was not tried (the phone was off, the time was changed…), in a minute;
+     * else tomorrow. lastAttempt: ISO date of the last notification tried, "" = never (just
+     * installed: the first one is the next day at that time).
+     */
+    fun nextTime(now: LocalDateTime, minutes: Int, lastAttempt: String): LocalDateTime {
+        val today = now.toLocalDate().atStartOfDay().plusMinutes(minutes.toLong())
+        return when {
+            now.isBefore(today) -> today
+            lastAttempt.isNotEmpty() && lastAttempt != now.toLocalDate().toString() -> now.plusMinutes(1)
+            else -> today.plusDays(1)
+        }
+    }
+
+    fun today(): String = LocalDate.now().toString()
 }
