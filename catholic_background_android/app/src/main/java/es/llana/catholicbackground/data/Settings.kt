@@ -49,6 +49,16 @@ class Settings(context: Context) {
         get() = string("last_set_day", "")
         set(value) = setString("last_set_day", value)
 
+    /** Day (ISO date) of the last notification the alarm tried to show; "" = never. */
+    var lastAttemptDay: String
+        get() = string("last_attempt_day", "")
+        set(value) = setString("last_attempt_day", value)
+
+    /** Day (ISO date) of the last notification shown (or of a day without image); "" = never. */
+    var lastNotifiedDay: String
+        get() = string("last_notified_day", "")
+        set(value) = setString("last_notified_day", value)
+
     /** "blur", "average" or "color". */
     var background: String
         get() = string("background", "blur")

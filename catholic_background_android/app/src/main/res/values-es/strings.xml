@@ -44,4 +44,7 @@
     <string name="image_question_title">Imagen del día</string>
     <string name="image_question_text">¿Qué quieres hacer con la imagen del %1$s?</string>
     <string name="set_as_wallpaper_note">Es la última imagen que has puesto como fondo.</string>
+    <string name="notification_test">Mostrarla ahora</string>
+    <string name="notifications_blocked">El sistema tiene desactivadas las notificaciones de esta aplicación: la diaria no se mostrará.</string>
+    <string name="notifications_open_settings">Abrir los ajustes de notificaciones</string>
 </resources>

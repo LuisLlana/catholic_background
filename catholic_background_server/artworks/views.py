@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.html import format_html

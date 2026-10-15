@@ -45,4 +45,7 @@
     <string name="image_question_title">Image of the day</string>
     <string name="image_question_text">What do you want to do with the image of %1$s?</string>
     <string name="set_as_wallpaper_note">This is the last image you set as wallpaper.</string>
+    <string name="notification_test">Show it now</string>
+    <string name="notifications_blocked">The system has the notifications of this application turned off: the daily one will not be shown.</string>
+    <string name="notifications_open_settings">Open the notification settings</string>
 </resources>
