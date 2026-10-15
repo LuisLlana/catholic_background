@@ -5,6 +5,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Signature of the release (the upload key of Google Play), from ~/.gradle/gradle.properties,
+// never from the repository. Without catholicBackground.storeFile the release is not signed.
+val uploadStoreFile = providers.gradleProperty("catholicBackground.storeFile").orNull
+
 android {
     namespace = "es.llana.catholicbackground"
     compileSdk = 37
@@ -17,9 +21,23 @@ android {
         versionName = "0.6.1"
     }
 
+    signingConfigs {
+        if (uploadStoreFile != null) {
+            create("upload") {
+                val password = providers.gradleProperty("catholicBackground.storePassword").get()
+                storeFile = file(uploadStoreFile)
+                storePassword = password
+                keyAlias = providers.gradleProperty("catholicBackground.keyAlias").getOrElse("upload")
+                // PKCS12 keystores (the default of keytool) use the same password for the key
+                keyPassword = providers.gradleProperty("catholicBackground.keyPassword").getOrElse(password)
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (uploadStoreFile != null) signingConfig = signingConfigs.getByName("upload")
         }
     }
     buildFeatures {

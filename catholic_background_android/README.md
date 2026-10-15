@@ -79,11 +79,19 @@ enabled:
        keytool -genkeypair -v -keystore ~/catholic-background-upload.jks \
            -alias upload -keyalg RSA -keysize 4096 -validity 10000
 
-2. Build the Android App Bundle signed with it (for example with Android Studio:
-   Build → Generate Signed App Bundle, or configuring `signingConfigs` in
-   `app/build.gradle.kts` with the passwords kept out of the repository):
+2. Tell Gradle where it is, in `~/.gradle/gradle.properties` (your home, never
+   in the repository; `chmod 600` it):
+
+       catholicBackground.storeFile=/home/<user>/catholic-background-upload.jks
+       catholicBackground.storePassword=<password of the keystore>
+       # Only if they are not the default ones:
+       # catholicBackground.keyAlias=upload
+       # catholicBackground.keyPassword=<password of the key>
+
+   Then the bundle comes out signed (without those properties it is not signed):
 
        sh gradlew bundleRelease     # app/build/outputs/bundle/release/app-release.aab
+       jarsigner -verify app/build/outputs/bundle/release/app-release.aab   # "jar verified."
 
 3. Upload the `.aab` in the Google Play Console (Play App Signing signs the final
    application). Increase `versionCode` in `app/build.gradle.kts` for every new
