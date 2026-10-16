@@ -22,15 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import es.llana.catholicbackground.R
 
-/** What can be done with an image, with its text: set it somewhere, or only see it. */
-val IMAGE_CHOICES = listOf(
+/** Where an image can be set as wallpaper, with its text. */
+val WALLPAPER_TARGETS = listOf(
     "home" to R.string.target_home,
     "lock" to R.string.target_lock,
     "both" to R.string.target_both,
-    "none" to R.string.target_none,
 )
 
 @Composable
@@ -51,30 +49,26 @@ fun RadioList(options: List<Pair<String, Int>>, selected: String?, onSelect: (St
 }
 
 /**
- * What to do with the image of a day: wallpaper of the home screen, of the lock screen, of
- * both, or only see it. Nothing is preselected: the user chooses explicitly.
- * required: the daily question, which cannot be dismissed without answering.
+ * "Use as wallpaper…": wallpaper of the home screen, of the lock screen or of both, for the
+ * image of the day shown. Nothing is preselected: the user chooses explicitly.
  */
 @Composable
-fun ImageChoiceDialog(dayText: String, required: Boolean, onDismiss: () -> Unit = {}, onChoice: (String) -> Unit) {
+fun WallpaperTargetDialog(dayText: String, onDismiss: () -> Unit, onChoice: (String) -> Unit) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     AlertDialog(
-        onDismissRequest = { if (!required) onDismiss() },
-        properties = DialogProperties(dismissOnBackPress = !required, dismissOnClickOutside = !required),
-        title = { Text(stringResource(R.string.image_question_title)) },
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.use_as_wallpaper)) },
         text = {
             Column {
-                Text(stringResource(R.string.image_question_text, dayText), Modifier.padding(bottom = 12.dp))
-                RadioList(IMAGE_CHOICES, selected) { selected = it }
+                Text(stringResource(R.string.wallpaper_where_text, dayText), Modifier.padding(bottom = 12.dp))
+                RadioList(WALLPAPER_TARGETS, selected) { selected = it }
             }
         },
         confirmButton = {
             TextButton(onClick = { selected?.let(onChoice) }, enabled = selected != null) {
-                Text(stringResource(android.R.string.ok))
+                Text(stringResource(R.string.set_wallpaper))
             }
         },
-        dismissButton = if (required) null else {
-            { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
     )
 }

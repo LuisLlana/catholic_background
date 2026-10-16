@@ -30,9 +30,9 @@
     <string name="notifications_title">Notificación diaria</string>
     <string name="notifications_summary">Con la obra del día</string>
     <string name="notification_time">Hora: %1$s</string>
-    <string name="target_both">Ponerla en las dos pantallas</string>
-    <string name="target_home">Ponerla de fondo en la pantalla de inicio</string>
-    <string name="target_lock">Ponerla de fondo en la pantalla de bloqueo</string>
+    <string name="target_both">Las dos pantallas</string>
+    <string name="target_home">Pantalla de inicio</string>
+    <string name="target_lock">Pantalla de bloqueo</string>
     <string name="around_image">Alrededor de la imagen</string>
     <string name="blur">Imagen difuminada</string>
     <string name="average">Color medio de la imagen</string>
@@ -40,11 +40,10 @@
     <string name="color_hex">Color (#rrggbb)</string>
     <string name="apply_note">Estas opciones se aplican la próxima vez que pongas una imagen como fondo.</string>
     <string name="about">Catholic Background %1$s · © 2026 Luis Llana · GPL-3.0 o posterior</string>
-    <string name="target_none">Solo verla</string>
-    <string name="image_question_title">Imagen del día</string>
-    <string name="image_question_text">¿Qué quieres hacer con la imagen del %1$s?</string>
     <string name="set_as_wallpaper_note">Es la última imagen que has puesto como fondo.</string>
     <string name="notification_test">Mostrarla ahora</string>
     <string name="notifications_blocked">El sistema tiene desactivadas las notificaciones de esta aplicación: la diaria no se mostrará.</string>
     <string name="notifications_open_settings">Abrir los ajustes de notificaciones</string>
+    <string name="wallpaper_where_text">¿Dónde quieres poner la imagen del %1$s?</string>
+    <string name="set_wallpaper">Poner</string>
 </resources>

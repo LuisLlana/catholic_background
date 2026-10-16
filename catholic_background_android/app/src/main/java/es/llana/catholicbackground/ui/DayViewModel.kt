@@ -39,36 +39,27 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
     var busy by mutableStateOf(false); private set
     /** Day of the image this application last set as wallpaper, if any. */
     var lastSetDay by mutableStateOf(parseDay(settings.lastSetDay)); private set
-    /** Ask what to do with the image of today (once a day, when it is shown). */
-    var askToday by mutableStateOf(false); private set
     var languages by mutableStateOf(ServerClient.FALLBACK_LANGUAGES); private set
 
     /** Short messages for the snackbar. */
     val messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
 
     private var loadingJob: Job? = null
+    /** Day the application was showing as "today": on another day it goes to the new today. */
+    private var openedOn = LocalDate.now()
 
     init {
         load(LocalDate.now())
         loadLanguages()
     }
 
-    /** When the application is shown: the first time each day, today's image and the question. */
+    /** When the application is shown again on another day (for example from the notification): today. */
     fun resumed() {
         val today = LocalDate.now()
-        if (settings.answeredDay == today.toString()) return
-        askToday = true
-        if (day != today || (artwork == null && !loading)) load(today)
-    }
-
-    /** The question about today must be shown now (its image is ready). */
-    val questionVisible: Boolean get() = askToday && day == LocalDate.now() && artwork != null
-
-    /** Answer about the image of today: "home", "lock", "both" or "none" (only see it). */
-    fun answerToday(choice: String) {
-        askToday = false
-        settings.answeredDay = LocalDate.now().toString()
-        if (choice in Settings.TARGETS) setWallpaper(choice)
+        if (today != openedOn) {
+            openedOn = today
+            load(today)
+        }
     }
 
     fun load(newDay: LocalDate) {

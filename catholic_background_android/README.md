@@ -1,7 +1,7 @@
 # Catholic Background — Android
 
 Shows a work of Catholic sacred art every day, with a daily notification, and
-sets it as the wallpaper of the phone only when the user says so. It uses the
+sets it as the wallpaper of the phone only with the button Use as wallpaper. It uses the
 server of the `catholic_background_server` project (by default
 `https://simba.fdi.ucm.es/background`).
 
@@ -16,16 +16,12 @@ Requirements: Android 8.0 (API 26) or later.
   (saint, celebration or liturgical season), title, author and year of the
   artwork of the day and its picture. Tapping it opens the application. On
   Android 13 or later the application asks for permission to show it.
-- **Question of the day**: the first time the application is opened each day
-  (for example from the notification) it asks what to do with the image of
-  today: set it as the wallpaper of the home screen, of the lock screen, of both,
-  or only see it. Nothing is preselected and it must be answered. The
-  application **never changes the wallpaper by itself**.
 - **Main screen**: the image of any day with its data (reason, title, author,
   year, comment, other data, license and source); previous and next day, a
-  calendar and Today. **Use as wallpaper…** asks the same question for the day
-  shown; **Edit this image** opens the page of the artwork in the content
-  manager (editors must log in).
+  calendar and Today. **Use as wallpaper…** asks where to put the image of the day
+  shown: the home screen, the lock screen or both. The application **never
+  changes the wallpaper by itself**. **Edit this image** opens the page of the
+  artwork in the content manager (editors must log in).
 - **The wallpaper**: the artwork complete and as big as possible, the rest of the
   screen filled with a blurred copy of it, its average color or a color. The
   server adds a label with the reason, title, author and year (it can be turned

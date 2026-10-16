@@ -31,9 +31,9 @@
     <string name="notifications_title">Daily notification</string>
     <string name="notifications_summary">With the artwork of the day</string>
     <string name="notification_time">Time: %1$s</string>
-    <string name="target_both">On both screens</string>
-    <string name="target_home">As the wallpaper of the home screen</string>
-    <string name="target_lock">As the wallpaper of the lock screen</string>
+    <string name="target_both">Both screens</string>
+    <string name="target_home">Home screen</string>
+    <string name="target_lock">Lock screen</string>
     <string name="around_image">Around the image</string>
     <string name="blur">Blurred image</string>
     <string name="average">Average color of the image</string>
@@ -41,11 +41,10 @@
     <string name="color_hex">Color (#rrggbb)</string>
     <string name="apply_note">These options are used the next time you set an image as wallpaper.</string>
     <string name="about">Catholic Background %1$s · © 2026 Luis Llana · GPL-3.0-or-later</string>
-    <string name="target_none">Only see it</string>
-    <string name="image_question_title">Image of the day</string>
-    <string name="image_question_text">What do you want to do with the image of %1$s?</string>
     <string name="set_as_wallpaper_note">This is the last image you set as wallpaper.</string>
     <string name="notification_test">Show it now</string>
     <string name="notifications_blocked">The system has the notifications of this application turned off: the daily one will not be shown.</string>
     <string name="notifications_open_settings">Open the notification settings</string>
+    <string name="wallpaper_where_text">Where do you want to put the image of %1$s?</string>
+    <string name="set_wallpaper">Set</string>
 </resources>

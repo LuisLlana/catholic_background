@@ -35,15 +35,6 @@ class Settings(context: Context) {
         get() = prefs.getInt("notification_minutes", 9 * 60)
         set(value) = prefs.edit { putInt("notification_minutes", value.coerceIn(0, 24 * 60 - 1)) }
 
-    /**
-     * Day (ISO date) whose image the user already decided what to do with: set it as the
-     * wallpaper of the home screen, of the lock screen, of both, or only see it.
-     * The application asks once a day, and never changes the wallpaper by itself.
-     */
-    var answeredDay: String
-        get() = string("answered_day", "")
-        set(value) = setString("answered_day", value)
-
     /** Day of the image this application last set as wallpaper (ISO date); "" = none. */
     var lastSetDay: String
         get() = string("last_set_day", "")

@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import es.llana.catholicbackground.R
 import es.llana.catholicbackground.data.ServerClient
-import es.llana.catholicbackground.data.Settings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -175,13 +174,12 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
     }
 
     if (choosingTarget) {
-        ImageChoiceDialog(
+        WallpaperTargetDialog(
             dayText = model.day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
-            required = false,
             onDismiss = { choosingTarget = false },
-        ) { choice ->
+        ) { target ->
             choosingTarget = false
-            if (choice in Settings.TARGETS) model.setWallpaper(choice)
+            model.setWallpaper(target)
         }
     }
 

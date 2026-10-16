@@ -24,8 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 class MainActivity : ComponentActivity() {
     private val model: DayViewModel by viewModels()
@@ -35,8 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        // The very first time, the permission is asked after the question about the image
-        if (model.settings.answeredDay.isNotEmpty()) askForNotifications()
+        askForNotifications()
         setContent {
             val dark = isSystemInDarkTheme()
             val context = LocalContext.current
@@ -52,17 +49,6 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(model, onBack = { settingsOpen = false })
                 } else {
                     DayScreen(model, onSettings = { settingsOpen = true })
-                }
-                // Once a day: what to do with the image of today, asked explicitly
-                if (model.questionVisible) {
-                    val first = model.settings.answeredDay.isEmpty()
-                    ImageChoiceDialog(
-                        dayText = model.day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
-                        required = true,
-                    ) { choice ->
-                        model.answerToday(choice)
-                        if (first) askForNotifications()
-                    }
                 }
             }
         }
