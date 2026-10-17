@@ -19,9 +19,9 @@ Each project is a git subtree of this repository, with its own README:
 | Folder | What it is | Technology | Version |
 |---|---|---|---|
 | [`catholic_background_server`](catholic_background_server) | Server and content manager | Python, Django | — |
-| [`catholic_background_kde`](catholic_background_kde) | KDE Plasma: wallpaper provider and settings application | C++, Qt 6, KDE Frameworks 6, QML | 0.5.0 |
-| [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.5.0 |
-| [`catholic_background_windows`](catholic_background_windows) | Windows application (standalone `.exe` and MSIX for the Microsoft Store) | C#, .NET 10, Windows Forms | 0.5.0 |
+| [`catholic_background_kde`](catholic_background_kde) | KDE Plasma: wallpaper provider and settings application | C++, Qt 6, KDE Frameworks 6, QML | 0.5.1 |
+| [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.5.1 |
+| [`catholic_background_windows`](catholic_background_windows) | Windows application (standalone `.exe` and MSIX for the Microsoft Store) | C#, .NET 10, Windows Forms | 0.5.1 |
 | [`catholic_background_android`](catholic_background_android) | Android application, with a daily notification | Kotlin, Jetpack Compose | 0.6.2 |
 
 ## How it works
@@ -72,7 +72,10 @@ The desktop applications (KDE, GNOME and Windows):
 - show the artwork complete, as big as possible and not covered by panels or the
   taskbar, filling the rest of the screen with a blurred copy of it, its average
   color or a color;
-- keep the current wallpaper if the server is down.
+- keep the current wallpaper if the server is down;
+- notify when the image changes, from their icon in the notification area
+  (Windows, on by default), the system tray (KDE) or the top bar (GNOME); in KDE
+  and GNOME the icon is an option, off by default.
 
 They also have a window (the preferences, in GNOME) with the image of any day and
 all its data, a calendar to choose the day, **Use as wallpaper** (until the next
