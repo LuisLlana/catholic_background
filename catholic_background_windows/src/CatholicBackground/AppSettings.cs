@@ -24,6 +24,8 @@ public sealed class AppSettings
     public string Language { get; set; } = "";
     /// <summary>Label below the artwork (drawn by the server).</summary>
     public bool ShowLabel { get; set; } = true;
+    /// <summary>Notification from the icon of the notification area when the image changes.</summary>
+    public bool NotifyOnChange { get; set; } = true;
     /// <summary>Day used as wallpaper ("yyyy-MM-dd") until the next automatic check; "" = today.</summary>
     public string ShowDate { get; set; } = "";
 

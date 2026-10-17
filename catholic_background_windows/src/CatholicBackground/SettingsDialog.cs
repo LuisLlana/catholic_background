@@ -25,6 +25,7 @@ public sealed class SettingsDialog : Form
     private readonly RadioButton _color = new() { Text = "Color:", AutoSize = true };
     private readonly Button _colorButton = new() { Width = 56, Height = 24, FlatStyle = FlatStyle.Flat };
     private readonly CheckBox _startup = new() { Text = "Start with Windows", AutoSize = true };
+    private readonly CheckBox _notify = new() { Text = "Notify when the image changes (from the icon in the notification area)", AutoSize = true };
     private readonly Button _ok = new() { Text = "OK", AutoSize = true, DialogResult = DialogResult.OK };
     private readonly Button _cancel = new() { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel };
 
@@ -106,6 +107,8 @@ public sealed class SettingsDialog : Form
 
         _startup.Margin = new Padding(6, 10, 3, 3);
         root.Controls.Add(_startup);
+        _notify.Margin = new Padding(6, 4, 3, 3);
+        root.Controls.Add(_notify);
 
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = new Padding(0, 12, 0, 0) };
         buttons.Controls.AddRange([_cancel, _ok]);
@@ -146,6 +149,7 @@ public sealed class SettingsDialog : Form
         _colorButton.BackColor = _chosenColor;
         _colorButton.Enabled = _color.Checked;
         _label.Checked = s.ShowLabel;
+        _notify.Checked = s.NotifyOnChange;
 
         var system = CultureInfo.CurrentUICulture;
         var systemName = system.NativeName.Length > 0 ? char.ToUpper(system.NativeName[0]) + system.NativeName[1..] : system.Name;
@@ -221,6 +225,7 @@ public sealed class SettingsDialog : Form
         s.ServerUrl = url;
         s.Language = SelectedLanguage;
         s.ShowLabel = _label.Checked;
+        s.NotifyOnChange = _notify.Checked;
         s.Background = SelectedBackground;
         s.BackgroundColor = Composer.ToHex(_chosenColor);
         s.CheckIntervalMinutes = (int)_interval.Value;

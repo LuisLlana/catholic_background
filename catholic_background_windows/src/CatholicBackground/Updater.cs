@@ -18,6 +18,12 @@ public sealed class Updater
     public event EventHandler? Changed;
 
     /// <summary>
+    /// Raised on the UI thread when an automatic check sets a new image (the server changed it:
+    /// a new day, or another image of the same day). Not raised the first time.
+    /// </summary>
+    public event EventHandler<DownloadedImage>? ImageChanged;
+
+    /// <summary>
     /// Downloads the image of the wallpaper day and changes the wallpaper if it is different
     /// from the current one (or always, if force is true). The server may have several images a
     /// day. An automatic check also ends a day chosen with "Use as wallpaper": back to today.
@@ -48,6 +54,7 @@ public sealed class Updater
             if (!force && image.Hash == Settings.ImageHash && File.Exists(Paths.OriginalImage) && File.Exists(Settings.PreviewFile))
                 return Record(true, "The image has not changed.");
 
+            bool isNew = automatic && Settings.ImageHash.Length > 0 && image.Hash != Settings.ImageHash;
             Directory.CreateDirectory(Paths.DataDirectory);
             await File.WriteAllBytesAsync(Paths.OriginalImage, image.Bytes);
             Settings.ImageHash = image.Hash;
@@ -55,6 +62,8 @@ public sealed class Updater
             Settings.Author = image.Author;
 
             var error = await ComposeAndSetAsync();
+            if (error is null && isNew)
+                ImageChanged?.Invoke(this, image);
             return error is null ? Record(true, "The wallpaper has been updated.") : Record(false, error);
         }
         finally

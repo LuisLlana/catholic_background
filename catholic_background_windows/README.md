@@ -14,6 +14,10 @@ Requirements: Windows 10 (1809) or later, x64 (arm64 can be built with `ARCH=arm
 
 - Runs in the notification area. Left click opens the main window; the menu has
   Open, Refresh wallpaper and Exit.
+- When an automatic check sets a new image (a new day, or another image of the
+  same day), a Windows notification shows why it is shown that day, its title
+  and author; clicking it opens the main window. It can be turned off in the
+  settings ("Notify when the image changes").
 - Shortly after starting, every N minutes (5–1440, 30 by default) and after
   resuming from sleep, it downloads the image of the day in the language of
   Windows (or the one chosen in the settings). The wallpaper changes only when
@@ -43,7 +47,7 @@ author, year, comment, other data, license and source. From there:
   the server (editors must log in);
 - **Settings…**: server URL (with Test), check interval, language of the texts
   (by default that of Windows; the list comes from the server), label below the
-  artwork, how to fill the screen and start with Windows;
+  artwork, how to fill the screen, start with Windows and the notification;
 - **Refresh wallpaper**.
 
 Files: `%LOCALAPPDATA%\CatholicBackground` (standalone) or the package's local

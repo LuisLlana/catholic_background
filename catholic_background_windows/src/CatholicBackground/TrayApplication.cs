@@ -43,6 +43,8 @@ public sealed class TrayApplication : ApplicationContext
         };
 
         _updater.Changed += (_, _) => UpdateTooltip();
+        _updater.ImageChanged += (_, image) => Notify(image);
+        _icon.BalloonTipClicked += (_, _) => ShowSettings();
         UpdateTooltip();
 
         // First check shortly after starting, then every CheckInterval minutes
@@ -99,6 +101,20 @@ public sealed class TrayApplication : ApplicationContext
         if (!Paths.IsPackaged)   // packaged: enabled by the manifest
             await Autostart.SetEnabledAsync(true);
     }
+
+    /// <summary>A notification of Windows from the icon: the reason of the new image, its title and author.</summary>
+    private void Notify(DownloadedImage image)
+    {
+        if (!_updater.Settings.NotifyOnChange)
+            return;
+        var title = image.Reason.Length > 0 ? image.Reason : "New image of the day";
+        var text = string.Join(" \u2014 ", new[] { image.TitleWithYear, image.Author }.Where(t => t.Length > 0));
+        if (text.Length == 0)
+            text = "The wallpaper has changed.";
+        _icon.ShowBalloonTip(10_000, Shorten(title, 63), Shorten(text, 255), ToolTipIcon.None);
+    }
+
+    private static string Shorten(string text, int max) => text.Length > max ? text[..(max - 1)] + "\u2026" : text;
 
     private void UpdateTooltip()
     {
