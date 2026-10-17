@@ -28,6 +28,12 @@ Debian 13).
   artwork, its average color or a chosen color.
 - It sets it in `org.gnome.desktop.background` (light and dark styles),
   recomposing it when the options, the monitors or the work area change.
+- Optionally (**Icon in the top bar**, off by default), an icon in the top bar
+  whose menu shows the reason, title and author of the current image, with
+  **Image of the Day…** (the preferences) and **Refresh Wallpaper**. With it,
+  when a periodic check finds a new image (a new day, or another image of the
+  same day) a GNOME notification shows its reason, title and author; clicking it
+  opens the preferences.
 - Files: `~/.local/share/backgrounds/catholic-background/` (wallpaper) and
   `~/.cache/catholic-background/original` (today's original image).
 
@@ -48,8 +54,8 @@ Open them from the Extensions application, or with
   in); **Refresh Wallpaper** and the result of the last check.
 - **Settings**: server URL (with Test and Restore default), how often to check
   the server, language of the texts (by default that of the system; the list
-  comes from the server), label below the artwork, and how to fill the screen
-  around the image.
+  comes from the server), label below the artwork, how to fill the screen
+  around the image, and the icon in the top bar (with the notifications).
 
 The extension and the preferences build the address of the image in the same
 way (`wallpaperUrl` in `lib/server.js`: day, `lang` and `caption`).

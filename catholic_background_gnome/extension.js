@@ -5,8 +5,12 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
 import Soup from 'gi://Soup?version=3.0';
+import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {fetchWallpaper, pixbufFromBytes, wallpaperUrl} from './lib/server.js';
@@ -19,6 +23,7 @@ Gio._promisify(Gio.File.prototype, 'delete_async');
 
 const STARTUP_DELAY_SECONDS = 5;
 const MUTTER_EXPERIMENTAL = 'experimental-features';
+const ICON_NAME = 'preferences-desktop-wallpaper-symbolic';
 
 export default class CatholicBackgroundExtension extends Extension {
     enable() {
@@ -42,7 +47,12 @@ export default class CatholicBackgroundExtension extends Extension {
             this._settings.connect('changed::background', () => this._scheduleCompose()),
             this._settings.connect('changed::background-color', () => this._scheduleCompose()),
             this._settings.connect('changed::check-interval', () => this._startTimer()),
+            this._settings.connect('changed::panel-indicator', () => this._syncIndicator()),
+            this._settings.connect('changed::reason', () => this._updateIndicator()),
+            this._settings.connect('changed::title', () => this._updateIndicator()),
+            this._settings.connect('changed::author', () => this._updateIndicator()),
         ];
+        this._syncIndicator();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._scheduleCompose());
         this._workAreasId = global.display.connect('workareas-changed', () => this._scheduleCompose());
 
@@ -76,6 +86,9 @@ export default class CatholicBackgroundExtension extends Extension {
         this._startupId = this._timerId = this._composeId = 0;
         for (const id of this._settingsIds)
             this._settings.disconnect(id);
+        this._destroyIndicator();
+        this._source?.destroy();
+        this._source = null;
         Main.layoutManager.disconnect(this._monitorsId);
         global.display.disconnect(this._workAreasId);
         this._session.abort();
@@ -144,6 +157,10 @@ export default class CatholicBackgroundExtension extends Extension {
             return;
         }
 
+        // A new image found by a periodic check (not the first one, nor a change by hand)
+        const previousHash = this._settings.get_string('image-hash');
+        const isNew = automatic && previousHash !== '' && hash !== previousHash;
+
         await this._ensureDirectory(this._originalFile.get_parent(), cancellable);
         await this._originalFile.replace_contents_bytes_async(result.bytes, null, false,
             Gio.FileCreateFlags.REPLACE_DESTINATION, cancellable);
@@ -151,9 +168,83 @@ export default class CatholicBackgroundExtension extends Extension {
         this._pixbuf = result.pixbuf;
         this._settings.set_string('title', result.titleWithYear);
         this._settings.set_string('author', result.author);
+        this._settings.set_string('reason', result.reason);
         this._settings.set_string('image-hash', hash);
         await this._composeAndSet(cancellable);
         this._setStatus('The wallpaper has been updated.');
+        if (isNew)
+            this._notify(result);
+    }
+
+    // ------------------------------------------------------------------ top bar
+
+    /** The icon in the top bar exists only while the option is on. */
+    _syncIndicator() {
+        const wanted = this._settings.get_boolean('panel-indicator');
+        if (wanted && !this._indicator)
+            this._createIndicator();
+        else if (!wanted)
+            this._destroyIndicator();
+    }
+
+    _createIndicator() {
+        const button = new PanelMenu.Button(0.0, this.metadata.name, false);
+        button.add_child(new St.Icon({icon_name: ICON_NAME, style_class: 'system-status-icon'}));
+
+        // The data of the current image, then the actions
+        this._reasonItem = new PopupMenu.PopupMenuItem('', {reactive: false});
+        this._titleItem = new PopupMenu.PopupMenuItem('', {reactive: false});
+        this._authorItem = new PopupMenu.PopupMenuItem('', {reactive: false});
+        this._reasonItem.label.style = 'font-weight: bold;';
+        for (const item of [this._reasonItem, this._titleItem, this._authorItem])
+            button.menu.addMenuItem(item);
+        button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        button.menu.addAction('Image of the Day\u2026', () => this.openPreferences());
+        button.menu.addAction('Refresh Wallpaper', () => this._schedule(true));
+
+        Main.panel.addToStatusArea(this.uuid, button);
+        this._indicator = button;
+        this._updateIndicator();
+    }
+
+    _updateIndicator() {
+        if (!this._indicator)
+            return;
+        const texts = [
+            [this._reasonItem, this._settings.get_string('reason')],
+            [this._titleItem, this._settings.get_string('title') || 'Catholic Background of the Day'],
+            [this._authorItem, this._settings.get_string('author')],
+        ];
+        for (const [item, text] of texts) {
+            item.label.text = text;
+            item.visible = text !== '';
+        }
+    }
+
+    _destroyIndicator() {
+        this._indicator?.destroy();
+        this._indicator = this._reasonItem = this._titleItem = this._authorItem = null;
+    }
+
+    /** Notification of a new image (only with the icon in the top bar); clicking it opens the preferences. */
+    _notify(result) {
+        if (!this._settings.get_boolean('panel-indicator'))
+            return;
+        if (!this._source) {
+            this._source = new MessageTray.Source({title: this.metadata.name, iconName: ICON_NAME});
+            this._source.connect('destroy', () => {
+                this._source = null;
+            });
+            Main.messageTray.add(this._source);
+        }
+        const body = [result.titleWithYear, result.author].filter(t => t).join(' \u2014 ');
+        const notification = new MessageTray.Notification({
+            source: this._source,
+            title: result.reason || 'New image of the day',
+            body: body || 'The wallpaper has changed.',
+        });
+        notification.connect('activated', () => this.openPreferences());
+        this._source.addNotification(notification);
     }
 
     _setStatus(message) {

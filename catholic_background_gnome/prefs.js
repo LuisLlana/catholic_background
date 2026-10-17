@@ -454,6 +454,16 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             return false;
         });
 
+        // ---------- Top bar ----------
+        const topBar = new Adw.PreferencesGroup({title: 'Top Bar'});
+        page.add(topBar);
+        const indicatorRow = new Adw.SwitchRow({
+            title: 'Icon in the top bar',
+            subtitle: 'With the data of the image, and a notification when the image changes',
+        });
+        settings.bind('panel-indicator', indicatorRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        topBar.add(indicatorRow);
+
         // ---------- About ----------
         const about = new Adw.PreferencesGroup({title: 'About'});
         page.add(about);

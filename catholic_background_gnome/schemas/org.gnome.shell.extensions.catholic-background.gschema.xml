@@ -32,6 +32,12 @@
       <description>The server may have several images for the same day; the wallpaper changes only when the image is different.</description>
     </key>
 
+    <key name="panel-indicator" type="b">
+      <default>false</default>
+      <summary>Icon in the top bar</summary>
+      <description>An icon in the top bar with the data of the image and a notification when the image changes.</description>
+    </key>
+
     <!-- Communication between the preferences window and the extension -->
     <key name="language" type="s">
       <default>''</default>
@@ -70,6 +76,10 @@
     <key name="author" type="s">
       <default>''</default>
       <summary>Author of the current image</summary>
+    </key>
+    <key name="reason" type="s">
+      <default>''</default>
+      <summary>Why the current image is shown that day</summary>
     </key>
     <key name="status" type="s">
       <default>''</default>
