@@ -47,12 +47,14 @@ Debian 13 (trixie):
 
     sudo apt install build-essential cmake extra-cmake-modules qt6-base-dev \
         libkf6kio-dev libkf6coreaddons-dev libkf6config-dev qt6-declarative-dev \
+        libkf6notifications-dev libkf6statusnotifieritem-dev \
         qml6-module-org-kde-kirigami qml6-module-org-kde-desktop \
         plasma-dataengines-addons plasma-wallpapers-addons
 
 Other distributions need CMake, extra-cmake-modules, Qt 6 (Core, Gui, Widgets,
 Quick, QuickControls2, DBus, Network), Kirigami,
-KF6 (KIO, CoreAddons, Config) and kdeplasma-addons.
+KF6 (KIO, CoreAddons, Config, Notifications, StatusNotifierItem) and
+kdeplasma-addons.
 
 Debian does not package the headers of the provider library
 (`libplasmapotdprovidercore`), so this project bundles a copy in
@@ -111,13 +113,27 @@ comment, other data, license and source. From there:
 **Settings** (in their own dialog): server URL (with Test), language of the
 texts (by default that of the system; the list comes from the server), label
 below the artwork (reason, title, author; drawn by the server), how to fill the
-screen around the image, and how often to check the server.
+screen around the image, how often to check the server, and the icon in the
+system tray.
+
+**System tray** (option "Icon in the system tray, with a notification when the
+image changes", off by default): an icon whose tooltip shows the reason, title
+and author of the current image; clicking it opens the application, and its menu
+has Open… and Refresh wallpaper. When the image changes (a new day, or another
+image of the same day) it shows a KDE notification with the reason, title and
+author; clicking it opens the application. It is the same program
+(`catholic-background-settings --tray`), started at login by
+`~/.config/autostart/catholic-background-tray.desktop`, which the option creates
+or removes. It downloads nothing: it watches `~/.config/catholicbackgroundrc`,
+where the provider writes the data of each new image. A day chosen by hand with
+Use as wallpaper is not notified.
 
 It can also be used from the command line:
 
     catholic-background-settings --refresh         # download the image again
     catholic-background-settings --set-wallpaper   # use it as wallpaper
     catholic-background-settings --update          # refresh only if the image changed
+    catholic-background-settings --tray            # icon in the system tray (if the option is on)
 
 Before refreshing, it checks that the server answers with a valid image, so
 a server that is down never leaves the desktop without today's image.

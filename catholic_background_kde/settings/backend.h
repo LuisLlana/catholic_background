@@ -48,6 +48,7 @@ class Backend : public QObject
     Q_PROPERTY(QString systemLanguageName READ systemLanguageName CONSTANT)
     Q_PROPERTY(QVariantList languages READ languages NOTIFY languagesChanged)
     Q_PROPERTY(bool showLabel READ showLabel NOTIFY showLabelChanged)
+    Q_PROPERTY(bool trayIcon READ trayIcon NOTIFY trayIconChanged)
     // The day shown in the window (any day) and the day used as wallpaper
     Q_PROPERTY(QDate viewDate READ viewDate NOTIFY dayChanged)
     Q_PROPERTY(QString viewDateText READ viewDateText NOTIFY dayChanged)
@@ -87,6 +88,7 @@ public:
     QString systemLanguageName() const;
     QVariantList languages() const;
     bool showLabel() const;
+    bool trayIcon() const;
     QDate viewDate() const;
     QString viewDateText() const;
     int viewYear() const;
@@ -116,7 +118,7 @@ public:
     /// Saves URL and background settings and, if something changed, refreshes the wallpaper.
     /// Returns false if the URL is not valid.
     Q_INVOKABLE bool applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval,
-                                   const QString &language, bool showLabel);
+                                   const QString &language, bool showLabel, bool trayIcon);
     /// Downloads today's image from the given URL without touching Plasma. Emits testFinished().
     Q_INVOKABLE void testConnection(const QString &url);
     /// Deletes the cached image and makes Plasma download it again. Emits refreshFinished().
@@ -142,6 +144,7 @@ Q_SIGNALS:
     void languageChanged();
     void languagesChanged();
     void showLabelChanged();
+    void trayIconChanged();
     void dayChanged();
 
 private:

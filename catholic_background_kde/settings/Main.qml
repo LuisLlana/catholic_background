@@ -382,6 +382,7 @@ Kirigami.ApplicationWindow {
                 property int checkInterval: Backend.checkInterval
                 property string language: Backend.language
                 property bool showLabel: Backend.showLabel
+                property bool trayIcon: Backend.trayIcon
 
                 readonly property bool changed: urlField.text.trim() !== Backend.serverUrl
                     || background !== Backend.background
@@ -390,6 +391,7 @@ Kirigami.ApplicationWindow {
                     || checkInterval !== Backend.checkInterval
                     || language !== Backend.language
                     || showLabel !== Backend.showLabel
+                    || trayIcon !== Backend.trayIcon
 
                 Component.onCompleted: settingsForm = form
 
@@ -430,6 +432,13 @@ Kirigami.ApplicationWindow {
                     text: "Show the reason, title and author below the artwork"
                     checked: form.showLabel
                     onToggled: form.showLabel = checked
+                }
+
+                QQC2.CheckBox {
+                    Kirigami.FormData.label: "System tray:"
+                    text: "Icon in the system tray, with a notification when the image changes"
+                    checked: form.trayIcon
+                    onToggled: form.trayIcon = checked
                 }
 
                 Kirigami.Separator {
@@ -509,7 +518,7 @@ Kirigami.ApplicationWindow {
                         enabled: !Backend.busy && form.changed
                         onClicked: {
                             if (Backend.applySettings(urlField.text, form.background, form.backgroundColor, form.checkInterval,
-                                                      form.language, form.showLabel)) {
+                                                      form.language, form.showLabel, form.trayIcon)) {
                                 urlField.text = Backend.serverUrl
                             } else {
                                 root.showPassiveNotification("The URL is not valid. It must start with http:// or https://.", "long")
@@ -527,6 +536,7 @@ Kirigami.ApplicationWindow {
                             form.checkInterval = Backend.defaultCheckInterval
                             form.language = ""
                             form.showLabel = true
+                            form.trayIcon = false
                             languageBox.currentIndex = 0
                         }
                     }

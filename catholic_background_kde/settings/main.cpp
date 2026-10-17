@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "backend.h"
+#include "tray.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDBusConnection>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
@@ -39,11 +41,25 @@ int main(int argc, char *argv[])
     const QCommandLineOption updateOption(u"update"_s,
                                           u"Download today's image and refresh the wallpaper only if it has changed, then exit "
                                           "(run every 30 minutes by catholic-background-update.timer)."_s);
+    const QCommandLineOption trayOption(u"tray"_s,
+                                        u"Show the icon in the system tray, with a notification when the image changes "
+                                        "(started at login when the option is on)."_s);
+    parser.addOption(trayOption);
     parser.addOption(refreshOption);
     parser.addOption(setOption);
     parser.addOption(updateOption);
     parser.process(app);
     about.processCommandLine(&parser);
+
+    // Icon in the system tray: one per session, and only while the option is on
+    if (parser.isSet(trayOption)) {
+        if (!Tray::enabled() || !QDBusConnection::sessionBus().registerService(u"es.llana.CatholicBackground.Tray"_s)) {
+            return 0;
+        }
+        QApplication::setQuitOnLastWindowClosed(false);
+        Tray tray;
+        return app.exec();
+    }
 
     Backend backend;
 

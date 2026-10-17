@@ -1,0 +1,9 @@
+[Global]
+IconName=catholic-background
+Comment=Catholic Background
+DesktopEntry=catholic-background-settings
+
+[Event/imageChanged]
+Name=New image of the day
+Comment=The image of the day has changed (shown by the icon in the system tray)
+Action=Popup

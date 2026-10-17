@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.18)
-project(catholic-background-potd-provider VERSION 0.5.0)
+project(catholic-background-potd-provider VERSION 0.5.1)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF6_MIN_VERSION "6.0.0")
@@ -19,7 +19,7 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 include(FeatureSummary)
 
 find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS Core Gui Widgets Quick QuickControls2 DBus Network)
-find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS KIO CoreAddons Config)
+find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS KIO CoreAddons Config Notifications StatusNotifierItem)
 
 # Picture of the Day provider library (kdeplasma-addons)
 find_package(PlasmaPotdProvider CONFIG QUIET)

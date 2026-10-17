@@ -1,3 +1,11 @@
+catholic-background (0.5.1) trixie; urgency=medium
+
+  * Optional icon in the system tray ("System tray" in the settings): it
+    shows the reason, title and author of the current image and notifies
+    when the image changes; clicking it opens the settings.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Sat, 17 Oct 2026 17:30:00 +0200
+
 catholic-background (0.5.0) trixie; urgency=medium
 
   * The texts of the label are requested in the language of the system, or

@@ -180,14 +180,6 @@ void CatholicBackgroundProvider::requestFinished(KJob *_job)
         return;
     }
 
-    // Fingerprint of the image, so that the settings application can tell
-    // whether the server has a different image later the same day
-    KSharedConfigPtr config = KSharedConfig::openConfig(QStringLiteral("catholicbackgroundrc"));
-    config->reparseConfiguration();
-    KConfigGroup group = config->group(QStringLiteral("General"));
-    group.writeEntry("CurrentImageHash", QString::fromLatin1(QCryptographicHash::hash(*decoded, QCryptographicHash::Sha1).toHex()));
-    config->sync();
-
     // --- Metadata ---
     const QString title = obj.value(QStringLiteral("title")).toString().trimmed();
     // toVariant() accepts both "1889" and 1889
@@ -201,6 +193,18 @@ void CatholicBackgroundProvider::requestFinished(KJob *_job)
     } else {
         m_title = title.isEmpty() ? date : title;
     }
+
+    // Fingerprint and data of the image: the settings application tells with
+    // them whether the server has a different image later the same day, and the
+    // tray icon shows them (and notifies the change)
+    KSharedConfigPtr config = KSharedConfig::openConfig(QStringLiteral("catholicbackgroundrc"));
+    config->reparseConfiguration();
+    KConfigGroup group = config->group(QStringLiteral("General"));
+    group.writeEntry("CurrentReason", obj.value(QStringLiteral("reason")).toString().trimmed());
+    group.writeEntry("CurrentTitle", m_title);
+    group.writeEntry("CurrentAuthor", m_author);
+    group.writeEntry("CurrentImageHash", QString::fromLatin1(QCryptographicHash::hash(*decoded, QCryptographicHash::Sha1).toHex()));
+    config->sync();
 
     Q_EMIT finished(this, compose(image, m_background, m_backgroundColor, m_panelMargins));
 }

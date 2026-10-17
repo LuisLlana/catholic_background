@@ -3,6 +3,7 @@
 
 #include "backend.h"
 #include "catholicbackground_request.h"
+#include "tray.h"
 
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -243,9 +244,18 @@ void Backend::setCheckInterval(int minutes)
     Q_EMIT lastCheckChanged();
 }
 
-bool Backend::applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval,
-                            const QString &language, bool showLabel)
+bool Backend::trayIcon() const
 {
+    return Tray::enabled();
+}
+
+bool Backend::applySettings(const QString &url, const QString &background, const QColor &color, int checkInterval,
+                            const QString &language, bool showLabel, bool trayIcon)
+{
+    if (trayIcon != this->trayIcon()) {
+        Tray::setEnabled(trayIcon);
+        Q_EMIT trayIconChanged();
+    }
     // Language and label change the image (the label is drawn by the server)
     const bool languageChanged = language != this->language();
     const bool labelChanged = showLabel != this->showLabel();

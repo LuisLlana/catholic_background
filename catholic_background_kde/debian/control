@@ -9,6 +9,8 @@ Build-Depends: debhelper-compat (= 13),
                libkf6config-dev,
                libkf6coreaddons-dev,
                libkf6kio-dev,
+               libkf6notifications-dev,
+               libkf6statusnotifieritem-dev,
                qt6-declarative-dev,
                plasma-dataengines-addons (>= 4:6.3),
                plasma-dataengines-addons (<< 4:6.4~)
