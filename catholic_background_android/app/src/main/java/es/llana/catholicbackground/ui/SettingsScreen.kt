@@ -197,6 +197,11 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                 }, label = { Text(stringResource(R.string.color_hex)) }, singleLine = true)
             }
             Text(stringResource(R.string.apply_note), style = MaterialTheme.typography.bodySmall)
+            SwitchRow(stringResource(R.string.follow_title),
+                stringResource(if (model.followWallpaper) R.string.follow_summary else R.string.follow_off_summary),
+                model.followWallpaper, enabled = model.followWallpaper) {
+                if (!it) model.stopFollowing()
+            }
             HorizontalDivider()
             Text(stringResource(R.string.about, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.bodySmall)
         }
@@ -221,13 +226,13 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(title: String, summary: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SwitchRow(title: String, summary: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(summary, style = MaterialTheme.typography.bodySmall)
         }
-        Switch(checked, onChange)
+        Switch(checked, onChange, enabled = enabled)
     }
 }
 

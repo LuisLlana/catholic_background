@@ -40,6 +40,31 @@ class Settings(context: Context) {
         get() = string("last_set_day", "")
         set(value) = setString("last_set_day", value)
 
+    /** Date (ISO) on which that wallpaper was set, and SHA-1 of its image. */
+    var lastSetOn: String
+        get() = string("last_set_on", "")
+        set(value) = setString("last_set_on", value)
+    var lastSetHash: String
+        get() = string("last_set_hash", "")
+        set(value) = setString("last_set_hash", value)
+
+    /**
+     * Where the wallpaper set by this application is kept up to date with the image of the
+     * day ("home", "lock" or "both"); "" = it is not (never set, turned off, or the user put
+     * another wallpaper).
+     */
+    var followTarget: String
+        get() = string("follow_target", "")
+        set(value) = setString("follow_target", value)
+
+    /** Ids the system gave to the wallpapers this application set (to notice another one). */
+    var homeWallpaperId: Int
+        get() = prefs.getInt("home_wallpaper_id", -1)
+        set(value) = prefs.edit { putInt("home_wallpaper_id", value) }
+    var lockWallpaperId: Int
+        get() = prefs.getInt("lock_wallpaper_id", -1)
+        set(value) = prefs.edit { putInt("lock_wallpaper_id", value) }
+
     /** Day (ISO date) of the last notification the alarm tried to show; "" = never. */
     var lastAttemptDay: String
         get() = string("last_attempt_day", "")

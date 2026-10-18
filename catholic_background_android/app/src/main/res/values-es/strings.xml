@@ -46,4 +46,7 @@
     <string name="notifications_open_settings">Abrir los ajustes de notificaciones</string>
     <string name="wallpaper_where_text">¿Dónde quieres poner la imagen del %1$s?</string>
     <string name="set_wallpaper">Poner</string>
+    <string name="follow_title">Mantener actualizado el fondo</string>
+    <string name="follow_summary">El fondo puesto por esta aplicación cambia cuando hay una imagen nueva (se comprueba cada hora). Se detiene si pones otro fondo.</string>
+    <string name="follow_off_summary">Pon una imagen con Usar como fondo… para mantenerla actualizada.</string>
 </resources>

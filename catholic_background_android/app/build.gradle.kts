@@ -17,8 +17,8 @@ android {
         applicationId = "es.llana.catholicbackground"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.6.2"
+        versionCode = 5
+        versionName = "0.6.3"
     }
 
     signingConfigs {

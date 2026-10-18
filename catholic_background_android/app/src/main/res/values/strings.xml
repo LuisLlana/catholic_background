@@ -47,4 +47,7 @@
     <string name="notifications_open_settings">Open the notification settings</string>
     <string name="wallpaper_where_text">Where do you want to put the image of %1$s?</string>
     <string name="set_wallpaper">Set</string>
+    <string name="follow_title">Keep the wallpaper up to date</string>
+    <string name="follow_summary">The wallpaper set by this application changes when there is a new image (it is checked every hour). It stops if you put another wallpaper.</string>
+    <string name="follow_off_summary">Set an image with Use as wallpaper… to keep it up to date.</string>
 </resources>

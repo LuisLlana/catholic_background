@@ -6,7 +6,12 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import es.llana.catholicbackground.data.Settings
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -21,10 +26,29 @@ object Scheduler {
     /** Work of older versions, cancelled: the periodic wallpaper check (up to 0.5.0) and the notification (up to 0.6.0). */
     private val OLD_WORK = listOf("wallpaper-update", "daily-notification")
 
+    private const val WALLPAPER = "wallpaper-follow"
+
     fun scheduleAll(context: Context) {
         val manager = WorkManager.getInstance(context)
         OLD_WORK.forEach { manager.cancelUniqueWork(it) }
         scheduleNotification(context)
+        scheduleWallpaper(context)
+    }
+
+    /**
+     * Hourly check of the image while the wallpaper set by this application is kept up to date
+     * (KEEP: calling it again does not move the next check).
+     */
+    fun scheduleWallpaper(context: Context) {
+        val manager = WorkManager.getInstance(context)
+        if (Settings(context).followTarget !in Settings.TARGETS) {
+            manager.cancelUniqueWork(WALLPAPER)
+            return
+        }
+        val request = PeriodicWorkRequestBuilder<WallpaperWorker>(1, TimeUnit.HOURS)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        manager.enqueueUniquePeriodicWork(WALLPAPER, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
     /** Sets (or cancels) the alarm of the next notification. It can be called any number of times. */

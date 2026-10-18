@@ -39,6 +39,14 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
     var busy by mutableStateOf(false); private set
     /** Day of the image this application last set as wallpaper, if any. */
     var lastSetDay by mutableStateOf(parseDay(settings.lastSetDay)); private set
+    /** The wallpaper set by this application is kept up to date with the image of the day. */
+    var followWallpaper by mutableStateOf(settings.followTarget.isNotEmpty()); private set
+
+    fun stopFollowing() {
+        settings.followTarget = ""
+        followWallpaper = false
+        Scheduler.scheduleWallpaper(getApplication())
+    }
     var languages by mutableStateOf(ServerClient.FALLBACK_LANGUAGES); private set
 
     /** Short messages for the snackbar. */
@@ -55,6 +63,13 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
 
     /** When the application is shown again on another day (for example from the notification): today. */
     fun resumed() {
+        // A new image may have come out while the application was closed
+        if (settings.followTarget.isNotEmpty() && !busy) {
+            viewModelScope.launch {
+                if (updater.keepUpToDate()) lastSetDay = parseDay(settings.lastSetDay)
+                followWallpaper = settings.followTarget.isNotEmpty()
+            }
+        }
         val today = LocalDate.now()
         if (today != openedOn) {
             openedOn = today
@@ -101,9 +116,13 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
         busy = true
         val shown = day
         viewModelScope.launch {
-            val (_, message) = updater.set(shown, target)
+            val (ok, message) = updater.set(shown, target)
             messages.emit(message)
             lastSetDay = parseDay(settings.lastSetDay)
+            if (ok) {
+                followWallpaper = true
+                Scheduler.scheduleWallpaper(getApplication())
+            }
             busy = false
         }
     }
