@@ -1,3 +1,10 @@
+catholic-background (0.5.2) trixie; urgency=medium
+
+  * When the day shown has several images, "Next image" shows the following
+    one of the same day (only to see it).
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Sun, 25 Oct 2026 16:00:00 +0100
+
 catholic-background (0.5.1) trixie; urgency=medium
 
   * Optional icon in the system tray ("System tray" in the settings): it

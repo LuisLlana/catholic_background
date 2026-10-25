@@ -104,6 +104,9 @@ comment, other data, license and source. From there:
 
 - **choose the day**: previous and next day, a calendar and "Today" (any day,
   past or future);
+- **Next image** (only when the day has several images, with "Image 2 of 3 of this
+  day"): the following one of the same day, back to the first after the last; it
+  only changes what is seen;
 - **Use as wallpaper**: the day shown becomes the wallpaper until the next
   automatic check, which returns to today;
 - **Edit this image**: opens the page of the artwork in the content manager of

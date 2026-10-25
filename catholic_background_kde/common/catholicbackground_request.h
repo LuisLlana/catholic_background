@@ -37,11 +37,12 @@ inline bool showLabel(const KConfigGroup &group)
 }
 
 /// base?ts=<local midnight of day>&lang=<language>[&caption=0], keeping other parameters of base.
-inline QUrl requestUrl(const QString &base, const QDate &day, const QString &language, bool label)
+/// next: id of an artwork of the day, to get the one that follows it (another artwork of the same day); -1: none.
+inline QUrl requestUrl(const QString &base, const QDate &day, const QString &language, bool label, qint64 next = -1)
 {
     QUrl url(base.trimmed());
     QUrlQuery query(url);
-    for (const auto &name : {QStringLiteral("ts"), QStringLiteral("lang"), QStringLiteral("caption")}) {
+    for (const auto &name : {QStringLiteral("ts"), QStringLiteral("lang"), QStringLiteral("caption"), QStringLiteral("next")}) {
         query.removeAllQueryItems(name);
     }
     query.addQueryItem(QStringLiteral("ts"), QString::number(day.startOfDay().toSecsSinceEpoch()));
@@ -50,6 +51,9 @@ inline QUrl requestUrl(const QString &base, const QDate &day, const QString &lan
     }
     if (!label) {
         query.addQueryItem(QStringLiteral("caption"), QStringLiteral("0"));
+    }
+    if (next >= 0) {
+        query.addQueryItem(QStringLiteral("next"), QString::number(next));
     }
     url.setQuery(query);
     return url;

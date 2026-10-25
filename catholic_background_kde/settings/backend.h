@@ -106,6 +106,8 @@ public:
     void startInteractive();
     /// Shows the image and texts of any day (it does not change the wallpaper).
     Q_INVOKABLE void loadDay(const QDate &day);
+    /** Another artwork of the day shown: the one after it, back to the first after the last (only to see it). */
+    Q_INVOKABLE void nextImage();
     Q_INVOKABLE void shiftDay(int days);
     /// Dates from QML as numbers (a JavaScript Date may move a day with some time zones)
     Q_INVOKABLE void loadDate(int year, int month, int day);
@@ -158,6 +160,7 @@ private:
     void checkServer(const QUrl &url, const std::function<void(bool, const QString &, const QByteArray &)> &callback);
     void loadLanguages();
     void setDayResult(const QString &error, const QUrl &image, const QVariantMap &info);
+    void loadDay(const QDate &day, qint64 after);
     void doRefresh(bool automatic);
     void doSetAsWallpaper();
     void updatePanelMargins(const std::function<void()> &done);

@@ -432,6 +432,18 @@ void Backend::shiftDay(int days)
 
 void Backend::loadDay(const QDate &day)
 {
+    loadDay(day, -1);
+}
+
+void Backend::nextImage()
+{
+    if (m_dayInfo.value(u"count"_s).toInt() > 1) {
+        loadDay(m_viewDate, m_dayInfo.value(u"id"_s).toLongLong());
+    }
+}
+
+void Backend::loadDay(const QDate &day, qint64 after)
+{
     if (!day.isValid()) {
         return;
     }
@@ -444,12 +456,12 @@ void Backend::loadDay(const QDate &day)
     Q_EMIT dayChanged();
 
     // The artwork alone (the window shows the texts next to it), in the chosen language
-    const QUrl address = CatholicBackground::requestUrl(serverUrl(), day, CatholicBackground::languageCode(configGroup()), false);
+    const QUrl address = CatholicBackground::requestUrl(serverUrl(), day, CatholicBackground::languageCode(configGroup()), false, after);
     QNetworkRequest request(address);
     request.setTransferTimeout(DOWNLOAD_TIMEOUT_MS);
     QNetworkReply *reply = m_network.get(request);
     m_dayReply = reply;
-    connect(reply, &QNetworkReply::finished, this, [this, reply, day] {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, day, after] {
         reply->deleteLater();
         if (reply != m_dayReply || day != m_viewDate) {
             return;   // another day was asked for meanwhile
@@ -491,6 +503,11 @@ void Backend::loadDay(const QDate &day)
         for (const char *key : {"reason", "reason_type", "title", "author", "date", "description", "license", "source", "edit_url", "language"}) {
             info.insert(QString::fromLatin1(key), obj.value(QLatin1String(key)).toVariant().toString());
         }
+        // Place among the artworks of the day (0 with servers that do not send it)
+        info.insert(u"id"_s, obj.value("id"_L1).toVariant().toLongLong());
+        info.insert(u"position"_s, obj.value("position"_L1).toInt());
+        info.insert(u"count"_s, obj.value("count"_L1).toInt());
+        info.insert(u"alternative"_s, after >= 0);
         info.insert(u"extra"_s, extra);
         setDayResult({}, QUrl::fromLocalFile(file.fileName()), info);
     });

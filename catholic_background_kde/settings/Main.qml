@@ -139,6 +139,32 @@ Kirigami.ApplicationWindow {
                 }
             }
 
+            // Other artworks of the same day (only to see them)
+            RowLayout {
+                Layout.fillWidth: true
+                visible: (Backend.dayInfo.count || 0) > 1 && !Backend.dayLoading
+                spacing: Kirigami.Units.smallSpacing
+
+                QQC2.Label {
+                    text: "Image " + (Backend.dayInfo.position || 0) + " of " + (Backend.dayInfo.count || 0) + " of this day"
+                    opacity: 0.8
+                }
+                QQC2.Button {
+                    text: "Next image"
+                    icon.name: "go-next"
+                    QQC2.ToolTip.text: "Another image of the same day (only to see it)"
+                    QQC2.ToolTip.visible: hovered
+                    onClicked: Backend.nextImage()
+                }
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    visible: Backend.dayInfo.alternative === true
+                    text: "Use as wallpaper puts the image of the current turn of the day, which may not be this one."
+                    wrapMode: Text.WordWrap
+                    opacity: 0.7
+                }
+            }
+
             QQC2.Label {
                 Layout.fillWidth: true
                 visible: Backend.wallpaperDateText.length > 0
