@@ -14,7 +14,8 @@ with the same protocol:
     GET /background?ts=<…>&lang=<language code>&caption=0     (lang and caption are optional)
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
         "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|",
-        "id": <artwork>, "edit_url": "<page of the admin site to edit it>"}
+        "id": <artwork>, "edit_url": "<page of the admin site to edit it>",
+        "position": <place among the artworks of the day, from 1>, "count": <artworks of the day>}
 
 With `raw=1` (any non null value; `0`, `false`, `no`, `off` or empty are null) the
 answer is the image itself (`image/jpeg` or `image/png`, with the label unless
@@ -24,6 +25,13 @@ or to download it, e.g. `https://simba.fdi.ucm.es/background?raw=1&lang=en`.
 Any day can be asked for with `ts` (past or future): the settings applications use it
 to show the image of another day. When a day has several artworks, the one of the
 current time of day is sent, also for other days.
+
+With `next=<id>` the answer is the artwork of that day that follows the one with that
+`id`, in a fixed order (by id), going back to the first one after the last: asking
+again with the `id` received each time goes through all the artworks of the day,
+a different one each time. `next` with no value (or with an id that is not of that
+day) sends the one after the current turn. `position` and `count` say where the
+artwork is among those of the day, e.g. `https://simba.fdi.ucm.es/background?raw=1&next=42`.
 
     GET /background/languages
     -> {"default": "es", "languages": [{"code": "es", "name": "Español"}, …]}
