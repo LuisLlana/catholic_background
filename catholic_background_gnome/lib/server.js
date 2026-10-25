@@ -64,8 +64,11 @@ export function validateUrl(baseUrl) {
     requestUrl(baseUrl, 0, '', true);
 }
 
-/** base?ts=<ts>&lang=<language>[&caption=0], keeping any other query parameters. */
-export function requestUrl(baseUrl, ts, language = '', label = true) {
+/**
+ * base?ts=<ts>&lang=<language>[&caption=0][&next=<id>], keeping any other query parameters.
+ * next: id of an artwork of the day, to get the one that follows it (another artwork of the same day).
+ */
+export function requestUrl(baseUrl, ts, language = '', label = true, next = null) {
     const uri = GLib.Uri.parse(baseUrl.trim(), GLib.UriFlags.NONE);
     const scheme = uri.get_scheme();
     if (scheme !== 'http' && scheme !== 'https')
@@ -75,7 +78,7 @@ export function requestUrl(baseUrl, ts, language = '', label = true) {
     const query = uri.get_query();
     if (query) {
         for (const part of query.split('&')) {
-            if (part && !['ts', 'lang', 'caption'].includes(part.split('=')[0]))
+            if (part && !['ts', 'lang', 'caption', 'next'].includes(part.split('=')[0]))
                 params.push(part);
         }
     }
@@ -84,6 +87,8 @@ export function requestUrl(baseUrl, ts, language = '', label = true) {
         params.push(`lang=${GLib.Uri.escape_string(language, null, false)}`);
     if (!label)
         params.push('caption=0');
+    if (next !== null)
+        params.push(`next=${Number(next)}`);
 
     return GLib.Uri.build(GLib.UriFlags.ENCODED, scheme, uri.get_userinfo(), uri.get_host(),
         uri.get_port(), uri.get_path(), params.join('&'), uri.get_fragment()).to_string();
@@ -158,7 +163,8 @@ export async function fetchLanguages(session, baseUrl, cancellable = null) {
 /**
  * Downloads an image of the server (url: see requestUrl and wallpaperUrl).
  * Returns {bytes, pixbuf, title, year, titleWithYear, author, description, reason, license,
- * source, editUrl, language, extra: [[name, value], ...]}; bytes is the image (GLib.Bytes).
+ * source, editUrl, language, extra: [[name, value], ...], id, position, count}; bytes is the image
+ * (GLib.Bytes); position (from 1) and count place it among the artworks of the day (0 if not sent).
  * Throws an Error with a readable message on failure.
  */
 export async function fetchWallpaper(session, url, cancellable = null) {
@@ -194,5 +200,8 @@ export async function fetchWallpaper(session, url, cancellable = null) {
         editUrl: text('edit_url'),
         language: text('language'),
         extra,
+        id: Number.isInteger(json.id) ? json.id : 0,
+        position: Number.isInteger(json.position) ? json.position : 0,
+        count: Number.isInteger(json.count) ? json.count : 0,
     };
 }

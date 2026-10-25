@@ -48,7 +48,9 @@ Open them from the Extensions application, or with
 - **Image of the Day**: the image of any day, as big as the window allows, with
   its data (reason, title, author, year, comment, other data, license and
   source). Previous and next day, a calendar and Today (any day, past or
-  future); **Use as Wallpaper** (the day shown becomes the wallpaper until the
+  future); **Next Image** (only when the day has several images, with "Image 2 of
+  3 of this day": the following one of the same day, back to the first after the
+  last; it only changes what is seen); **Use as Wallpaper** (the day shown becomes the wallpaper until the
   next automatic check, which returns to today); **Edit this Image** (opens the
   page of the artwork in the content manager of the server; editors must log
   in); **Refresh Wallpaper** and the result of the last check.

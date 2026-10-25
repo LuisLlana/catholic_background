@@ -115,6 +115,20 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
         const note = new Gtk.Label({xalign: 0, wrap: true, css_classes: ['dim-label'], margin_bottom: 6});
         group.add(note);
 
+        // ---- other artworks of the same day (only to see them)
+        const others = new Gtk.Box({spacing: 12, margin_bottom: 6});
+        const position = new Gtk.Label({xalign: 0, css_classes: ['dim-label']});
+        const nextImage = new Gtk.Button({label: 'Next Image', tooltip_text: 'Another image of the same day (only to see it)'});
+        const alternativeNote = new Gtk.Label({
+            xalign: 0, wrap: true, hexpand: true, css_classes: ['dim-label', 'caption'],
+            label: 'Use as Wallpaper puts the image of the current turn of the day, which may not be this one.',
+        });
+        others.append(position);
+        others.append(nextImage);
+        others.append(alternativeNote);
+        group.add(others);
+        let alternative = false;        // the artwork shown came with Next Image
+
         // ---- the image (two thirds) and its data
         const content = new Gtk.Box({spacing: 18});
         group.add(content);
@@ -185,11 +199,17 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             edit.visible = loaded !== null && loaded.editUrl !== '';
             note.visible = !sameDay(wallpaper, todayMidnight());
             note.label = `The wallpaper shows the image of ${longDate(wallpaper)} until the next automatic check, which returns to today.`;
+            others.visible = loaded !== null && loaded.count > 1;
+            if (others.visible)
+                position.label = `Image ${loaded.position} of ${loaded.count} of this day`;
+            alternativeNote.visible = alternative;
             status.label = settings.get_string('status');
         };
 
-        const load = async day => {
+        // after: id of the artwork shown, to see the following one of the same day
+        const load = async (day, after = null) => {
             loading?.cancel();
+            alternative = after !== null;
             const cancellable = loading = new Gio.Cancellable();
             viewDay = day;
             loaded = null;
@@ -199,7 +219,7 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             let data;
             try {
                 // The artwork alone: its data are shown next to it
-                const url = requestUrl(settings.get_string('server-url'), day.to_unix(), languageCode(settings), false);
+                const url = requestUrl(settings.get_string('server-url'), day.to_unix(), languageCode(settings), false, after);
                 data = await fetchWallpaper(session, url, cancellable);
             } catch (e) {
                 if (e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) || cancellable !== loading)
@@ -227,6 +247,10 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
         };
 
         const shift = days => load(viewDay.add_days(days));
+        nextImage.connect('clicked', () => {
+            if (loaded?.count > 1)
+                load(viewDay, loaded.id);
+        });
         previous.connect('clicked', () => shift(-1));
         next.connect('clicked', () => shift(1));
         today.connect('clicked', () => load(todayMidnight()));
