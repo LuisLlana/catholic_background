@@ -24,6 +24,8 @@ public sealed class MainWindow : Form
     private readonly Button _edit = new() { Text = "Edit this image", AutoSize = true };
     private readonly Button _settings = new() { Text = "Settings\u2026", AutoSize = true };
     private readonly Button _refresh = new() { Text = "Refresh wallpaper", AutoSize = true };
+    private readonly Button _nextImage = new() { Text = "Next image", AutoSize = true, Visible = false };
+    private readonly Label _position = new() { AutoSize = true, ForeColor = SystemColors.GrayText, Margin = new Padding(12, 9, 3, 0), Visible = false };
     private readonly Label _note = new() { AutoSize = true, ForeColor = SystemColors.GrayText, Margin = new Padding(3, 6, 3, 0) };
     private readonly PictureBox _picture = new() { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.FromArgb(235, 235, 235) };
     private readonly Label _message = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, ForeColor = SystemColors.GrayText, Visible = false };
@@ -35,6 +37,8 @@ public sealed class MainWindow : Form
     private DownloadedImage? _day;
     private CancellationTokenSource? _loading;
     private bool _settingDate;
+    /// <summary>The artwork shown came with "Next image": it may not be the one of the current turn.</summary>
+    private bool _alternative;
 
     public MainWindow(TrayApplication app)
     {
@@ -75,7 +79,7 @@ public sealed class MainWindow : Form
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         var days = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
         _date.Margin = new Padding(3, 5, 3, 3);
-        days.Controls.AddRange([_previous, _date, _next, _today]);
+        days.Controls.AddRange([_previous, _date, _next, _today, _position, _nextImage]);
         var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
         actions.Controls.AddRange([_use, _edit, _settings]);
         bar.Controls.Add(days, 0, 0);
@@ -113,6 +117,12 @@ public sealed class MainWindow : Form
         _previous.Click += (_, _) => _ = LoadDayAsync(_viewDay.AddDays(-1));
         _next.Click += (_, _) => _ = LoadDayAsync(_viewDay.AddDays(1));
         _today.Click += (_, _) => _ = LoadDayAsync(DateTime.Today);
+        _nextImage.Click += (_, _) =>
+        {
+            if (_day is { Count: > 1 })
+                _ = LoadDayAsync(_viewDay, _day.Id);
+        };
+        _tips.SetToolTip(_nextImage, "Another image of the same day (only to see it)");
         _date.ValueChanged += (_, _) =>
         {
             if (!_settingDate)
@@ -131,8 +141,10 @@ public sealed class MainWindow : Form
 
     // ---------------------------------------------------------------- the day
 
-    public async Task LoadDayAsync(DateTime day)
+    /// <summary>after: id of the artwork shown, to see the following one of the same day ("Next image").</summary>
+    public async Task LoadDayAsync(DateTime day, long? after = null)
     {
+        _alternative = after is not null;
         _loading?.Cancel();
         var loading = _loading = new CancellationTokenSource();
         _viewDay = day.Date;
@@ -147,7 +159,7 @@ public sealed class MainWindow : Form
         try
         {
             // The artwork alone: the window shows its data next to it
-            var url = ServerClient.RequestUrl(Updater.Settings.ServerUrl, _viewDay, Updater.Settings.LanguageCode(), label: false);
+            var url = ServerClient.RequestUrl(Updater.Settings.ServerUrl, _viewDay, Updater.Settings.LanguageCode(), label: false, next: after);
             image = await ServerClient.FetchAsync(url, loading.Token);
         }
         catch (OperationCanceledException)
@@ -268,8 +280,19 @@ public sealed class MainWindow : Form
         _edit.Visible = _day is not null && _day.EditUrl.Length > 0;
         _today.Enabled = _viewDay != DateTime.Today;
         _refresh.Enabled = !Updater.Busy;
-        _note.Visible = wallpaperDay != DateTime.Today;
-        _note.Text = $"The wallpaper shows the image of {wallpaperDay:D} until the next automatic check, which returns to today.";
+        // Other artworks of the same day
+        bool several = _day is { Count: > 1 };
+        _nextImage.Visible = _position.Visible = several;
+        if (several)
+            _position.Text = $"Image {_day!.Position} of {_day.Count} of this day";
+
+        var notes = new List<string>();
+        if (wallpaperDay != DateTime.Today)
+            notes.Add($"The wallpaper shows the image of {wallpaperDay:D} until the next automatic check, which returns to today.");
+        if (_alternative && _day is not null)
+            notes.Add("Use as wallpaper puts the image of the current turn of the day, which may not be this one.");
+        _note.Visible = notes.Count > 0;
+        _note.Text = string.Join(" ", notes);
         var interval = $"The server is checked every {Updater.DescribeInterval(s.CheckInterval)}.";
         _status.Text = Updater.Busy ? "Checking the server\u2026"
             : s.LastCheck is { } when ? $"{interval} Last check at {when:t}: {s.LastCheckResult}" : interval;

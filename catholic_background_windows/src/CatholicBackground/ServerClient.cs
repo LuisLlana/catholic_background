@@ -11,7 +11,8 @@ public sealed record DownloadedImage(
     byte[] Bytes, string Hash, Size Size,
     string Title, string Author, string Year, string Description, string Reason,
     string License, string Source, string EditUrl, string Language,
-    IReadOnlyList<KeyValuePair<string, string>> Extra)
+    IReadOnlyList<KeyValuePair<string, string>> Extra,
+    long Id = 0, int Position = 0, int Count = 0)
 {
     /// <summary>"Title (year)", as shown in the tooltip of the tray icon.</summary>
     public string TitleWithYear => ServerClient.FormatTitle(Title, Year);
@@ -38,18 +39,21 @@ public static class ServerClient
     }
 
     /// <summary>Address of the image of a day, keeping any other query parameters of the base URL.</summary>
-    public static Uri RequestUrl(string baseUrl, DateTime day, string language, bool label)
+    /// <summary>next: id of an artwork of the day, to get the one that follows it (another artwork of the same day).</summary>
+    public static Uri RequestUrl(string baseUrl, DateTime day, string language, bool label, long? next = null)
     {
         var uri = ParseBase(baseUrl);
         long ts = new DateTimeOffset(day.Date).ToUnixTimeSeconds();
         var parameters = uri.Query.TrimStart('?')
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Where(p => p.Split('=')[0] is not ("ts" or "lang" or "caption"))
+            .Where(p => p.Split('=')[0] is not ("ts" or "lang" or "caption" or "next"))
             .Append($"ts={ts}");
         if (language.Length > 0)
             parameters = parameters.Append($"lang={Uri.EscapeDataString(language)}");
         if (!label)
             parameters = parameters.Append("caption=0");
+        if (next is not null)
+            parameters = parameters.Append($"next={next}");
         return new UriBuilder(uri) { Query = string.Join("&", parameters) }.Uri;
     }
 
@@ -141,8 +145,14 @@ public static class ServerClient
         return new DownloadedImage(
             bytes, Convert.ToHexString(SHA1.HashData(bytes)).ToLowerInvariant(), size,
             Get(root, "title"), Get(root, "author"), Get(root, "date"), Get(root, "description"), Get(root, "reason"),
-            Get(root, "license"), Get(root, "source"), Get(root, "edit_url"), Get(root, "language"), extra);
+            Get(root, "license"), Get(root, "source"), Get(root, "edit_url"), Get(root, "language"), extra,
+            Number(root, "id"), (int)Number(root, "position"), (int)Number(root, "count"));
     }
+
+    /// <summary>A whole number of the answer; 0 if it is missing (servers before "next").</summary>
+    private static long Number(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)
+            ? number : 0;
 
     /// <summary>Languages of the content offered by the server (Spanish and English if it cannot be asked).</summary>
     public static async Task<IReadOnlyList<ContentLanguage>> LanguagesAsync(string baseUrl, CancellationToken cancellationToken = default)
