@@ -19,7 +19,9 @@ Requirements: Android 8.0 (API 26) or later.
   Android 13 or later the application asks for permission to show it.
 - **Main screen**: the image of any day with its data (reason, title, author,
   year, comment, other data, license and source); previous and next day, a
-  calendar and Today. **Use as wallpaper…** asks where to put the image of the day
+  calendar and Today. When the day has several images, **Next image** shows the
+  following one ("Image 2 of 3 of this day"), back to the first after the last; it
+  only changes what is seen. **Use as wallpaper…** asks where to put the image of the day
   shown: the home screen, the lock screen or both. From then on the application
   keeps that wallpaper up to date: every hour it checks the server and puts the
   image of today when it changes (a new day, or a new image of the same day). A

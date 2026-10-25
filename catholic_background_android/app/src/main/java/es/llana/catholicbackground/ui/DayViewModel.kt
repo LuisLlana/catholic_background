@@ -77,8 +77,18 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun load(newDay: LocalDate) {
+    /** The artwork shown is not the one of the current turn (it came with "Next image"). */
+    var alternative by mutableStateOf(false); private set
+
+    /** Another artwork of the same day: the one after the artwork shown (back to the first after the last). */
+    fun nextImage() {
+        val current = artwork ?: return
+        if (current.count > 1) load(day, after = current.id)
+    }
+
+    fun load(newDay: LocalDate, after: Long? = null) {
         loadingJob?.cancel()
+        alternative = after != null
         day = newDay
         loading = true
         error = null
@@ -87,7 +97,7 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
         loadingJob = viewModelScope.launch {
             try {
                 // The artwork alone: its data are shown below it
-                val url = ServerClient.requestUrl(settings.serverUrl, newDay, settings.languageCode(), label = false)
+                val url = ServerClient.requestUrl(settings.serverUrl, newDay, settings.languageCode(), label = false, next = after)
                 val result = ServerClient.fetchArtwork(url)
                 val bitmap = withContext(Dispatchers.Default) {
                     BitmapFactory.decodeByteArray(result.bytes, 0, result.bytes.size)?.asImageBitmap()

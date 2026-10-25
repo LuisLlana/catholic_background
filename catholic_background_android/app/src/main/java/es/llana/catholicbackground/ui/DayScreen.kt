@@ -126,6 +126,20 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
                 }
             }
 
+            // ---- other artworks of the same day
+            model.artwork?.takeIf { it.count > 1 }?.let { artwork ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.image_position, artwork.position, artwork.count),
+                        Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(onClick = { model.nextImage() }, enabled = !model.loading) {
+                        Text(stringResource(R.string.next_image))
+                    }
+                }
+                if (model.alternative) {
+                    Text(stringResource(R.string.alternative_note), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
             // ---- its data
             model.artwork?.let { artwork ->
                 SelectionContainer {

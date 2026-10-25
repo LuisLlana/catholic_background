@@ -50,4 +50,7 @@
     <string name="follow_title">Keep the wallpaper up to date</string>
     <string name="follow_summary">The wallpaper set by this application changes when there is a new image (it is checked every hour). It stops if you put another wallpaper.</string>
     <string name="follow_off_summary">Set an image with Use as wallpaper… to keep it up to date.</string>
+    <string name="image_position">Image %1$d of %2$d of this day</string>
+    <string name="next_image">Next image</string>
+    <string name="alternative_note">Use as wallpaper… puts the image of the current turn of the day, which may not be this one.</string>
 </resources>

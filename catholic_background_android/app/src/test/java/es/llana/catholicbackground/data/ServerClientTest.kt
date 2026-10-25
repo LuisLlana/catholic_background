@@ -51,7 +51,7 @@ class ServerClientTest {
         val body = """{"image": "${Base64.getEncoder().encodeToString(image)}", "title": "La Anunciación", "author": "Fra Angelico",
             "date": "c. 1426", "description": null, "reason": "Tiempo ordinario", "license": "Dominio público",
             "source": "https://example.com", "edit_url": "https://x/admin/1/", "language": "es",
-            "extra": {"Museo": "Prado", "Vacío": ""}}"""
+            "extra": {"Museo": "Prado", "Vacío": ""}, "id": 42, "position": 2, "count": 3}"""
         val artwork = ServerClient.parseArtwork(body)
         assertEquals(listOf(1, 2, 3), artwork.bytes.map { it.toInt() })
         assertEquals("7037807198c22a7d2b0807371d763779a84fdfcf", artwork.hash)   // SHA-1 of 01 02 03
@@ -61,6 +61,13 @@ class ServerClientTest {
         assertEquals("Tiempo ordinario", artwork.reason)
         assertEquals(listOf("Museo" to "Prado"), artwork.extra)
         assertEquals("https://x/admin/1/", artwork.editUrl)
+        assertEquals(Triple(42L, 2, 3), Triple(artwork.id, artwork.position, artwork.count))
+    }
+
+    @Test
+    fun requestUrlWithNext() {
+        val url = ServerClient.requestUrl("https://simba.fdi.ucm.es/background?next=7", LocalDate.of(2026, 3, 19), "es", false, madrid, next = 42)
+        assertEquals("https://simba.fdi.ucm.es/background?ts=1773874800&lang=es&caption=0&next=42", url)
     }
 
     @Test

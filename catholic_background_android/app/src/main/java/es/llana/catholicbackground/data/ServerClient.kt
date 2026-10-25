@@ -30,6 +30,10 @@ class Artwork(
     val editUrl: String,
     val language: String,
     val extra: List<Pair<String, String>>,
+    /** Id of the artwork, and its place among the artworks of the day (0 with servers that do not send them). */
+    val id: Long = 0,
+    val position: Int = 0,
+    val count: Int = 0,
 )
 
 data class ContentLanguage(val code: String, val name: String)
@@ -67,14 +71,17 @@ object ServerClient {
     }
 
     /** base?ts=<local midnight of day>&lang=<language>[&caption=0], keeping other query parameters. */
-    fun requestUrl(base: String, day: LocalDate, language: String, label: Boolean, zone: ZoneId = ZoneId.systemDefault()): String {
+    /** next: id of an artwork of the day, to get the one that follows it (another artwork of the same day). */
+    fun requestUrl(base: String, day: LocalDate, language: String, label: Boolean, zone: ZoneId = ZoneId.systemDefault(),
+                   next: Long? = null): String {
         val uri = parseBase(base)
         val parameters = (uri.rawQuery ?: "").split("&")
-            .filter { it.isNotEmpty() && it.substringBefore("=") !in setOf("ts", "lang", "caption") }
+            .filter { it.isNotEmpty() && it.substringBefore("=") !in setOf("ts", "lang", "caption", "next") }
             .toMutableList()
         parameters += "ts=${day.atStartOfDay(zone).toEpochSecond()}"
         if (language.isNotEmpty()) parameters += "lang=${URLEncoder.encode(language, "UTF-8")}"
         if (!label) parameters += "caption=0"
+        if (next != null) parameters += "next=$next"
         return URI(uri.scheme, uri.rawAuthority, uri.rawPath, null, null).toString() + "?" + parameters.joinToString("&")
     }
 
@@ -119,6 +126,9 @@ object ServerClient {
             editUrl = text("edit_url"),
             language = text("language"),
             extra = extra,
+            id = json.optLong("id", 0),
+            position = json.optInt("position", 0),
+            count = json.optInt("count", 0),
         )
     }
 
