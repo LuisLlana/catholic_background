@@ -20,7 +20,7 @@ from accounts.adapters import apply_automatic_roles
 from artworks import liturgy
 from artworks.models import (AccessLog, Artwork, ArtworkMetadata, ArtworkTranslation, Celebration, Condition,
                              DailyStatistic, Language, MetadataKey, MetadataKeyName)
-from artworks.selection import candidates, pick
+from artworks.selection import candidates, pick, pick_next
 
 MEDIA = tempfile.mkdtemp()
 PREFIX = settings.PREFIX
@@ -136,6 +136,23 @@ class SelectionTests(TestCase):
         self.assertEqual([pick(day, h * 3600) for h in (0, 7, 8, 15, 16, 23)], [a, a, b, b, c, c])
 
 
+    def test_next_goes_through_all_the_artworks_of_the_day(self):
+        a = make_artwork("A", {"type": "any"})
+        b = make_artwork("B", {"type": "any"})
+        c = make_artwork("C", {"type": "any"})
+        day = date(2026, 10, 2)
+        self.assertEqual(pick_next(day, 0, a.pk), (b, 2, 3))
+        self.assertEqual(pick_next(day, 0, b.pk), (c, 3, 3))
+        self.assertEqual(pick_next(day, 0, c.pk), (a, 1, 3))   # back to the first
+        # Without a known id: the one after the current turn
+        self.assertEqual(pick_next(day, 16 * 3600, None), (a, 1, 3))
+        self.assertEqual(pick_next(day, 0, 999999), (b, 2, 3))
+
+    def test_next_with_a_single_artwork(self):
+        only = make_artwork("Only", {"type": "any"})
+        self.assertEqual(pick_next(date(2026, 10, 2), 0, only.pk), (only, 1, 1))
+
+
 @override_settings(MEDIA_ROOT=MEDIA)
 class ApiTests(TestCase):
     def test_background(self):
@@ -154,6 +171,24 @@ class ApiTests(TestCase):
         with Image.open(io.BytesIO(base64.b64decode(data["image"]))) as image:
             self.assertEqual(image.size, (1600, 1000))
         self.assertEqual(AccessLog.objects.get().user_agent, "test-agent")
+
+    def test_next(self):
+        artworks = [make_artwork(name, {"type": "any"}) for name in ("A", "B", "C")]
+        ts = local_midnight_ts(date.today())
+        url = reverse("background")
+        first = self.client.get(url, {"ts": ts, "caption": "0"}).json()
+        self.assertEqual(first["count"], 3)
+        seen = [first["id"]]
+        for _ in range(3):
+            data = self.client.get(url, {"ts": ts, "caption": "0", "next": seen[-1]}).json()
+            self.assertEqual(data["position"], [a.pk for a in artworks].index(data["id"]) + 1)
+            seen.append(data["id"])
+        # Each next is a different artwork, and after the last one it starts again
+        self.assertEqual(len(set(seen[:3])), 3)
+        self.assertEqual(seen[3], seen[0])
+        # next with no value: a different artwork from the current one
+        other = self.client.get(url + f"?ts={ts}&caption=0&next").json()
+        self.assertNotEqual(other["id"], first["id"])
 
     def test_errors(self):
         self.assertEqual(self.client.get(reverse("background"), {"ts": "abc"}).status_code, 400)

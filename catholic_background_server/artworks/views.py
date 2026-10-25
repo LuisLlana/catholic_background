@@ -17,7 +17,7 @@ from django.views.decorators.http import require_GET
 
 from .caption import labelled_jpeg
 from .models import AccessLog, Artwork, Language, current_language
-from .selection import pick, reason
+from .selection import candidates, pick, pick_next, reason
 
 
 
@@ -50,6 +50,18 @@ def image_type(data):
     return ("image/png", "png") if data.startswith(b"\x89PNG\r\n\x1a\n") else ("image/jpeg", "jpg")
 
 
+def requested_next(request):
+    """
+    next: another artwork of the day, the one after the artwork whose id is given (next=<id>),
+    or after the current turn (next with no value). None if the parameter is not there.
+    Returns (True, id or None) when it is there.
+    """
+    if "next" not in request.GET:
+        return False, None
+    value = request.GET["next"].strip()
+    return True, int(value) if value.isdigit() else None
+
+
 def client_ip(request):
     if getattr(settings, "TRUST_X_FORWARDED_FOR", False):
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
@@ -62,12 +74,16 @@ def client_ip(request):
 def background(request):
     """
     GET /background?ts=<Unix timestamp of the client's local midnight>[&lang=<language code>][&caption=0][&raw=1]
+                   [&next[=<id>]]
     -> {"image": base64, "title", "author", "date", "description", "source", "license", "extra", "language",
-        "reason", "reason_type"}
+        "reason", "reason_type", "id", "edit_url", "position", "count"}
     "reason" says why the artwork is shown that day (saint, celebration or liturgical season), if it is special.
     "id" and "edit_url" identify the artwork and give the page of the admin site to edit it.
     Any day can be asked for with ts, past or future.
     raw=<non null value> sends the image itself (image/jpeg or image/png) instead of the JSON document.
+    next=<id> sends the artwork of the day that follows the one with that id (in a fixed order,
+    back to the first after the last); next with no value, the one after the current turn.
+    "position" (from 1) and "count" place the artwork among those of the day.
     The texts are in the requested language (lang), or else in the default one. The image has a
     label below the artwork with the reason, title and author (unless caption=0).
     """
@@ -88,9 +104,19 @@ def background(request):
         day = datetime.fromtimestamp(ts + 12 * 3600, tz=timezone.utc).date()
 
     # The turn within the day follows the client's current time of day, also for other days
-    artwork = pick(day, (now - ts) % 86400)
-    if artwork is None:
-        return JsonResponse({"error": "no image for this day"}, status=404)
+    seconds = (now - ts) % 86400
+    wants_next, after = requested_next(request)
+    if wants_next:
+        chosen = pick_next(day, seconds, after)
+        if chosen is None:
+            return JsonResponse({"error": "no image for this day"}, status=404)
+        artwork, position, count = chosen
+    else:
+        artwork = pick(day, seconds)
+        if artwork is None:
+            return JsonResponse({"error": "no image for this day"}, status=404)
+        ids = [found.pk for found in candidates(day)]
+        position, count = ids.index(artwork.pk) + 1, len(ids)
 
     language = requested_language(request)
     texts = artwork.texts(language)
@@ -131,6 +157,9 @@ def background(request):
         "reason": why["text"],
         "reason_type": why["type"],
         "id": artwork.pk,
+        # Place among the artworks of the day (next=<id> goes to the following one)
+        "position": position,
+        "count": count,
         # Page of the admin site to edit the artwork (editors must log in)
         "edit_url": request.build_absolute_uri(reverse("admin:artworks_artwork_change", args=[artwork.pk])),
     })

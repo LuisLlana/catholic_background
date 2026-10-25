@@ -31,13 +31,33 @@ def candidates(day):
     return found
 
 
+def _turn(count, seconds_into_day):
+    return int(max(0, min(86399, seconds_into_day)) * count // 86400)
+
+
 def pick(day, seconds_into_day):
     """With several candidates, each one is shown in turn during an equal part of the day."""
     found = candidates(day)
     if not found:
         return None
-    slot = int(max(0, min(86399, seconds_into_day)) * len(found) // 86400)
-    return found[slot]
+    return found[_turn(len(found), seconds_into_day)]
+
+
+def pick_next(day, seconds_into_day, after=None):
+    """
+    The artwork of the day that follows another one, in the order of the candidates (by id),
+    back to the first one after the last: asking again and again with the id received goes
+    through all the artworks of the day. after: id of the artwork the client has; if it is
+    not one of the day (or None), the one after the current turn.
+    Returns (artwork, position starting at 1, number of artworks of the day), or None.
+    """
+    found = candidates(day)
+    if not found:
+        return None
+    ids = [artwork.pk for artwork in found]
+    current = ids.index(after) if after in ids else _turn(len(found), seconds_into_day)
+    position = (current + 1) % len(found)
+    return found[position], position + 1, len(found)
 
 
 # Most specific first: a saint or a celebration explains the choice better than a season
