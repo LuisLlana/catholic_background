@@ -794,3 +794,12 @@ msgstr "Procedencia"
 #: templates/pages/browser.html:71
 msgid "There is no image for this day."
 msgstr "No hay ninguna imagen para este día."
+
+#: templates/pages/browser.html
+#, python-format
+msgid "Image %(position)s of %(count)s of this day"
+msgstr "Imagen %(position)s de %(count)s de este día"
+
+#: templates/pages/browser.html
+msgid "Next image"
+msgstr "Siguiente imagen"

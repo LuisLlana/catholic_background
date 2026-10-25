@@ -215,12 +215,24 @@ def browser(request):
     """
     Web page with the image of any day and its data, like the desktop applications.
     ?date=YYYY-MM-DD (default: today) and ?lang=<language of the texts> (default: that of the page).
+    ?next=<id>: the artwork of the day that follows that one ("Next image", when the day has several).
     """
     day = _browser_day(request.GET.get("date"))
     language = Language.best_match([request.GET.get("lang", "")]) or current_language()
     now = dj_timezone.localtime()
     seconds = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-    artwork = pick(day, seconds)
+    wants_next, after = requested_next(request)
+    position = count = 0
+    if wants_next:
+        chosen = pick_next(day, seconds, after)
+        artwork = chosen[0] if chosen else None
+        if chosen:
+            position, count = chosen[1], chosen[2]
+    else:
+        artwork = pick(day, seconds)
+        if artwork is not None:
+            ids = [found.pk for found in candidates(day)]
+            position, count = ids.index(artwork.pk) + 1, len(ids)
 
     context = {
         "day": day,
@@ -230,6 +242,9 @@ def browser(request):
         "language": language,
         "languages": Language.objects.all(),
         "artwork": artwork,
+        # Place among the artworks of the day, for "Next image"
+        "position": position,
+        "count": count,
     }
     if artwork is not None:
         context.update({

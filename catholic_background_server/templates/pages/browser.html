@@ -26,6 +26,8 @@
   dl.data dt { font-weight: bold; opacity: .8; }
   dl.data dd { margin: 0; overflow-wrap: anywhere; }
   .empty { text-align: center; padding: 4rem 1rem; opacity: .75; }
+  .others { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: -.4rem 0 1rem; }
+  .others span { opacity: .75; }
 </style>
 {% endblock %}
 {% block content %}
@@ -49,6 +51,12 @@
 </nav>
 
 {% if artwork %}
+{% if count > 1 %}
+<div class="others">
+  <span>{% blocktranslate %}Image {{ position }} of {{ count }} of this day{% endblocktranslate %}</span>
+  <a class="button" href="?date={{ day|date:'Y-m-d' }}&amp;lang={{ language.code }}&amp;next={{ artwork.pk }}">{% translate "Next image" %} &#8250;</a>
+</div>
+{% endif %}
 <div class="view">
   <div class="picture">
     <img src="{% url 'browser_image' artwork.pk %}" alt="{{ texts.title }}">

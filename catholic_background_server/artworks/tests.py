@@ -697,6 +697,27 @@ class BrowserTests(TestCase):
             self.assertEqual(page.status_code, 200)
             self.assertContains(page, f'value="{date.today():%Y-%m-%d}"')
 
+    def test_next_image(self):
+        others = [make_artwork(name, {"type": "date", "date": date(2026, 4, 1)}) for name in ("Uno", "Dos", "Tres")]
+        page = self.client.get(reverse("browser"), {"date": "2026-04-01", "lang": "es"})
+        self.assertContains(page, "of 3 of this day")
+        shown = page.context["artwork"]
+        # Next image goes through the three artworks of the day and back to the first one
+        seen = [shown]
+        for _ in range(3):
+            page = self.client.get(reverse("browser"), {"date": "2026-04-01", "lang": "es", "next": seen[-1].pk})
+            self.assertContains(page, f"next={page.context['artwork'].pk}")
+            seen.append(page.context["artwork"])
+        self.assertEqual(set(seen[:3]), set(others))
+        self.assertEqual(seen[3], seen[0])
+        self.assertEqual(page.context["position"], others.index(seen[3]) + 1)
+        # A day with a single artwork has no Next image
+        self.assertNotContains(self.client.get(reverse("browser"), {"date": "2026-03-19"}), "next=")
+        # The interface in Spanish
+        page = self.client.get(reverse("browser"), {"date": "2026-04-01"}, HTTP_ACCEPT_LANGUAGE="es")
+        self.assertContains(page, "de 3 de este día")
+        self.assertContains(page, "Siguiente imagen")
+
     def test_day_without_artwork(self):
         self.reserve.delete()
         page = self.client.get(reverse("browser"), {"date": "2026-10-01"})
