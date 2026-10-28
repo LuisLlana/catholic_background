@@ -52,6 +52,10 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
     /** Short messages for the snackbar. */
     val messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
 
+    // Every property must be declared before init {}, which already calls load()
+    /** The artwork shown is not the one of the current turn (it came with "Next image"). */
+    var alternative by mutableStateOf(false); private set
+
     private var loadingJob: Job? = null
     /** Day the application was showing as "today": on another day it goes to the new today. */
     private var openedOn = LocalDate.now()
@@ -76,9 +80,6 @@ class DayViewModel(application: Application) : AndroidViewModel(application) {
             load(today)
         }
     }
-
-    /** The artwork shown is not the one of the current turn (it came with "Next image"). */
-    var alternative by mutableStateOf(false); private set
 
     /** Another artwork of the same day: the one after the artwork shown (back to the first after the last). */
     fun nextImage() {

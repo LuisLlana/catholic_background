@@ -17,8 +17,8 @@ android {
         applicationId = "es.llana.catholicbackground"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.6.4"
+        versionCode = 7
+        versionName = "0.6.5"
     }
 
     signingConfigs {
@@ -46,6 +46,7 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -62,4 +63,6 @@ dependencies {
     testImplementation(libs.junit)
     // The org.json of android.jar is only a stub in unit tests
     testImplementation(libs.org.json)
+    // Android classes in unit tests (the view model must at least start)
+    testImplementation(libs.robolectric)
 }
