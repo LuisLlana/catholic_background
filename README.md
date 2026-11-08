@@ -47,11 +47,13 @@ Each project is a git subtree of this repository, with its own README:
   comment and license; its source; additional data (museum, technique…) whose names
   are also translated. Only the image is required.
 - **When each artwork is shown**: one or more conditions, and it is shown on any day
-  that meets at least one of them: liturgical season, celebration, saint of the day,
-  date of every year, specific date, or "any day" (reserve for days without an
-  artwork). Movable celebrations are computed from Easter every year (calendar of
+  that meets at least one of them: liturgical season, day of Advent or Lent (a week,
+  or a day of a week, such as "Monday of the first week of Advent"), celebration,
+  saint of the day, date of every year, specific date, or "any day" (reserve for days
+  without an artwork). Movable celebrations are computed from Easter every year (calendar of
   Spain by default); fixed celebrations and saints come from an editable catalogue.
-  When several artworks match a day, they are shown in turns during the day.
+  When several artworks match a day, all of them are shown in turns during the day
+  (on 8 December, those of the Immaculate Conception and those of Advent).
 - **Content manager**: login with Google or Microsoft (and, while they are not set
   up, e-mail and password); editors upload, reviewers approve; drag and drop of
   images; calendar of the next days; interface in English and Spanish.
