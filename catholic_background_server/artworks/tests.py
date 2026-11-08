@@ -13,6 +13,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.conf import settings
 from django.test import TestCase, override_settings
+from django.core.exceptions import ValidationError
+from django.utils import translation
 from django.urls import reverse
 from PIL import Image
 
@@ -20,7 +22,7 @@ from accounts.adapters import apply_automatic_roles
 from artworks import liturgy
 from artworks.models import (AccessLog, Artwork, ArtworkMetadata, ArtworkTranslation, Celebration, Condition,
                              DailyStatistic, Language, MetadataKey, MetadataKeyName)
-from artworks.selection import candidates, pick, pick_next
+from artworks.selection import candidates, pick, pick_next, reason
 
 MEDIA = tempfile.mkdtemp()
 PREFIX = settings.PREFIX
@@ -98,6 +100,68 @@ class LiturgyTests(TestCase):
 
 
 @override_settings(MEDIA_ROOT=MEDIA)
+class SeasonDayTests(TestCase):
+    """Days of Advent and Lent chosen one by one (or by weeks), together with the other celebrations."""
+
+    def test_season_day_on(self):
+        from artworks.liturgy import season_day_on
+        self.assertEqual(season_day_on(date(2026, 11, 29)), ("advent", 1, 6))   # first Sunday of Advent
+        self.assertEqual(season_day_on(date(2026, 11, 30)), ("advent", 1, 0))   # first Monday
+        self.assertEqual(season_day_on(date(2026, 12, 8)), ("advent", 2, 1))    # Tuesday of the second week
+        self.assertEqual(season_day_on(date(2026, 12, 24)), ("advent", 4, 3))
+        self.assertIsNone(season_day_on(date(2026, 12, 25)))
+        self.assertEqual(season_day_on(date(2027, 2, 10)), ("lent", 0, 2))     # Ash Wednesday
+        self.assertEqual(season_day_on(date(2027, 2, 14)), ("lent", 1, 6))     # first Sunday of Lent
+        self.assertEqual(season_day_on(date(2027, 3, 21)), ("lent", 6, 6))     # Palm Sunday
+        self.assertEqual(season_day_on(date(2027, 3, 27)), ("lent", 6, 5))     # Holy Saturday
+        self.assertIsNone(season_day_on(date(2027, 3, 28)))                    # Easter
+
+    def test_texts(self):
+        from artworks.liturgy import season_day_text
+        with translation.override("es"):
+            self.assertEqual(season_day_text("advent", 1, 0), "Lunes de la primera semana de Adviento")
+            self.assertEqual(season_day_text("advent", 1, 6), "Primer domingo de Adviento")
+            self.assertEqual(season_day_text("lent", 0, 2), "Miércoles de Ceniza")
+            self.assertEqual(season_day_text("lent", 0, 3), "Jueves después de Ceniza")
+            self.assertEqual(season_day_text("lent", 6, 2), "Miércoles Santo")
+            self.assertEqual(season_day_text("advent", 2, None), "Segunda semana de Adviento")
+        with translation.override("en"):
+            self.assertEqual(season_day_text("lent", 3, 4), "Friday of the third week of Lent")
+
+    def test_immaculate_conception_and_advent_together(self):
+        immaculate = make_artwork("Inmaculada", {"type": "celebration", "celebration": Celebration.objects.get(month=12, day=8)})
+        tuesday = make_artwork("Martes II Adviento", {"type": "season_day", "season": "advent", "week": 2, "weekday": 1})
+        week = make_artwork("Semana II Adviento", {"type": "season_day", "season": "advent", "week": 2})
+        advent = make_artwork("Adviento", {"type": "season", "season": "advent"})
+        monday = make_artwork("Lunes I Adviento", {"type": "season_day", "season": "advent", "week": 1, "weekday": 0})
+        lent = make_artwork("Martes II Cuaresma", {"type": "season_day", "season": "lent", "week": 2, "weekday": 1})
+        day = date(2026, 12, 8)
+        self.assertEqual(candidates(day), [immaculate, tuesday, week, advent])
+        self.assertEqual(candidates(date(2026, 11, 30)), [advent, monday])
+        self.assertEqual(candidates(date(2027, 2, 23)), [lent])   # Tuesday of the second week of Lent
+        self.assertEqual(candidates(date(2027, 3, 2)), [])
+        with translation.override("es"):
+            spanish_language = spanish()
+        self.assertEqual(reason(tuesday, day, spanish_language),
+                         {"text": "Martes de la segunda semana de Adviento", "type": "season_day"})
+        self.assertEqual(reason(week, day, spanish_language)["text"], "Martes de la segunda semana de Adviento")
+        self.assertEqual(reason(immaculate, day, spanish_language)["type"], "celebration")
+
+    def test_validation(self):
+        artwork = make_artwork("Sin condiciones")
+        for fields, field in [({"season": "christmas", "week": 1}, "season"),
+                              ({"season": "advent", "week": 5}, "week"),
+                              ({"season": "advent", "week": 0}, "week"),
+                              ({"season": "lent"}, "week")]:
+            condition = Condition(artwork=artwork, type="season_day", **fields)
+            with self.assertRaises(ValidationError) as error:
+                condition.clean()
+            self.assertIn(field, error.exception.message_dict)
+        condition = Condition(artwork=artwork, type="season_day", season="lent", week=6, weekday=None, month=3)
+        condition.clean()
+        self.assertIsNone(condition.month)   # fields of other kinds are cleared
+
+
 class SelectionTests(TestCase):
     @classmethod
     def tearDownClass(cls):

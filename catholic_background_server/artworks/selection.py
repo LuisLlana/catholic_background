@@ -13,13 +13,25 @@ def celebrations_on(day):
     return Celebration.objects.filter(Q(month=day.month, day=day.day) | Q(movable__in=movable))
 
 
+def season_day_matches(day):
+    """Conditions "day of Advent or Lent" met by the day: its week, on that day or the whole week."""
+    found = liturgy.season_day_on(day)
+    if found is None:
+        return Q(pk__in=[])
+    season, week, weekday = found
+    return Q(conditions__type="season_day", conditions__season=season, conditions__week=week) & (
+        Q(conditions__weekday=weekday) | Q(conditions__weekday__isnull=True))
+
+
 def candidates(day):
     """
-    Approved artworks for a day: those with ANY condition met by the day.
-    If there are none, the ones marked "any day" (reserve).
+    Approved artworks for a day: those with ANY condition met by the day, all of them together
+    (e.g. on 8 December, those of the Immaculate Conception and those of Advent or of that day of
+    Advent; they are shown in turns). If there are none, the ones marked "any day" (reserve).
     """
     matches = (
         Q(conditions__type="season", conditions__season__in=liturgy.seasons_on(day))
+        | season_day_matches(day)
         | Q(conditions__type__in=["celebration", "saint"], conditions__celebration__in=celebrations_on(day))
         | Q(conditions__type="yearly_date", conditions__month=day.month, conditions__day=day.day)
         | Q(conditions__type="date", conditions__date=day)
@@ -61,7 +73,7 @@ def pick_next(day, seconds_into_day, after=None):
 
 
 # Most specific first: a saint or a celebration explains the choice better than a season
-REASON_ORDER = ("saint", "celebration", "season")
+REASON_ORDER = ("saint", "celebration", "season_day", "season")
 
 
 def reason(artwork, day, language=None):
@@ -70,6 +82,7 @@ def reason(artwork, day, language=None):
     {"text": "Saint Joseph…", "type": "saint"}. Empty for dates and "any day".
     """
     seasons = liturgy.seasons_on(day)
+    season_day = liturgy.season_day_on(day)
     celebrations = {c.pk: c for c in celebrations_on(day)}
     met = []
     for condition in artwork.conditions.all():
@@ -77,6 +90,10 @@ def reason(artwork, day, language=None):
             met.append((condition.type, celebrations[condition.celebration_id]))
         elif condition.type == "season" and condition.season in seasons:
             met.append(("season", condition.season))
+        elif (condition.type == "season_day" and season_day is not None
+              and (condition.season, condition.week) == season_day[:2]
+              and condition.weekday in (None, season_day[2])):
+            met.append(("season_day", season_day))
     if not met:
         return {"text": "", "type": ""}
     kind, value = min(met, key=lambda item: REASON_ORDER.index(item[0]))
@@ -85,6 +102,10 @@ def reason(artwork, day, language=None):
         # Names of the seasons are interface texts: translated when there is a catalogue for the language
         with translation.override(code or None):
             text = str(dict(liturgy.SEASONS)[value])
+    elif kind == "season_day":
+        # "Monday of the first week of Advent": the day itself, also when the condition is the whole week
+        with translation.override(code or None):
+            text = liturgy.season_day_text(*value)
     else:
         text = value.name_es if code.startswith("es") and value.name_es else value.name
     return {"text": text, "type": kind}

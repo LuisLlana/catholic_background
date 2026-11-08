@@ -33,7 +33,7 @@ class ConditionInline(admin.TabularInline):
     model = Condition
     formset = AtLeastOneConditionFormSet
     extra = 1
-    fields = ["type", "season", "celebration", "month", "day", "date"]
+    fields = ["type", "season", "week", "weekday", "celebration", "month", "day", "date"]
     autocomplete_fields = ["celebration"]
 
 
@@ -182,7 +182,9 @@ class ArtworkAdmin(admin.ModelAdmin):
             day = today + timedelta(days=offset)
             days.append({
                 "date": day,
-                "seasons": ", ".join(str(seasons[s]) for s in sorted(liturgy.seasons_on(day))),
+                "seasons": ", ".join([str(seasons[s]) for s in sorted(liturgy.seasons_on(day))]
+                                     + ([liturgy.season_day_text(*liturgy.season_day_on(day))]
+                                        if liturgy.season_day_on(day) else [])),
                 "celebrations": ", ".join(str(c) for c in celebrations_on(day)),
                 "artworks": candidates(day),
             })

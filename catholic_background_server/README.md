@@ -80,11 +80,18 @@ visits are not counted in the statistics of the applications.
   year (free text), comment, origin and license, and **other data**: name–value
   pairs whose names (museum, technique…) are a catalogue editable from the admin.
 - **When it is shown**: one or more conditions, and it is shown on any day that
-  meets at least one of them (OR): liturgical season, celebration, saint of the
-  day, date of every year, specific date, or "any day" (reserve used when no
-  artwork matches a day). When several artworks match a day, they are shown in
-  turns during the day.
-- **Calendar**: the next 60 days with their season, celebrations and artworks.
+  meets at least one of them (OR): liturgical season, day of Advent or Lent,
+  celebration, saint of the day, date of every year, specific date, or "any day"
+  (reserve used when no artwork matches a day). When several artworks match a
+  day, all of them are shown in turns during the day: on 8 December, those of the
+  Immaculate Conception and those of Advent.
+- **Day of Advent or Lent**: a week of the season (Advent 1-4; Lent: the days
+  after Ash Wednesday, 1-5 and Holy Week) and, optionally, a day of the week
+  (empty: the whole week). Each liturgical week begins on Sunday, so "Monday of the
+  first week of Advent" is the day after the first Sunday of Advent. The whole
+  season is the condition "liturgical season".
+- **Calendar**: the next 60 days with their season (and day of Advent or Lent),
+  celebrations and artworks.
 - **Liturgical calendar**: movable celebrations are computed from Easter every
   year (Spain by default: Epiphany on 6 January, Ascension and Corpus Christi on
   Sunday; see `CATHOLIC_BACKGROUND` in `config/settings.py`). Fixed celebrations
@@ -131,7 +138,8 @@ font (`sudo apt install fonts-dejavu-core`; `CAPTION_FONT` and `CAPTION_FONT_BOL
 use others).
 
 `reason` says why the artwork is shown that day when the reason is special: the saint
-or the celebration of the day, or else the liturgical season (the most specific one if
+or the celebration of the day, or else the day of Advent or Lent ("Monday of the first
+week of Advent", `reason_type` `season_day`), or else the liturgical season (the most specific one if
 the artwork meets several conditions), in the language asked. It is empty for artworks
 shown because of a date or as a reserve.
 

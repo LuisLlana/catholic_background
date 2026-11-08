@@ -7,7 +7,8 @@ Fixed-date celebrations and saints are in the Celebration model (editable).
 from datetime import date, timedelta
 
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _
+from django.utils.dates import WEEKDAYS
+from django.utils.translation import gettext, gettext_lazy as _
 
 SEASONS = [
     ("advent", _("Advent")),
@@ -41,6 +42,25 @@ MOVABLE = [
 ]
 
 SUNDAY = 6
+
+# Seasons whose days can be chosen one by one ("Monday of the first week of Advent")
+SEASONS_BY_DAY = ("advent", "lent")
+
+# Weeks of those seasons. Lent: 0 = from Ash Wednesday to the Saturday after it, 1-5 = first to
+# fifth week, 6 = Holy Week. Advent: 1-4. Each liturgical week begins on Sunday.
+SEASON_WEEKS = [
+    (0, _("Ash Wednesday to Saturday (Lent)")),
+    (1, _("First week")),
+    (2, _("Second week")),
+    (3, _("Third week")),
+    (4, _("Fourth week")),
+    (5, _("Fifth week (Lent)")),
+    (6, _("Holy Week (Lent)")),
+]
+WEEKS_OF = {"advent": range(1, 5), "lent": range(0, 7)}
+
+# Days of the week as datetime.weekday() (Monday = 0), in liturgical order: Sunday first
+WEEKDAY_CHOICES = [(6, _("Sunday"))] + [(n, WEEKDAYS[n]) for n in range(6)]
 
 
 def _options():
@@ -122,6 +142,57 @@ def movable_dates(year):
         "first_advent": first_advent(year),
         "holy_family": holy_family(year),
     }
+
+
+def season_day_on(d):
+    """
+    (season, week, weekday) of a day of Advent or Lent, or None on other days. week as in
+    SEASON_WEEKS; weekday as datetime.weekday() (Monday = 0, Sunday = 6).
+    """
+    advent = first_advent(d.year)
+    if advent <= d < date(d.year, 12, 25):
+        return "advent", (d - advent).days // 7 + 1, d.weekday()
+    e = easter(d.year)
+    ash = e - timedelta(days=46)
+    if ash <= d < e:
+        first_sunday = ash + timedelta(days=4)
+        week = 0 if d < first_sunday else (d - first_sunday).days // 7 + 1
+        return "lent", week, d.weekday()
+    return None
+
+
+def season_day_text(season, week, weekday):
+    text = _season_day_text(season, week, weekday)
+    return text[:1].upper() + text[1:]
+
+
+def _season_day_text(season, week, weekday):
+    """
+    "Monday of the first week of Advent", in the active language. weekday None: the whole
+    week ("First week of Advent").
+    """
+    season_name = str(dict(SEASONS)[season])
+    day = str(dict(WEEKDAY_CHOICES)[weekday]) if weekday is not None else ""
+    movable = dict(MOVABLE)
+    # Days with a name of their own
+    own = {("lent", 0, 2): "ash_wednesday", ("lent", 6, SUNDAY): "palm_sunday", ("lent", 6, 3): "holy_thursday",
+           ("lent", 6, 4): "good_friday", ("lent", 6, 5): "holy_saturday"}
+    if (season, week, weekday) in own:
+        return str(movable[own[season, week, weekday]])
+    if weekday == SUNDAY:
+        sundays = [gettext("First Sunday of %(season)s"), gettext("Second Sunday of %(season)s"),
+                   gettext("Third Sunday of %(season)s"), gettext("Fourth Sunday of %(season)s"),
+                   gettext("Fifth Sunday of %(season)s")]
+        return sundays[week - 1] % {"season": season_name}
+    if season == "lent" and week == 0:
+        return gettext("%(weekday)s after Ash Wednesday") % {"weekday": day} if day else gettext("Days after Ash Wednesday")
+    if season == "lent" and week == 6:
+        return gettext("%(weekday)s of Holy Week") % {"weekday": day} if day else str(dict(SEASONS)["holy_week"])
+    ordinal = [gettext("first"), gettext("second"), gettext("third"), gettext("fourth"), gettext("fifth")][week - 1]
+    if day:
+        return gettext("%(weekday)s of the %(ordinal)s week of %(season)s") % {
+            "weekday": day, "ordinal": ordinal, "season": season_name}
+    return gettext("The %(ordinal)s week of %(season)s") % {"ordinal": ordinal, "season": season_name}
 
 
 def movable_codes_on(d):

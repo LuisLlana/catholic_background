@@ -261,6 +261,7 @@ class ArtworkMetadata(models.Model):
 
 CONDITION_TYPES = [
     ("season", _("Liturgical season")),
+    ("season_day", _("Day of Advent or Lent")),
     ("celebration", _("Celebration (of the Lord, of the Virgin…)")),
     ("saint", _("Saint of the day")),
     ("yearly_date", _("Date of every year")),
@@ -280,6 +281,11 @@ class Condition(models.Model):
     month = models.PositiveSmallIntegerField(_("month"), choices=MONTH_CHOICES, null=True, blank=True)
     day = models.PositiveSmallIntegerField(_("day"), null=True, blank=True)
     date = models.DateField(_("date"), null=True, blank=True)
+    # Day of Advent or Lent: week of the season and, optionally, day of the week
+    week = models.PositiveSmallIntegerField(_("week"), choices=liturgy.SEASON_WEEKS, null=True, blank=True)
+    weekday = models.PositiveSmallIntegerField(
+        _("day of the week"), choices=liturgy.WEEKDAY_CHOICES, null=True, blank=True,
+        help_text=_("Empty: the whole week."))
 
     class Meta:
         verbose_name = _("when it is shown")
@@ -288,6 +294,8 @@ class Condition(models.Model):
     def __str__(self):
         if self.type == "season":
             return str(dict(liturgy.SEASONS).get(self.season, ""))
+        if self.type == "season_day" and self.season in liturgy.SEASONS_BY_DAY and self.week is not None:
+            return liturgy.season_day_text(self.season, self.week, self.weekday)
         if self.type in ("celebration", "saint"):
             return str(self.celebration or "")
         if self.type == "yearly_date" and self.month and self.day:
@@ -298,19 +306,26 @@ class Condition(models.Model):
 
     def clean(self):
         required = {
-            "season": ["season"], "celebration": ["celebration"], "saint": ["celebration"],
+            "season": ["season"], "season_day": ["season", "week"], "celebration": ["celebration"], "saint": ["celebration"],
             "yearly_date": ["month", "day"], "date": ["date"], "any": [],
         }.get(self.type, [])
         errors = {field: _("Required for this kind.") for field in required if getattr(self, field) in (None, "")}
         if errors:
             raise ValidationError(errors)
+        if self.type == "season_day":
+            if self.season not in liturgy.SEASONS_BY_DAY:
+                raise ValidationError({"season": _("Only Advent or Lent.")})
+            if self.week not in liturgy.WEEKS_OF[self.season]:
+                raise ValidationError({"week": _("That week does not exist in this season.")})
         if self.type == "yearly_date":
             try:
                 date(2024, self.month, self.day)
             except ValueError:
                 raise ValidationError({"day": _("That date does not exist.")})
         # Keep only the fields of the chosen type
-        for field in ("season", "celebration", "month", "day", "date"):
+        if self.type == "season_day":
+            required = required + ["weekday"]
+        for field in ("season", "celebration", "month", "day", "date", "week", "weekday"):
             if field not in required:
                 setattr(self, field, "" if field == "season" else None)
 

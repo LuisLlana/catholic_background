@@ -803,3 +803,99 @@ msgstr "Imagen %(position)s de %(count)s de este día"
 #: templates/pages/browser.html
 msgid "Next image"
 msgstr "Siguiente imagen"
+
+msgid "Day of Advent or Lent"
+msgstr "Día de Adviento o Cuaresma"
+
+msgid "Ash Wednesday to Saturday (Lent)"
+msgstr "Del Miércoles de Ceniza al sábado (Cuaresma)"
+
+msgid "First week"
+msgstr "Primera semana"
+
+msgid "Second week"
+msgstr "Segunda semana"
+
+msgid "Third week"
+msgstr "Tercera semana"
+
+msgid "Fourth week"
+msgstr "Cuarta semana"
+
+msgid "Fifth week (Lent)"
+msgstr "Quinta semana (Cuaresma)"
+
+msgid "Holy Week (Lent)"
+msgstr "Semana Santa (Cuaresma)"
+
+msgid "week"
+msgstr "semana"
+
+msgid "day of the week"
+msgstr "día de la semana"
+
+msgid "Empty: the whole week."
+msgstr "Vacío: toda la semana."
+
+msgid "Only Advent or Lent."
+msgstr "Solo Adviento o Cuaresma."
+
+msgid "That week does not exist in this season."
+msgstr "Esa semana no existe en este tiempo."
+
+msgid "first"
+msgstr "primera"
+
+msgid "second"
+msgstr "segunda"
+
+msgid "third"
+msgstr "tercera"
+
+msgid "fourth"
+msgstr "cuarta"
+
+msgid "fifth"
+msgstr "quinta"
+
+msgid "Days after Ash Wednesday"
+msgstr "Días después de Ceniza"
+
+msgid "Sunday"
+msgstr "domingo"
+
+#, python-format
+msgid "%(weekday)s after Ash Wednesday"
+msgstr "%(weekday)s después de Ceniza"
+
+#, python-format
+msgid "%(weekday)s of Holy Week"
+msgstr "%(weekday)s Santo"
+
+#, python-format
+msgid "%(weekday)s of the %(ordinal)s week of %(season)s"
+msgstr "%(weekday)s de la %(ordinal)s semana de %(season)s"
+
+#, python-format
+msgid "The %(ordinal)s week of %(season)s"
+msgstr "%(ordinal)s semana de %(season)s"
+
+#, python-format
+msgid "First Sunday of %(season)s"
+msgstr "Primer domingo de %(season)s"
+
+#, python-format
+msgid "Second Sunday of %(season)s"
+msgstr "Segundo domingo de %(season)s"
+
+#, python-format
+msgid "Third Sunday of %(season)s"
+msgstr "Tercer domingo de %(season)s"
+
+#, python-format
+msgid "Fourth Sunday of %(season)s"
+msgstr "Cuarto domingo de %(season)s"
+
+#, python-format
+msgid "Fifth Sunday of %(season)s"
+msgstr "Quinto domingo de %(season)s"
