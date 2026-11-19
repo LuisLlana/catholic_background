@@ -249,6 +249,7 @@ def browser(request):
         "position": position,
         "count": count,
     }
+    context.update(_search_engines(request, artwork))
     if artwork is not None:
         context.update({
             "texts": artwork.texts(language),
@@ -283,6 +284,20 @@ def _time_zones():
                   if "/" in z and not z.startswith(("Etc/", "SystemV/", "US/", "posix/", "right/")))
 
 
+def public_url(request, path):
+    """Absolute address of a path of this server: PUBLIC_URL if it is set, else the host of the request."""
+    base = getattr(settings, "PUBLIC_URL", "")
+    return base + path if base else request.build_absolute_uri(path)
+
+
+def _search_engines(request, artwork=None):
+    """Canonical address (without parameters) and preview image of a public page."""
+    return {
+        "canonical": public_url(request, request.path),
+        "og_image": public_url(request, reverse("browser_image", args=[artwork.pk])) if artwork else "",
+    }
+
+
 @require_GET
 def time_page(request):
     """
@@ -292,7 +307,10 @@ def time_page(request):
     ?tz=<time zone> and ?lang=<language of the texts of the image>.
     """
     language = Language.best_match([request.GET.get("lang", "")]) or current_language()
+    now = dj_timezone.localtime()
+    today = pick(now.date(), (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
     return render(request, "pages/time.html", {
+        **_search_engines(request, today),
         "server_now": int(time.time() * 1000),
         "zones": _time_zones(),
         "language": language,
@@ -309,3 +327,19 @@ def time_now(request):
     response = JsonResponse({"now": int(time.time() * 1000)})
     response["Cache-Control"] = "no-store"
     return response
+
+
+@require_GET
+def sitemap(request):
+    """sitemap.xml with the public pages, to send to Google Search Console and Bing Webmaster Tools."""
+    pages = [(reverse("browser"), "daily", "1.0"), (reverse("time"), "daily", "0.8"),
+             (reverse("privacy"), "yearly", "0.3")]
+    today = dj_timezone.localdate().isoformat()
+    entries = "".join(
+        f"  <url><loc>{public_url(request, path)}</loc><lastmod>{today}</lastmod>"
+        f"<changefreq>{frequency}</changefreq><priority>{priority}</priority></url>\n"
+        for path, frequency, priority in pages
+    )
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + entries + "</urlset>\n")
+    return HttpResponse(xml, content_type="application/xml")

@@ -1,9 +1,13 @@
-{% load i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+{% load i18n static %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
 <html lang="{{ CURRENT_LANGUAGE }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% translate "Time" %} · Catholic Background</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'artworks/favicon.svg' %}">
+  <title>{% translate "Exact time in any time zone" %} · Catholic Background</title>
+  {% translate "The exact time, from a server synchronized with NTP, in your time zone or any other, over the work of Catholic sacred art of the day." as description %}
+  {% translate "Exact time in any time zone" as og_title %}
+  {% include "includes/search_engines.html" with description=description og_title=og_title %}
   <style>
     :root { color-scheme: dark; --overlay: .45; }
     * { box-sizing: border-box; }
@@ -46,6 +50,9 @@
     .caption .reason { color: #ffd27a; font-weight: bold; }
     .caption .title { font-weight: 600; }
     #position { opacity: .85; }
+    .about { font-size: .8rem; opacity: .8; margin: 0; }
+    .about a { color: #fff; }
+    h1.title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .hidden { display: none !important; }
     @media (max-width: 40rem) { .panel { font-size: .9rem; } }
   </style>
@@ -54,6 +61,7 @@
 <div id="picture" aria-hidden="true"></div>
 <div id="veil" aria-hidden="true"></div>
 <main>
+  <h1 class="title">{% translate "Exact time in any time zone" %} · Catholic Background</h1>
   <section class="clock" aria-live="off">
     <div id="time">--:--:--</div>
     <div id="date"></div>
@@ -85,6 +93,9 @@
       <a class="button" id="more" href="{% url 'browser' %}">{% translate "About the image" %}</a>
     </div>
     <div class="caption" id="caption"></div>
+    <p class="about">{% translate "The exact time, from a server synchronized with NTP, in your time zone or any other, over the work of Catholic sacred art of the day." %}
+      <a href="{% url 'browser' %}">Catholic Background</a> · <a href="{% url 'privacy' %}">{% translate "Privacy" %}</a></p>
+    <noscript><p class="about">{% translate "The clock needs JavaScript." %}</p></noscript>
   </section>
 </main>
 

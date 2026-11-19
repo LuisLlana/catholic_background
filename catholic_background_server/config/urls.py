@@ -38,6 +38,7 @@ pages = [
     path("browser/image/<int:pk>", artwork_views.browser_image, name="browser_image"),
     path("time/", artwork_views.time_page, name="time"),
     path("time/now", artwork_views.time_now, name="time_now"),
+    path("sitemap.xml", artwork_views.sitemap, name="sitemap"),
     path("media/<path:path>", artwork_views.protected_media, name="media"),
     path("accounts/", include("allauth.urls")),
     path("i18n/", include("django.conf.urls.i18n")),     # set_language: the language selector

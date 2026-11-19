@@ -61,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "artworks.middleware.NoIndexMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -78,6 +79,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.login_options",
                 "accounts.context_processors.cookie_notice",
+                "artworks.context_processors.search_engines",
             ],
         },
     },
@@ -175,6 +177,16 @@ SESSION_COOKIE_PATH = PREFIX
 CSRF_COOKIE_PATH = PREFIX
 LANGUAGE_COOKIE_PATH = PREFIX
 COOKIE_NOTICE_COOKIE = "cookie_notice"
+
+# Search engines: codes to prove the site is ours in Google Search Console and Bing Webmaster
+# Tools (the content of their <meta name="google-site-verification"> / "msvalidate.01" tags)
+GOOGLE_SITE_VERIFICATION = env("GOOGLE_SITE_VERIFICATION", "")
+# Public address of the server (scheme and host, e.g. https://simba.fdi.ucm.es), for the addresses
+# given to search engines and messaging apps (canonical, sitemap, preview image). Empty: the host
+# of each request. Set it when moving the server, so that the old address (with a redirect)
+# points to the new one.
+PUBLIC_URL = env("PUBLIC_URL", "").rstrip("/")
+BING_SITE_VERIFICATION = env("BING_SITE_VERIFICATION", "")
 
 # ---------------------------------------------------------------- behind nginx (HTTPS)
 if env_bool("BEHIND_PROXY", not DEBUG):

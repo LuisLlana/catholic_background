@@ -931,3 +931,25 @@ msgstr "Hora del servidor, sincronizada por NTP"
 #: templates/pages/time.html
 msgid "Time of this device (the server could not be reached)"
 msgstr "Hora de este dispositivo (no se pudo contactar con el servidor)"
+
+msgid "Clock"
+msgstr "Reloj"
+
+msgid "Privacy"
+msgstr "Privacidad"
+
+msgid "Exact time in any time zone"
+msgstr "Hora exacta en cualquier zona horaria"
+
+msgid "The exact time, from a server synchronized with NTP, in your time zone or any other, over the work of Catholic sacred art of the day."
+msgstr "La hora exacta, de un servidor sincronizado por NTP, en tu zona horaria o en cualquier otra, sobre la obra de arte sacro católico del día."
+
+msgid "A work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment."
+msgstr "Una obra de arte sacro católico para cada día del año litúrgico, con su motivo, autor y comentario."
+
+msgid "The clock needs JavaScript."
+msgstr "El reloj necesita JavaScript."
+
+#, python-format
+msgid "%(title)s: a work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment."
+msgstr "%(title)s: una obra de arte sacro católico para cada día del año litúrgico, con su motivo, autor y comentario."

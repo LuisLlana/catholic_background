@@ -2,6 +2,8 @@
 {% load i18n %}
 {% block title %}{% if artwork %}{{ texts.title|default:_("Untitled") }} · {% endif %}Catholic Background{% endblock %}
 {% block head %}
+{% if artwork %}{% blocktranslate asvar description with title=texts.title|default:_("Untitled") %}{{ title }}: a work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment.{% endblocktranslate %}{% else %}{% translate "A work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment." as description %}{% endif %}
+{% include "includes/search_engines.html" with description=description og_title=texts.title|default:"Catholic Background" %}
 <style>
   body { max-width: 82rem; margin: 1.2rem auto; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .8rem 0 1.2rem; }
@@ -47,6 +49,7 @@
   {% if next %}<a class="button" href="?date={{ next|date:'Y-m-d' }}&amp;lang={{ language.code }}" title="{% translate 'Next day' %}">&#9654;</a>{% endif %}
   <a class="button{% if day == today %} disabled{% endif %}" href="?lang={{ language.code }}">{% translate "Today" %}</a>
   <span class="spacer"></span>
+  <a class="button" href="{% url 'time' %}">{% translate "Clock" %}</a>
   {% if can_edit %}<a class="button" href="{% url 'admin:artworks_artwork_change' artwork.pk %}">{% translate "Edit this image" %}</a>{% endif %}
 </nav>
 

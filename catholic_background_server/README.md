@@ -52,6 +52,7 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 | `/background/languages` | languages of the content (used by the applications) |
 | `/background/browser/` | web page with the image of any day and its data |
 | `/background/time/` | clock over the image of the day |
+| `/background/sitemap.xml` | public pages, for search engines |
 | `/background/home/` | start page after logging in |
 | `/background/admin/` | content management |
 | `/background/accounts/…` | login with Google or Microsoft |
@@ -91,6 +92,32 @@ A public page with the current time, big, over the image of the day blurred.
   image to 72 % for a light one; the controls are on a translucent dark band.
 - Its requests to the API carry `log=0`, so they are not counted in the
   statistics of the applications.
+
+## Search engines
+
+Only the public pages (browser, clock, privacy policy and `sitemap.xml`) can be
+indexed: every other answer (content manager, login, home page, API, images) carries
+`X-Robots-Tag: noindex, nofollow`. The public pages have a description, a canonical
+address and Open Graph tags (title, description and the image of the day as
+preview, for links shared in messaging apps and social networks), and link to each
+other. The tab icon is `artworks/static/artworks/favicon.svg`.
+
+To appear in search results:
+
+1. In [Google Search Console](https://search.google.com/search-console), add a
+   property of type **URL prefix** with `https://simba.fdi.ucm.es/background/`, choose
+   the **HTML tag** verification and put its code in `GOOGLE_SITE_VERIFICATION` in the
+   environment file; restart the service and click Verify.
+2. In Sitemaps, send `sitemap.xml`; in URL inspection, ask for the indexing of
+   `/background/browser/` and `/background/time/`.
+3. The same in [Bing Webmaster Tools](https://www.bing.com/webmasters)
+   (`BING_SITE_VERIFICATION`), or import the property from Google.
+
+`robots.txt` belongs to the root of the host, which is not this application, so the
+sitemap is sent by hand. **When moving the server**, set `PUBLIC_URL` to the new
+address (e.g. `https://background.example.org`) and add the new address as another
+property in both tools: canonical addresses, the sitemap and the previews then point
+to it, also while the old address redirects to the new one.
 
 ## Content manager (`/background/admin/`)
 

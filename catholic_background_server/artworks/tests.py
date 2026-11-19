@@ -839,3 +839,48 @@ class TimePageTests(TestCase):
         self.assertEqual(AccessLog.objects.count(), 0)
         self.client.get(reverse("background"), {"caption": "0"})
         self.assertEqual(AccessLog.objects.count(), 1)
+
+
+class SearchEngineTests(TestCase):
+    def test_sitemap(self):
+        answer = self.client.get(reverse("sitemap"))
+        self.assertEqual(answer["Content-Type"], "application/xml")
+        for name in ("browser", "time", "privacy"):
+            self.assertContains(answer, f"<loc>http://testserver{reverse(name)}</loc>")
+
+    def test_only_public_pages_are_indexed(self):
+        for name in ("browser", "time", "privacy", "sitemap"):
+            self.assertNotIn("X-Robots-Tag", self.client.get(reverse(name)), name)
+        for url in (reverse("home"), reverse("admin:login"), reverse("background"), reverse("time_now")):
+            self.assertEqual(self.client.get(url).headers.get("X-Robots-Tag"), "noindex, nofollow", url)
+
+    def test_tags(self):
+        artwork = make_artwork("Anunciación", {"type": "any"})
+        page = self.client.get(reverse("time") + "?tz=Europe/Madrid", HTTP_ACCEPT_LANGUAGE="es")
+        self.assertContains(page, '<meta name="description" content="La hora exacta')
+        self.assertContains(page, f'<link rel="canonical" href="http://testserver{reverse("time")}">')
+        self.assertContains(page, f'content="http://testserver{reverse("browser_image", args=[artwork.pk])}"')
+        self.assertNotContains(page, "google-site-verification")
+        browser = self.client.get(reverse("browser"))
+        self.assertContains(browser, 'property="og:title" content="Anunciación"')
+        self.assertContains(browser, reverse("time"))     # link to the clock
+
+    @override_settings(GOOGLE_SITE_VERIFICATION="abc123", BING_SITE_VERIFICATION="B1N9")
+    def test_verification(self):
+        page = self.client.get(reverse("browser"))
+        self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
+        self.assertContains(page, '<meta name="msvalidate.01" content="B1N9">')
+
+
+    @override_settings(PUBLIC_URL="https://nuevo.example.org")
+    def test_public_url(self):
+        """After moving the server, every address given to search engines is the new one."""
+        artwork = make_artwork("Anunciación", {"type": "any"})
+        page = self.client.get(reverse("time"))
+        self.assertContains(page, f'<link rel="canonical" href="https://nuevo.example.org{reverse("time")}">')
+        self.assertContains(page, f'content="https://nuevo.example.org{reverse("browser_image", args=[artwork.pk])}"')
+        self.assertContains(self.client.get(reverse("sitemap")), f"<loc>https://nuevo.example.org{reverse('browser')}</loc>")
+
+    def test_favicon(self):
+        self.assertContains(self.client.get(reverse("time")), "favicon.svg")
+        self.assertContains(self.client.get(reverse("browser")), "favicon.svg")
