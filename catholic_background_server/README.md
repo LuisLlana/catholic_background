@@ -33,6 +33,8 @@ a different one each time. `next` with no value (or with an id that is not of th
 day) sends the one after the current turn. `position` and `count` say where the
 artwork is among those of the day, e.g. `https://simba.fdi.ucm.es/background?raw=1&next=42`.
 
+`log=0` leaves the request out of the statistics (the clock page uses it).
+
     GET /background/languages
     -> {"default": "es", "languages": [{"code": "es", "name": "Español"}, …]}
 
@@ -49,6 +51,7 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 | `/background?ts=…` | the image of the day (used by the applications) |
 | `/background/languages` | languages of the content (used by the applications) |
 | `/background/browser/` | web page with the image of any day and its data |
+| `/background/time/` | clock over the image of the day |
 | `/background/home/` | start page after logging in |
 | `/background/admin/` | content management |
 | `/background/accounts/…` | login with Google or Microsoft |
@@ -65,6 +68,29 @@ Parameters: `?date=YYYY-MM-DD` (default: today) and `?lang=<code>`. Logged-in
 editors also get an "Edit this image" link. Its images come from
 `/background/browser/image/<id>`, which only serves approved artworks, and its
 visits are not counted in the statistics of the applications.
+
+## Clock (`/background/time/`)
+
+A public page with the current time, big, over the image of the day blurred.
+
+- **Time**: that of this server (synchronized with NTP). The page asks
+  `/background/time/now` for it (milliseconds since 1970, UTC) when it opens and
+  every 10 minutes, half the round trip included, and corrects the clock of the
+  device with the difference: a device whose clock is wrong still shows the right
+  time. If the server cannot be reached, it says so and uses the device's.
+- **Time zone**: by default that of the visitor's device; a list (all the zones of
+  the browser, or of the server for old browsers) changes it, and "Mine" goes back.
+  The choice is remembered in the browser; `?tz=Europe/Madrid` in the address
+  chooses one. It shows the date and the UTC offset of the zone.
+- **Image**: the image of today in that zone (at its midnight it changes by
+  itself), blurred; previous and next day, a date picker, Today, and Next image
+  when the day has several, with its reason, title and author, and a link to the
+  browser page. Language of the texts: `?lang=<code>`.
+- **Contrast**: the time is white with a shadow over a dark veil whose strength
+  depends on how light the image is (measured in the page), from 28 % for a dark
+  image to 72 % for a light one; the controls are on a translucent dark band.
+- Its requests to the API carry `log=0`, so they are not counted in the
+  statistics of the applications.
 
 ## Content manager (`/background/admin/`)
 

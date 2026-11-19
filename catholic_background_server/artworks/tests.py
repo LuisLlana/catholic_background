@@ -814,3 +814,28 @@ class SourceLinkTests(TestCase):
                          '<a href="https://example.com/a?b=1&amp;c=2" rel="noopener noreferrer">https://example.com/a?b=1&amp;c=2</a>')
         self.assertEqual(source_link("javascript:alert(1)"), "javascript:alert(1)")   # shown as text (escaped by the template)
         self.assertEqual(source_link(""), "")
+
+
+class TimePageTests(TestCase):
+    def test_page(self):
+        page = self.client.get(reverse("time"), HTTP_ACCEPT_LANGUAGE="es")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Zona horaria")
+        self.assertContains(page, '"Europe/Madrid"')           # zones for browsers that cannot list them
+        self.assertContains(page, reverse("time_now"))
+        self.assertContains(page, 'id="other"')                # Next image (shown when the day has several)
+
+    def test_now(self):
+        import time as clock
+        before = int(clock.time() * 1000)
+        answer = self.client.get(reverse("time_now"))
+        after = int(clock.time() * 1000)
+        self.assertEqual(answer["Cache-Control"], "no-store")
+        self.assertTrue(before <= answer.json()["now"] <= after)
+
+    def test_images_of_the_clock_not_in_the_statistics(self):
+        make_artwork("A", {"type": "any"})
+        self.assertEqual(self.client.get(reverse("background"), {"caption": "0", "log": "0"}).status_code, 200)
+        self.assertEqual(AccessLog.objects.count(), 0)
+        self.client.get(reverse("background"), {"caption": "0"})
+        self.assertEqual(AccessLog.objects.count(), 1)

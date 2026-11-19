@@ -899,3 +899,35 @@ msgstr "Cuarto domingo de %(season)s"
 #, python-format
 msgid "Fifth Sunday of %(season)s"
 msgstr "Quinto domingo de %(season)s"
+
+#: templates/pages/time.html
+msgid "Time"
+msgstr "Hora"
+
+#: templates/pages/time.html
+msgid "Time zone"
+msgstr "Zona horaria"
+
+#: templates/pages/time.html
+msgid "The time zone of this device"
+msgstr "La zona horaria de este dispositivo"
+
+#: templates/pages/time.html
+msgid "Mine"
+msgstr "La mía"
+
+#: templates/pages/time.html
+msgid "About the image"
+msgstr "Sobre la imagen"
+
+#: templates/pages/time.html
+msgid "The image could not be loaded."
+msgstr "No se pudo cargar la imagen."
+
+#: templates/pages/time.html
+msgid "Time of the server, synchronized with NTP"
+msgstr "Hora del servidor, sincronizada por NTP"
+
+#: templates/pages/time.html
+msgid "Time of this device (the server could not be reached)"
+msgstr "Hora de este dispositivo (no se pudo contactar con el servidor)"

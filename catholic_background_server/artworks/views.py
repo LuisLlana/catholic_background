@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import base64
 import time
+import zoneinfo
 from datetime import date, datetime, timedelta, timezone
 
 from django.conf import settings
@@ -130,9 +131,11 @@ def background(request):
     except (FileNotFoundError, ValueError, OSError):
         return JsonResponse({"error": "image file missing"}, status=500)
 
-    AccessLog.objects.create(day=dj_timezone.localdate(), ip=client_ip(request),
-                             user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
-                             artwork=artwork)
+    # log=0: a page of this server (the clock), not an application: not in the statistics
+    if request.GET.get("log") != "0":
+        AccessLog.objects.create(day=dj_timezone.localdate(), ip=client_ip(request),
+                                 user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
+                                 artwork=artwork)
 
     if wants_raw(request):
         content_type, extension = image_type(data)
@@ -269,4 +272,40 @@ def browser_image(request, pk):
     content_type, _ = image_type(data)
     response = HttpResponse(data, content_type=content_type)
     response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+# ---------------------------------------------------------------- clock
+
+def _time_zones():
+    """Time zones of the system (tz database), for browsers that cannot list them."""
+    return sorted(z for z in zoneinfo.available_timezones()
+                  if "/" in z and not z.startswith(("Etc/", "SystemV/", "US/", "posix/", "right/")))
+
+
+@require_GET
+def time_page(request):
+    """
+    Clock: the current time in the time zone of the visitor (or the one chosen), over the image
+    of the day, blurred. The time comes from this server (synchronized with NTP): the page
+    measures the difference with the clock of the device and corrects it.
+    ?tz=<time zone> and ?lang=<language of the texts of the image>.
+    """
+    language = Language.best_match([request.GET.get("lang", "")]) or current_language()
+    return render(request, "pages/time.html", {
+        "server_now": int(time.time() * 1000),
+        "zones": _time_zones(),
+        "language": language,
+        "languages": Language.objects.all(),
+        # Placeholders of "Image 2 of 3 of this day", filled in by the page
+        "position": "{position}",
+        "count": "{count}",
+    })
+
+
+@require_GET
+def time_now(request):
+    """Time of the server in milliseconds since 1970 (UTC), for the clock to correct the device's."""
+    response = JsonResponse({"now": int(time.time() * 1000)})
+    response["Cache-Control"] = "no-store"
     return response
