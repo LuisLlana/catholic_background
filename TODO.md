@@ -56,6 +56,10 @@ Not now; notes for when it is done.
 - **Domain** of our own (about 10-15 €/year) with an HTTPS certificate from
   Let's Encrypt.
 - **Login with Google and Microsoft**: add the new callback URL in their consoles.
+- **Search engines**: set `PUBLIC_URL` to the new address in the environment file
+  of the server, and add the new address as another property in Google Search
+  Console and Bing Webmaster Tools (with its verification codes) and send its
+  `sitemap.xml`.
 - **Data**: copy `data/` (database and images) with
   `catholic-background-backup.sh -f` and install the server as its README says
   (`migrate`, `collectstatic`, systemd units, nginx snippet).
