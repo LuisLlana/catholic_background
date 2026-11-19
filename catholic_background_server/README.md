@@ -48,7 +48,7 @@ Everything hangs from the base path, `BASE_PATH` (default `background`):
 
 | Address | |
 |---|---|
-| `/background?ts=…` | the image of the day (used by the applications) |
+| `/background?ts=…` | the image of the day (used by the applications); opened in a browser without parameters, the page of the image of the day |
 | `/background/languages` | languages of the content (used by the applications) |
 | `/background/browser/` | web page with the image of any day and its data |
 | `/background/time/` | clock over the image of the day |
@@ -112,6 +112,11 @@ To appear in search results:
    `/background/browser/` and `/background/time/`.
 3. The same in [Bing Webmaster Tools](https://www.bing.com/webmasters)
    (`BING_SITE_VERIFICATION`), or import the property from Google.
+
+Google checks the tag at the root of the property, `/background/`: there a browser or a
+search engine (asking for HTML, without parameters) gets the page of the image of the
+day, whose canonical address is the browser page; the applications always send `ts`
+and get the JSON document as before.
 
 `robots.txt` belongs to the root of the host, which is not this application, so the
 sitemap is sent by hand. **When moving the server**, set `PUBLIC_URL` to the new

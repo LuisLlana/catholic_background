@@ -63,6 +63,12 @@ def requested_next(request):
     return True, int(value) if value.isdigit() else None
 
 
+def wants_html(request):
+    """The client prefers a web page (a browser or a search engine), not JSON nor an image."""
+    accepted = request.headers.get("Accept", "")
+    return "text/html" in accepted or "application/xhtml+xml" in accepted
+
+
 def client_ip(request):
     if getattr(settings, "TRUST_X_FORWARDED_FOR", False):
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
@@ -88,6 +94,11 @@ def background(request):
     The texts are in the requested language (lang), or else in the default one. The image has a
     label below the artwork with the reason, title and author (unless caption=0).
     """
+    # A person with a browser (no parameters, wants HTML): the page of the image of the day.
+    # It is also the root of the site for Google Search Console. The applications always send ts.
+    if not request.GET and wants_html(request):
+        return browser(request)
+
     now = time.time()
     raw = request.GET.get("ts")
     if raw is None:
@@ -249,7 +260,8 @@ def browser(request):
         "position": position,
         "count": count,
     }
-    context.update(_search_engines(request, artwork))
+    # Also shown at the root of the site: its canonical address is always that of the browser
+    context.update(_search_engines(request, artwork, reverse("browser")))
     if artwork is not None:
         context.update({
             "texts": artwork.texts(language),
@@ -290,10 +302,10 @@ def public_url(request, path):
     return base + path if base else request.build_absolute_uri(path)
 
 
-def _search_engines(request, artwork=None):
-    """Canonical address (without parameters) and preview image of a public page."""
+def _search_engines(request, artwork=None, path=None):
+    """Canonical address (path, without parameters) and preview image of a public page."""
     return {
-        "canonical": public_url(request, request.path),
+        "canonical": public_url(request, path or request.path),
         "og_image": public_url(request, reverse("browser_image", args=[artwork.pk])) if artwork else "",
     }
 

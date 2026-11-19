@@ -884,3 +884,20 @@ class SearchEngineTests(TestCase):
     def test_favicon(self):
         self.assertContains(self.client.get(reverse("time")), "favicon.svg")
         self.assertContains(self.client.get(reverse("browser")), "favicon.svg")
+
+
+    @override_settings(GOOGLE_SITE_VERIFICATION="abc123")
+    def test_root_is_a_page_for_browsers(self):
+        """The root of the site (Google Search Console checks its tag there) is HTML for browsers."""
+        make_artwork("Anunciación", {"type": "any"})
+        html = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        for url in (reverse("background"), reverse("background") + "/"):
+            page = self.client.get(url, HTTP_ACCEPT=html)
+            self.assertEqual(page["Content-Type"], "text/html; charset=utf-8", url)
+            self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
+            self.assertContains(page, f'<link rel="canonical" href="http://testserver{reverse("browser")}">')
+        # The applications (ts, or no Accept for HTML) still get the JSON document or the image
+        ts = local_midnight_ts(date.today())
+        self.assertEqual(self.client.get(reverse("background"), {"ts": ts}, HTTP_ACCEPT=html)["Content-Type"], "application/json")
+        self.assertEqual(self.client.get(reverse("background"))["Content-Type"], "application/json")
+        self.assertEqual(self.client.get(reverse("background"), {"raw": "1"}, HTTP_ACCEPT=html)["Content-Type"], "image/jpeg")
