@@ -64,9 +64,19 @@ def requested_next(request):
 
 
 def wants_html(request):
-    """The client prefers a web page (a browser or a search engine), not JSON nor an image."""
+    """
+    The client is a browser or a search engine, which want a web page: it asks for HTML, or its
+    User-Agent is that of a browser or a robot (the verifier of Google Search Console does not
+    always send "Accept: text/html"). Programs (curl, the applications) get JSON, unless they ask
+    only for JSON anyway.
+    """
     accepted = request.headers.get("Accept", "")
-    return "text/html" in accepted or "application/xhtml+xml" in accepted
+    if "application/json" in accepted and "text/html" not in accepted:
+        return False
+    if "text/html" in accepted or "application/xhtml+xml" in accepted:
+        return True
+    agent = request.headers.get("User-Agent", "").lower()
+    return agent.startswith("mozilla/") or any(word in agent for word in ("bot", "crawler", "spider", "verification"))
 
 
 def client_ip(request):
@@ -94,8 +104,9 @@ def background(request):
     The texts are in the requested language (lang), or else in the default one. The image has a
     label below the artwork with the reason, title and author (unless caption=0).
     """
-    # A person with a browser (no parameters, wants HTML): the page of the image of the day.
-    # It is also the root of the site for Google Search Console. The applications always send ts.
+    # No parameters at all: a person with a browser or a search engine. The page of the image of
+    # the day (it is also the root of the site for Google Search Console). The applications always
+    # send ts; a client that wants the JSON of today without parameters can send Accept: application/json.
     if not request.GET and wants_html(request):
         return browser(request)
 

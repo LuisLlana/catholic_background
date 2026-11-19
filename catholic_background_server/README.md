@@ -114,8 +114,9 @@ To appear in search results:
    (`BING_SITE_VERIFICATION`), or import the property from Google.
 
 Google checks the tag at the root of the property, `/background/`: there a browser or a
-search engine (asking for HTML, without parameters) gets the page of the image of the
-day, whose canonical address is the browser page; the applications always send `ts`
+search engine (without parameters, asking for HTML or with the User-Agent of a browser or
+a robot, like Google's verifier, which does not always ask for HTML) gets the page of the
+image of the day, whose canonical address is the browser page; the applications always send `ts`
 and get the JSON document as before.
 
 `robots.txt` belongs to the root of the host, which is not this application, so the

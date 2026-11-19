@@ -896,8 +896,13 @@ class SearchEngineTests(TestCase):
             self.assertEqual(page["Content-Type"], "text/html; charset=utf-8", url)
             self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
             self.assertContains(page, f'<link rel="canonical" href="http://testserver{reverse("browser")}">')
-        # The applications (ts, or no Accept for HTML) still get the JSON document or the image
+        # Verifiers and robots that send no Accept, or */*, also get the page
+        for accept in ({}, {"HTTP_ACCEPT": "*/*"}):
+            page = self.client.get(reverse("background") + "/", HTTP_USER_AGENT="Mozilla/5.0 (compatible; Google-Site-Verification/1.0)", **accept)
+            self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
+        # The applications (they always send ts) still get the JSON document or the image
         ts = local_midnight_ts(date.today())
         self.assertEqual(self.client.get(reverse("background"), {"ts": ts}, HTTP_ACCEPT=html)["Content-Type"], "application/json")
-        self.assertEqual(self.client.get(reverse("background"))["Content-Type"], "application/json")
+        self.assertEqual(self.client.get(reverse("background"), {"ts": ts})["Content-Type"], "application/json")
+        self.assertEqual(self.client.get(reverse("background"), HTTP_ACCEPT="application/json")["Content-Type"], "application/json")
         self.assertEqual(self.client.get(reverse("background"), {"raw": "1"}, HTTP_ACCEPT=html)["Content-Type"], "image/jpeg")
