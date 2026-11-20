@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Default server. Override it with:
+#     WALLPAPER_URL=https://my-server.example/background dpkg-buildpackage -us -uc -b
+WALLPAPER_URL ?= https://simba.fdi.ucm.es/background
+SHARE = debian/catholic-background-gtk/usr/share/catholic-background-gtk
+
+%:
+	dh $@
+
+override_dh_auto_build override_dh_auto_install override_dh_auto_test:
+
+execute_after_dh_install:
+	sed -i 's|^DEFAULT_SERVER = .*|DEFAULT_SERVER = "$(WALLPAPER_URL)"|' $(SHARE)/catholic_background_gtk/server.py
+	find $(SHARE) -name __pycache__ -prune -exec rm -rf {} +
+
+# The login screen timer only starts when the user turns the option on (login-background enable)
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start
+

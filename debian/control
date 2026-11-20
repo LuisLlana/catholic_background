@@ -1,0 +1,27 @@
+Source: catholic-background-gtk
+Section: gnome
+Priority: optional
+Maintainer: Luis Llana <luis.llana.diaz@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+
+Package: catholic-background-gtk
+Architecture: all
+Depends: python3 (>= 3.11),
+         python3-gi,
+         python3-pil,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1 (>= 1.5),
+         gsettings-desktop-schemas,
+         pkexec | policykit-1,
+         ${misc:Depends}
+Description: Catholic background of the day for GNOME and other GTK desktops
+ Application that puts a work of Catholic sacred art, chosen for each day
+ by a Catholic background of the day server, as the background of the
+ desktop and, optionally, of the lock screen and of the login screen
+ (SDDM and LightDM with the GTK or Slick greeter).
+ .
+ It shows the image of any day with its explanation and keeps the
+ background up to date with a systemd user timer. It does not need the
+ GNOME Shell extension, nor any KDE library.

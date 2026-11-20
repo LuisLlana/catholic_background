@@ -1,0 +1,16 @@
+#!/usr/bin/python3
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Launcher: the package is in /usr/share/catholic-background-gtk (or next to this file)."""
+import os
+import sys
+
+here = os.path.dirname(os.path.realpath(__file__))
+for folder in (os.path.join(here, "src"), "/usr/share/catholic-background-gtk"):
+    if os.path.isdir(os.path.join(folder, "catholic_background_gtk")):
+        sys.path.insert(0, folder)
+        break
+
+from catholic_background_gtk.app import main  # noqa: E402
+
+sys.exit(main())
