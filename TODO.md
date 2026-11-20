@@ -63,3 +63,20 @@ Not now; notes for when it is done.
 - **Data**: copy `data/` (database and images) with
   `catholic-background-backup.sh -f` and install the server as its README says
   (`migrate`, `collectstatic`, systemd units, nginx snippet).
+
+## GDM login screen
+
+The login screen option of the KDE and GTK applications supports SDDM and LightDM
+(GTK and Slick greeters). GDM (Debian and Ubuntu with GNOME) was left for later
+because it has no setting for a background picture:
+
+- The background of GDM is drawn by GNOME Shell with the `gnome-shell-theme.gresource`
+  theme (`#lockDialogGroup` in its CSS). Changing it means building a copy of that
+  gresource with our image and pointing `gdm-theme.gresource` to it with
+  `update-alternatives` (Ubuntu) or replacing the file (Debian), which every update
+  of `gnome-shell` overwrites. A dpkg trigger or an APT hook would have to rebuild it.
+- Simpler alternative: only the color, with the `org.gnome.desktop.background`
+  keys of the `gdm` user (dconf profile `/etc/dconf/db/gdm.d/`), which GNOME 46 or
+  later uses for the login screen background color.
+- Whichever is chosen, it goes into `login-background` (the same helper of both
+  applications) as another greeter, with the same backup and restore.
