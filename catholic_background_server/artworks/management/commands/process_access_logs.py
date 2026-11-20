@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Count
 from django.utils import timezone
 
-from artworks.models import AccessLog, DailyStatistic
+from artworks.models import AccessLog, DailyStatistic, MachineTranslation
 
 
 class Command(BaseCommand):
@@ -39,3 +39,8 @@ class Command(BaseCommand):
                 file.unlink(missing_ok=True)
                 removed += 1
         self.stdout.write(f"{removed} old labelled image(s) removed from the cache.")
+
+        # Machine translations not used for a while (e.g. of texts that have changed)
+        unused = timezone.localdate() - timedelta(days=settings.CATHOLIC_BACKGROUND["MACHINE_TRANSLATION_DAYS"])
+        deleted, _ = MachineTranslation.objects.filter(used__lt=unused).delete()
+        self.stdout.write(f"{deleted} unused machine translation(s) removed.")

@@ -211,6 +211,14 @@ CATHOLIC_BACKGROUND = {
     "CAPTION_FONT": env("CAPTION_FONT", ""),          # default: DejaVu Sans (fonts-dejavu-core)
     "CAPTION_FONT_BOLD": env("CAPTION_FONT_BOLD", ""),
     "CAPTION_CACHE_DAYS": int(env("CAPTION_CACHE_DAYS", "30")),
+    # Machine translation (LibreTranslate) of the texts into the languages without a translation
+    # written by hand. Empty URL: off. The address of a LibreTranslate server, e.g. one installed
+    # on this machine (http://127.0.0.1:5000) or https://libretranslate.com (needs an API key).
+    "LIBRETRANSLATE_URL": env("LIBRETRANSLATE_URL", ""),
+    "LIBRETRANSLATE_API_KEY": env("LIBRETRANSLATE_API_KEY", ""),
+    "LIBRETRANSLATE_TIMEOUT": int(env("LIBRETRANSLATE_TIMEOUT", "30")),
+    # Translations not used for these days are removed by process_access_logs
+    "MACHINE_TRANSLATION_DAYS": int(env("MACHINE_TRANSLATION_DAYS", "180")),
     # Privacy: days that access logs with IP addresses are kept
     "ACCESS_LOG_DAYS": int(env("ACCESS_LOG_DAYS", "30")),
     # Shown on the privacy page

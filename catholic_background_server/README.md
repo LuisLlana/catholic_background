@@ -15,7 +15,8 @@ with the same protocol:
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license", "extra": {...},
         "language": "<language of the texts>", "reason": "…", "reason_type": "saint|celebration|season|",
         "id": <artwork>, "edit_url": "<page of the admin site to edit it>",
-        "position": <place among the artworks of the day, from 1>, "count": <artworks of the day>}
+        "position": <place among the artworks of the day, from 1>, "count": <artworks of the day>,
+        "machine_translation": null | {"service": "LibreTranslate", "notice": "…", "url": "https://libretranslate.com"}}
 
 With `raw=1` (any non null value; `0`, `false`, `no`, `off` or empty are null) the
 answer is the image itself (`image/jpeg` or `image/png`, with the label unless
@@ -36,9 +37,16 @@ artwork is among those of the day, e.g. `https://simba.fdi.ucm.es/background?raw
 `log=0` leaves the request out of the statistics (the clock page uses it).
 
     GET /background/languages
-    -> {"default": "es", "languages": [{"code": "es", "name": "Español"}, …]}
+    -> {"default": "es", "languages": [{"code": "es", "name": "Español"}, …],
+        "machine_languages": [{"code": "fr", "name": "Français"}, …],
+        "machine_translation": null | {"service": "LibreTranslate", "url": "https://libretranslate.com"}}
 
-The languages of the content, for the language selector of the applications.
+The languages of the content, for the language selector of the applications: first
+`languages` (translated by people), then, as a separate part of the menu,
+`machine_languages` (translated by LibreTranslate, see *Machine translation*). When the
+texts of an answer are a machine translation, `machine_translation` is not null and the
+application must show its `notice` ("Traduction automatique (LibreTranslate)", already
+in that language), which gives the credit, preferably as a link to its `url`.
 
 `date` is the year of the artwork (free text); `extra` contains the additional data.
 
@@ -225,6 +233,53 @@ of data. Nothing written by hand is lost: a field is only filled in when it is e
 language or is a copy of the default language that was never translated. Each artwork
 carries its title in the default language, and is skipped if it does not match (the file
 was made for another database). It can be run again: it only adds what is missing.
+
+### Machine translation (LibreTranslate)
+
+The languages without a translation written by hand can be shown translated by
+[LibreTranslate](https://libretranslate.com), free software for machine translation. It
+is only for showing them: nothing is written into the texts of the artworks, and a text
+written by hand always wins (a language added in the admin site leaves the machine part
+of the menu).
+
+- The title, comment, year, license, additional data and reason are translated from the
+  default language; the author is a name and is not translated. Texts without words
+  (`1668-1669`) or with addresses (licenses with links) are left as they are.
+- Each text is translated only once and kept in the database (`MachineTranslation`);
+  changing a text translates it again, and `process_access_logs` removes the translations
+  not used for `MACHINE_TRANSLATION_DAYS` days (180).
+- Everything translated says so: the API gives `machine_translation` with the notice,
+  the label of the image has one more small line with it, and the browser and clock
+  pages show it with a link to libretranslate.com. The menus show the languages of
+  LibreTranslate after those written by hand, under "Machine translation (LibreTranslate)".
+- If LibreTranslate cannot be reached, the texts are shown in the default language, as
+  without it, and it is not asked again for 5 minutes.
+
+Install it on the same machine (free; it needs about 2 GB of disk for the program and
+a few hundred MB for each pair of languages, and some RAM):
+
+    sudo apt install python3-venv
+    sudo python3 -m venv /opt/libretranslate
+    sudo /opt/libretranslate/bin/pip install libretranslate
+    sudo cp deploy/libretranslate.service /etc/systemd/system/
+    sudo systemctl enable --now libretranslate   # the first start downloads the models (minutes)
+
+To offer only some languages (less memory and disk), add `--load-only es,en,fr,it,pt,de`
+to its `ExecStart` (Spanish, the default language, and English, from which the notice is
+translated, must be among them).
+
+and in `/etc/catholic-background/env`:
+
+    LIBRETRANSLATE_URL=http://127.0.0.1:5000
+    # LIBRETRANSLATE_API_KEY=…   (if the server asks for one, e.g. https://libretranslate.com)
+    # LIBRETRANSLATE_TIMEOUT=30
+
+The first visitor of a language waits for the translation of the image of the day
+(a few seconds); to avoid it, translate everything in advance (it can be run again; it
+only translates what is new):
+
+    python manage.py machine_translate --languages fr,it,pt,de
+    python manage.py machine_translate --all
 
 ## Privacy
 

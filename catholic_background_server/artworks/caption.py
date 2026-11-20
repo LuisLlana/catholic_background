@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 VERSION = "1"
 
 BAND = (22, 22, 24)
-COLORS = {"reason": (240, 194, 75), "title": (255, 255, 255), "author": (205, 205, 205)}
+COLORS = {"reason": (240, 194, 75), "title": (255, 255, 255), "author": (205, 205, 205), "note": (150, 150, 150)}
 # Height of each kind of text as a fraction of the height of a 16:9 screen
-SIZES = {"reason": 0.020, "title": 0.027, "author": 0.020}
+SIZES = {"reason": 0.020, "title": 0.027, "author": 0.020, "note": 0.014}
 FONT_FILES = {
     "regular": ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuSans.ttf"],
     "bold": ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold.ttf"],
@@ -62,8 +62,11 @@ def _wrap(draw, text, font, width, max_lines):
     return lines
 
 
-def add_label(image, reason, title, author_year):
-    """Returns a new RGB image: the artwork with the label below it (or the artwork alone if there is no text)."""
+def add_label(image, reason, title, author_year, note=""):
+    """
+    Returns a new RGB image: the artwork with the label below it (or the artwork alone if there is
+    no text). note: a last small line (the notice of a machine translation).
+    """
     image = ImageOps.exif_transpose(image).convert("RGB")
     if not (reason or title or author_year):
         return image
@@ -77,11 +80,13 @@ def add_label(image, reason, title, author_year):
         "reason": _font("regular", max(10, round(screen * SIZES["reason"]))),
         "title": _font("bold", max(12, round(screen * SIZES["title"]))),
         "author": _font("regular", max(10, round(screen * SIZES["author"]))),
+        "note": _font("regular", max(9, round(screen * SIZES["note"]))),
     }
     measure = ImageDraw.Draw(image)
     lines = []
     title_lines = 2 if width >= height else 3
-    for kind, text, max_lines in (("reason", reason, 1), ("title", title, title_lines), ("author", author_year, 1)):
+    for kind, text, max_lines in (("reason", reason, 1), ("title", title, title_lines), ("author", author_year, 1),
+                                 ("note", note if (reason or title or author_year) else "", 1)):
         if text:
             lines += [(kind, line) for line in _wrap(measure, text, fonts[kind], max_width, max_lines)]
     heights = [fonts[kind].getbbox("ÁÉgjpq")[3] for kind, _ in lines]
@@ -97,22 +102,23 @@ def add_label(image, reason, title, author_year):
     return labelled
 
 
-def labelled_jpeg(artwork, texts, reason):
+def labelled_jpeg(artwork, texts, reason, note=""):
     """
     JPEG bytes of the artwork with its label, cached on disk: the same request always gets
     exactly the same bytes (the applications compare them to detect a new image).
     """
     author_year = ", ".join(t for t in (texts["author"], texts["year"]) if t)
-    key = hashlib.sha256("\x1f".join([
-        VERSION, artwork.image.name, str(artwork.image.size), reason, texts["title"], author_year,
-    ]).encode()).hexdigest()
+    parts = [VERSION, artwork.image.name, str(artwork.image.size), reason, texts["title"], author_year]
+    if note:
+        parts.append(note)          # only then: the images already cached keep their names
+    key = hashlib.sha256("\x1f".join(parts).encode()).hexdigest()
     cache = Path(settings.MEDIA_ROOT) / "caption-cache"
     path = cache / f"{key}.jpg"
     if path.exists():
         path.touch()          # recently used: kept by the nightly clean-up
         return path.read_bytes()
     with artwork.image.open("rb") as f:
-        labelled = add_label(Image.open(io.BytesIO(f.read())), reason, texts["title"], author_year)
+        labelled = add_label(Image.open(io.BytesIO(f.read())), reason, texts["title"], author_year, note)
     buffer = io.BytesIO()
     labelled.save(buffer, "JPEG", quality=90)
     data = buffer.getvalue()

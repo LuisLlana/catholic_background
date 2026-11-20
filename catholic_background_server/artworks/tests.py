@@ -992,3 +992,142 @@ class ImportTextsTests(TestCase):
         self.assertEqual(artwork.additional_data(spanish()), {"Museo": "Museo Memling"})
         # The title has changed, so the file no longer matches this artwork
         self.assertIn("Artworks skipped: 1", self.run_import(data))
+
+
+class FakeLibreTranslate:
+    """Answers like LibreTranslate: /languages and /translate ("[fr] text"); counts the texts translated."""
+
+    def __init__(self, fail=False):
+        self.fail = fail
+        self.translated = []
+
+    def __call__(self, path, payload=None):
+        if self.fail:
+            raise OSError("connection refused")
+        if path == "/languages":
+            return [{"code": "es", "name": "Spanish", "targets": ["en", "fr", "de", "pt", "es"]},
+                    {"code": "en", "name": "English", "targets": ["es", "fr", "de", "pt"]},
+                    {"code": "fr", "name": "French", "targets": ["es", "en"]},
+                    {"code": "de", "name": "German", "targets": ["es", "en"]},
+                    {"code": "pt", "name": "Portuguese", "targets": ["es", "en"]}]
+        self.translated += payload["q"]
+        return {"translatedText": [f"[{payload['target']}] {text}" for text in payload["q"]]}
+
+
+LIBRETRANSLATE = {**settings.CATHOLIC_BACKGROUND, "LIBRETRANSLATE_URL": "http://libretranslate.test"}
+
+
+@override_settings(MEDIA_ROOT=MEDIA, CATHOLIC_BACKGROUND=LIBRETRANSLATE)
+class MachineTranslationTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        from unittest import mock
+        cache.clear()
+        self.fake = FakeLibreTranslate()
+        patcher = mock.patch("artworks.machine._call", self.fake)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.artwork = make_artwork("La Anunciación", {"type": "any"})
+        self.artwork.translations.update(author="Fra Angelico", year="siglo XV", description="El ángel Gabriel.",
+                                         license="Dominio público")
+        key = MetadataKey.objects.create(name="Museo")
+        ArtworkMetadata.objects.create(artwork=self.artwork, key=key, language=spanish(), value="Museo del Prado")
+
+    def get(self, **params):
+        return self.client.get(reverse("background"), {"caption": "0", **params}).json()
+
+    def test_languages_in_two_parts(self):
+        data = self.client.get(reverse("languages")).json()
+        self.assertEqual([item["code"] for item in data["languages"]], ["es", "en"])
+        # Those written by hand are not offered again; names in their own language, by name
+        self.assertEqual(data["machine_languages"], [{"code": "de", "name": "Deutsch"},
+                                                     {"code": "fr", "name": "Français"},
+                                                     {"code": "pt", "name": "Português"}])
+        self.assertEqual(data["machine_translation"]["service"], "LibreTranslate")
+
+    def test_translated_texts_with_the_notice(self):
+        data = self.get(lang="fr")
+        self.assertEqual(data["language"], "fr")
+        self.assertEqual(data["title"], "[fr] La Anunciación")
+        self.assertEqual(data["description"], "[fr] El ángel Gabriel.")
+        self.assertEqual(data["date"], "[fr] siglo XV")
+        self.assertEqual(data["license"], "[fr] Dominio público")
+        self.assertEqual(data["author"], "Fra Angelico")              # a name: not translated
+        self.assertEqual(data["extra"], {"[fr] Museo": "[fr] Museo del Prado"})
+        self.assertEqual(data["machine_translation"], {"service": "LibreTranslate", "url": "https://libretranslate.com",
+                                                       "notice": "[fr] Machine translation (LibreTranslate)"})
+        # Each text is translated only once
+        count = len(self.fake.translated)
+        self.assertEqual(self.get(lang="fr")["title"], "[fr] La Anunciación")
+        self.assertEqual(len(self.fake.translated), count)
+        # Changing a text translates it again
+        self.artwork.translations.update(title="La Anunciación de Cortona")
+        self.assertEqual(self.get(lang="fr")["title"], "[fr] La Anunciación de Cortona")
+        self.assertEqual(len(self.fake.translated), count + 1)
+
+    def test_only_texts_with_words(self):
+        self.artwork.translations.update(year="1668-1669", license="CC BY-SA 4.0, https://commons.wikimedia.org/x")
+        data = self.get(lang="fr")
+        self.assertEqual(data["date"], "1668-1669")
+        self.assertEqual(data["license"], "CC BY-SA 4.0, https://commons.wikimedia.org/x")
+
+    def test_languages_written_by_hand_are_not_translated(self):
+        for lang in ("es", "en", "en-US", ""):
+            data = self.get(lang=lang)
+            self.assertIsNone(data["machine_translation"], lang)
+            self.assertEqual(data["title"], "La Anunciación", lang)
+        self.assertIsNone(self.get(lang="xx")["machine_translation"])      # not offered: default language
+        self.assertEqual(self.fake.translated, [])
+
+    def test_without_libretranslate_the_texts_are_shown_as_they_are(self):
+        self.fake.fail = True
+        from django.core.cache import cache
+        cache.set("libretranslate-languages-es", [("fr", "Français")])
+        data = self.get(lang="fr")
+        self.assertEqual(data["title"], "La Anunciación")
+        self.assertEqual(data["language"], "es")
+        self.assertIsNone(data["machine_translation"])
+        self.assertTrue(cache.get("libretranslate-down"))           # not asked again for a while
+        self.fake.fail = False
+        self.assertIsNone(self.get(lang="fr")["machine_translation"])
+        self.assertEqual(self.fake.translated, [])
+
+    @override_settings(CATHOLIC_BACKGROUND={**LIBRETRANSLATE, "LIBRETRANSLATE_URL": ""})
+    def test_off_without_address(self):
+        data = self.client.get(reverse("languages")).json()
+        self.assertEqual(data["machine_languages"], [])
+        self.assertIsNone(data["machine_translation"])
+        self.assertIsNone(self.get(lang="fr")["machine_translation"])
+
+    def test_label_with_the_credit(self):
+        plain = base64.b64decode(self.client.get(reverse("background"), {"lang": "es"}).json()["image"])
+        translated = base64.b64decode(self.client.get(reverse("background"), {"lang": "fr"}).json()["image"])
+        with Image.open(io.BytesIO(plain)) as a, Image.open(io.BytesIO(translated)) as b:
+            self.assertGreater(b.size[1], a.size[1])            # one more line: the notice
+
+    def test_pages(self):
+        page = self.client.get(reverse("browser"), {"lang": "fr"})
+        self.assertContains(page, '<optgroup label="Machine translation (LibreTranslate)">')
+        self.assertContains(page, '<option value="fr" selected>Français</option>')
+        self.assertContains(page, "[fr] La Anunciación")
+        self.assertContains(page, "[fr] Machine translation (LibreTranslate)")
+        self.assertContains(page, 'href="https://libretranslate.com"')
+        self.assertContains(page, "lang=fr")                       # the links keep the language
+        page = self.client.get(reverse("browser"), {"lang": "es"})
+        self.assertNotContains(page, "[fr]")
+        self.assertNotContains(page, 'class="machine"')
+        page = self.client.get(reverse("time"), {"lang": "de"})
+        self.assertContains(page, '<option value="de" selected>Deutsch</option>')
+        self.assertContains(page, "data.machine_translation")
+
+    def test_translate_in_advance_and_clean_up(self):
+        out = io.StringIO()
+        call_command("machine_translate", "--languages", "fr,de", stdout=out)
+        self.assertIn("fr: 1 artworks translated.", out.getvalue())
+        count = len(self.fake.translated)
+        self.assertEqual(self.get(lang="de")["title"], "[de] La Anunciación")
+        self.assertEqual(len(self.fake.translated), count)             # all translated in advance
+        from artworks.models import MachineTranslation
+        MachineTranslation.objects.update(used=date.today() - timedelta(days=400))
+        call_command("process_access_logs", stdout=io.StringIO())
+        self.assertFalse(MachineTranslation.objects.exists())

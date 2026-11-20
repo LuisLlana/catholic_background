@@ -49,6 +49,7 @@
     .caption { font-size: .95rem; line-height: 1.4; }
     .caption .reason { color: #ffd27a; font-weight: bold; }
     .caption .title { font-weight: 600; }
+    .caption .machine { font-size: .8rem; opacity: .75; color: inherit; }
     #position { opacity: .85; }
     .about { font-size: .8rem; opacity: .8; margin: 0; }
     .about a { color: #fff; }
@@ -78,7 +79,7 @@
       <span class="spacer"></span>
       <label>{% translate "Texts in" %}
         <select id="lang">
-          {% for item in languages %}<option value="{{ item.code }}"{% if item.pk == language.pk %} selected{% endif %}>{{ item.name }}</option>{% endfor %}
+          {% include "includes/language_options.html" %}
         </select>
       </label>
     </div>
@@ -270,9 +271,19 @@
       if (caption.childNodes.length) caption.append(" · ");
       caption.append(span);
     };
+    caption.lang = data.language || "";
     add(data.reason, "reason");
     add(data.title || T.untitled, "title");
     add([data.author, data.date].filter(Boolean).join(", "), "author");
+    // Machine translation: say so and give the credit to LibreTranslate
+    if (data.machine_translation) {
+      const note = document.createElement("a");
+      note.className = "machine";
+      note.href = data.machine_translation.url;
+      note.rel = "noopener noreferrer";
+      note.textContent = data.machine_translation.notice;
+      caption.append(document.createElement("br"), note);
+    }
     const several = (data.count || 0) > 1;
     $("other").classList.toggle("hidden", !several);
     $("position").classList.toggle("hidden", !several);

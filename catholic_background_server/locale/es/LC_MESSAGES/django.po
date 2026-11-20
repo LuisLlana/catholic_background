@@ -957,3 +957,15 @@ msgstr "%(title)s: una obra de arte sacro católico para cada día del año lit�
 #: templates/pages/redirect.html
 msgid "Go to the image of the day"
 msgstr "Ir a la imagen del día"
+
+#: templates/includes/language_options.html
+msgid "Machine translation (LibreTranslate)"
+msgstr "Traducción automática (LibreTranslate)"
+
+#: artworks/models.py
+msgid "machine translation"
+msgstr "traducción automática"
+
+#: artworks/models.py
+msgid "machine translations"
+msgstr "traducciones automáticas"

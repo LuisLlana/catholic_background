@@ -17,10 +17,47 @@ from django.utils import timezone as dj_timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
 
+from . import machine
 from .caption import labelled_jpeg
 from .models import AccessLog, Artwork, Language, current_language
 from .selection import candidates, pick, pick_next, reason
 
+
+
+def machine_languages():
+    """[(code, name)] of the languages LibreTranslate offers that have no translation written by hand."""
+    default = Language.default()
+    if default is None or not machine.enabled():
+        return []
+    manual = list(Language.objects.all())
+    taken = {language.code.lower() for language in manual} | {language.code.lower().split("-")[0] for language in manual}
+    return [(code, name) for code, name in machine.languages(default.code)
+            if code.lower() not in taken and code.lower().split("-")[0] not in taken]
+
+
+def content_language(request, fallback=None):
+    """
+    (language of the content, code of a language of machine translation or ""). ?lang=xx is
+    a language written by hand if there is one that matches it, else one that LibreTranslate offers
+    (then the texts are those of the default language, to be translated).
+    """
+    asked = (request.GET.get("lang") or "").strip().replace("_", "-")
+    language = Language.best_match([asked])
+    if language is None and asked:
+        for code, _ in machine_languages():
+            if code.lower() == asked.lower():
+                return Language.default(), code
+    return language or fallback or Language.default(), ""
+
+
+def machine_note(request, texts, why, extra, target):
+    """The texts translated into target (and the notice of machine translation), or as they were."""
+    if target:
+        done = machine.translate_artwork(texts, why["text"], extra, target)
+        if done:
+            texts, text, extra, notice = done
+            return texts, {**why, "text": text}, extra, notice
+    return texts, why, extra, ""
 
 
 def requested_language(request):
@@ -143,12 +180,12 @@ def background(request):
         ids = [found.pk for found in candidates(day)]
         position, count = ids.index(artwork.pk) + 1, len(ids)
 
-    language = requested_language(request)
-    texts = artwork.texts(language)
-    why = reason(artwork, day, language)
+    language, target = content_language(request)
+    texts, why, extra, notice = machine_note(request, artwork.texts(language), reason(artwork, day, language),
+                                             artwork.additional_data(language), target)
     try:
         if wants_caption(request):
-            data = labelled_jpeg(artwork, texts, why["text"])
+            data = labelled_jpeg(artwork, texts, why["text"], notice)
         else:
             with artwork.image.open("rb") as f:
                 data = f.read()
@@ -179,8 +216,12 @@ def background(request):
         "description": texts["description"],
         "source": artwork.source_url,
         "license": texts["license"],
-        "extra": artwork.additional_data(language),
+        "extra": extra,
         "language": texts["language"],
+        # Texts translated by LibreTranslate (lang of a language without a translation written by
+        # hand): the applications must show the notice, which gives the credit; null otherwise
+        "machine_translation": {"service": machine.SERVICE, "notice": notice, "url": machine.CREDIT_URL}
+                               if notice else None,
         "reason": why["text"],
         "reason_type": why["type"],
         "id": artwork.pk,
@@ -214,9 +255,14 @@ def protected_media(request, path):
 def languages(request):
     """Languages of the content, for the language selector of the applications."""
     default = Language.default()
+    machine_ones = machine_languages()
     response = JsonResponse({
         "default": default.code if default else "",
+        # Translated by people
         "languages": [{"code": language.code, "name": language.name} for language in Language.objects.all()],
+        # Translated by LibreTranslate when they are asked for (a separate part of the menu)
+        "machine_languages": [{"code": code, "name": name} for code, name in machine_ones],
+        "machine_translation": {"service": machine.SERVICE, "url": machine.CREDIT_URL} if machine_ones else None,
     })
     response["Cache-Control"] = "no-store"
     return response
@@ -245,7 +291,7 @@ def browser(request):
     ?next=<id>: the artwork of the day that follows that one ("Next image", when the day has several).
     """
     day = _browser_day(request.GET.get("date"))
-    language = Language.best_match([request.GET.get("lang", "")]) or current_language()
+    language, target = content_language(request, current_language())
     now = dj_timezone.localtime()
     seconds = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
     wants_next, after = requested_next(request)
@@ -268,6 +314,10 @@ def browser(request):
         "next": day + timedelta(days=1) if day < date.max else None,
         "language": language,
         "languages": Language.objects.all(),
+        # The language chosen in the menu (written by hand or of machine translation)
+        "lang_code": target or language.code,
+        "target": target,
+        "machine_languages": machine_languages(),
         "artwork": artwork,
         # Place among the artworks of the day, for "Next image"
         "position": position,
@@ -276,10 +326,14 @@ def browser(request):
     # Also shown at the root of the site: its canonical address is always that of the browser
     context.update(_search_engines(request, artwork, reverse("browser")))
     if artwork is not None:
+        texts, why, additional, notice = machine_note(request, artwork.texts(language), reason(artwork, day, language),
+                                                      artwork.additional_data(language), target)
         context.update({
-            "texts": artwork.texts(language),
-            "reason": reason(artwork, day, language)["text"],
-            "additional": artwork.additional_data(language),
+            "texts": texts,
+            "reason": why["text"],
+            "additional": additional,
+            "notice": notice,
+            "credit_url": machine.CREDIT_URL,
             "source": source_link(artwork.source_url),
             "can_edit": request.user.is_active and request.user.is_staff,
         })
@@ -347,7 +401,7 @@ def time_page(request):
     measures the difference with the clock of the device and corrects it.
     ?tz=<time zone> and ?lang=<language of the texts of the image>.
     """
-    language = Language.best_match([request.GET.get("lang", "")]) or current_language()
+    language, target = content_language(request, current_language())
     now = dj_timezone.localtime()
     today = pick(now.date(), (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
     return render(request, "pages/time.html", {
@@ -356,6 +410,8 @@ def time_page(request):
         "zones": _time_zones(),
         "language": language,
         "languages": Language.objects.all(),
+        "target": target,
+        "machine_languages": machine_languages(),
         # Placeholders of "Image 2 of 3 of this day", filled in by the page
         "position": "{position}",
         "count": "{count}",

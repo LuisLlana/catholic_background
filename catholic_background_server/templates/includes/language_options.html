@@ -1,0 +1,5 @@
+{% load i18n %}{# Menu of the language of the texts: first those written by hand, then those of machine translation #}
+{% for item in languages %}<option value="{{ item.code }}"{% if not target and item.pk == language.pk %} selected{% endif %}>{{ item.name }}</option>{% endfor %}
+{% if machine_languages %}<optgroup label="{% translate 'Machine translation (LibreTranslate)' %}">
+{% for code, name in machine_languages %}<option value="{{ code }}"{% if code == target %} selected{% endif %}>{{ name }}</option>{% endfor %}
+</optgroup>{% endif %}

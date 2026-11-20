@@ -330,6 +330,27 @@ class Condition(models.Model):
                 setattr(self, field, "" if field == "season" else None)
 
 
+class MachineTranslation(models.Model):
+    """
+    A text translated by LibreTranslate (see machine.py): each text is translated only once.
+    "key" identifies the original text; when an editor changes it, it is translated again.
+    """
+
+    source = models.CharField(max_length=20)
+    target = models.CharField(max_length=20)
+    key = models.CharField(max_length=64)
+    text = models.TextField()
+    used = models.DateField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("machine translation")
+        verbose_name_plural = _("machine translations")
+        constraints = [models.UniqueConstraint(fields=["source", "target", "key"], name="unique_machine_translation")]
+
+    def __str__(self):
+        return f"{self.source}→{self.target}: {self.text[:50]}"
+
+
 class AccessLog(models.Model):
     """Requests of the applications (IP addresses are personal data: deleted after ACCESS_LOG_DAYS)."""
 

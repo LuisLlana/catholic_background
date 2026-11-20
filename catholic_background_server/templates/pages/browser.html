@@ -30,24 +30,25 @@
   .empty { text-align: center; padding: 4rem 1rem; opacity: .75; }
   .others { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: -.4rem 0 1rem; }
   .others span { opacity: .75; }
+  .machine { font-size: .85rem; opacity: .75; margin: 0 0 .6rem; padding: .3rem .6rem; border-left: 3px solid currentColor; }
 </style>
 {% endblock %}
 {% block content %}
 <h2 style="margin:0">Catholic Background</h2>
 
 <nav class="bar" aria-label="{% translate 'Choice of the day' %}">
-  {% if previous %}<a class="button" href="?date={{ previous|date:'Y-m-d' }}&amp;lang={{ language.code }}" title="{% translate 'Previous day' %}">&#9664;</a>{% endif %}
+  {% if previous %}<a class="button" href="?date={{ previous|date:'Y-m-d' }}&amp;lang={{ lang_code }}" title="{% translate 'Previous day' %}">&#9664;</a>{% endif %}
   <form method="get">
     <input type="date" name="date" value="{{ day|date:'Y-m-d' }}" onchange="this.form.submit()" aria-label="{% translate 'Day' %}">
     <label>{% translate "Texts in" %}
       <select name="lang" onchange="this.form.submit()">
-        {% for item in languages %}<option value="{{ item.code }}"{% if item.pk == language.pk %} selected{% endif %}>{{ item.name }}</option>{% endfor %}
+        {% include "includes/language_options.html" %}
       </select>
     </label>
     <noscript><button class="button" type="submit">{% translate "Show" %}</button></noscript>
   </form>
-  {% if next %}<a class="button" href="?date={{ next|date:'Y-m-d' }}&amp;lang={{ language.code }}" title="{% translate 'Next day' %}">&#9654;</a>{% endif %}
-  <a class="button{% if day == today %} disabled{% endif %}" href="?lang={{ language.code }}">{% translate "Today" %}</a>
+  {% if next %}<a class="button" href="?date={{ next|date:'Y-m-d' }}&amp;lang={{ lang_code }}" title="{% translate 'Next day' %}">&#9654;</a>{% endif %}
+  <a class="button{% if day == today %} disabled{% endif %}" href="?lang={{ lang_code }}">{% translate "Today" %}</a>
   <span class="spacer"></span>
   <a class="button" href="{% url 'time' %}">{% translate "Clock" %}</a>
   {% if can_edit %}<a class="button" href="{% url 'admin:artworks_artwork_change' artwork.pk %}">{% translate "Edit this image" %}</a>{% endif %}
@@ -57,14 +58,15 @@
 {% if count > 1 %}
 <div class="others">
   <span>{% blocktranslate %}Image {{ position }} of {{ count }} of this day{% endblocktranslate %}</span>
-  <a class="button" href="?date={{ day|date:'Y-m-d' }}&amp;lang={{ language.code }}&amp;next={{ artwork.pk }}">{% translate "Next image" %} &#8250;</a>
+  <a class="button" href="?date={{ day|date:'Y-m-d' }}&amp;lang={{ lang_code }}&amp;next={{ artwork.pk }}">{% translate "Next image" %} &#8250;</a>
 </div>
 {% endif %}
 <div class="view">
   <div class="picture">
     <img src="{% url 'browser_image' artwork.pk %}" alt="{{ texts.title }}">
   </div>
-  <div>
+  <div lang="{{ texts.language }}">
+    {% if notice %}<p class="machine">{{ notice }} · <a href="{{ credit_url }}" rel="noopener noreferrer">libretranslate.com</a></p>{% endif %}
     {% if reason %}<p class="reason">{{ reason }}</p>{% endif %}
     <h1>{{ texts.title|default:_("Untitled") }}</h1>
     {% if texts.author or texts.year %}<p class="author">{{ texts.author }}{% if texts.author and texts.year %}, {% endif %}{{ texts.year }}</p>{% endif %}

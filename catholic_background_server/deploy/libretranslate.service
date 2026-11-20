@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+# LibreTranslate for the machine translation of the texts (optional, see the README).
+# The language models are downloaded the first time into /var/lib/libretranslate.
+[Unit]
+Description=LibreTranslate (machine translation for Catholic background)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=libretranslate
+Environment=HOME=/var/lib/libretranslate
+Environment=XDG_DATA_HOME=/var/lib/libretranslate
+Environment=XDG_CACHE_HOME=/var/lib/libretranslate/cache
+# Only some languages (less memory and disk): add --load-only es,en,fr,it,pt,de
+ExecStart=/opt/libretranslate/bin/libretranslate --host 127.0.0.1 --port 5000 --disable-web-ui
+Restart=on-failure
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=multi-user.target
