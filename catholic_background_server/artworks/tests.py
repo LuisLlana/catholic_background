@@ -916,3 +916,59 @@ class SearchEngineTests(TestCase):
         self.assertEqual(self.client.get(reverse("background"), {"ts": ts})["Content-Type"], "application/json")
         self.assertEqual(self.client.get(reverse("background"), HTTP_ACCEPT="application/json")["Content-Type"], "application/json")
         self.assertEqual(self.client.get(reverse("background"), {"raw": "1"}, HTTP_ACCEPT=html)["Content-Type"], "image/jpeg")
+
+
+class ImportTextsTests(TestCase):
+    """python manage.py import_texts: translations without losing what was written by hand."""
+
+    def setUp(self):
+        self.folder = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.folder)
+
+    def run_import(self, data, *arguments):
+        import json
+        path = f"{self.folder}/texts.json"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        out = io.StringIO()
+        call_command("import_texts", path, *arguments, stdout=out, stderr=io.StringIO())
+        return out.getvalue()
+
+    def test_import(self):
+        fresh = make_artwork("Anunciación")
+        copied = make_artwork("Santa Margarita")       # the Spanish text was put in the English block too
+        ArtworkTranslation.objects.filter(artwork=copied).update(description="Texto")
+        ArtworkTranslation.objects.create(artwork=copied, language=english(), description="Texto")
+        misplaced = make_artwork("San Pablo")           # the Spanish text only in the English block
+        ArtworkTranslation.objects.create(artwork=misplaced, language=english(), description="Basílica")
+        by_hand = make_artwork("Dalí")
+        ArtworkTranslation.objects.create(artwork=by_hand, language=english(), title="Written by hand")
+        museum = MetadataKey.objects.create(name="Museo")
+        ArtworkMetadata.objects.create(artwork=fresh, key=museum, language=spanish(), value="Museo del Prado")
+        data = {"language": "en", "artworks": {
+            str(fresh.pk): {"check_title": "Anunciación", "texts": {"title": "Annunciation", "license": "Public domain"}},
+            str(copied.pk): {"check_title": "Santa Margarita", "texts": {"description": "Text"}},
+            str(misplaced.pk): {"check_title": "San Pablo", "texts": {"description": "Basilica"},
+                                "fix_default_language": {"description": {"from": "", "to": "Basílica"}}},
+            str(by_hand.pk): {"check_title": "Dalí", "texts": {"title": "Machine translation"}},
+            "999": {"check_title": "Nothing", "texts": {"title": "Nothing"}},
+            str(fresh.pk + 1000): {"texts": {"title": "Nothing"}},
+        }, "metadata_keys": {"Museo": "Museum"}, "metadata": {str(fresh.pk): {"Museo": "Prado Museum"}}}
+
+        self.assertIn("Would change: 4 fields", self.run_import(data, "--dry-run"))
+        self.assertFalse(ArtworkTranslation.objects.filter(artwork=fresh, language=english()).exists())
+
+        self.assertIn("Kept as they were (already written by hand): 1. Artworks skipped: 2.", self.run_import(data))
+        self.assertEqual(fresh.texts(english())["title"], "Annunciation")
+        self.assertEqual(fresh.texts(english())["license"], "Public domain")
+        self.assertEqual(copied.texts(english())["description"], "Text")
+        self.assertEqual(misplaced.texts(english())["description"], "Basilica")
+        self.assertEqual(misplaced.texts(spanish())["description"], "Basílica")
+        self.assertEqual(by_hand.texts(english())["title"], "Written by hand")
+        self.assertEqual(fresh.additional_data(english()), {"Museum": "Prado Museum"})
+        self.assertEqual(fresh.additional_data(spanish()), {"Museo": "Museo del Prado"})
+        # Running it again changes nothing
+        self.assertIn("Changed: 0 fields of English, 0 corrections of Español, 0 additional data, 0 names",
+                      self.run_import(data))

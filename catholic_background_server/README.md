@@ -214,6 +214,18 @@ whatever HTTP library the application uses. The answer includes `"language"` and
 The celebrations of the calendar are content, not interface: each one has a name and
 a name in Spanish, editable in the admin site (the initial catalogue has both).
 
+**Loading a translation** of many artworks at once (e.g. all the texts in English):
+
+    python manage.py import_texts translations-en.json --dry-run   # says what it would change
+    python manage.py import_texts translations-en.json
+
+The file (format at the top of `artworks/management/commands/import_texts.py`) has, for
+each artwork, its texts in that language, its additional data and the names of the kinds
+of data. Nothing written by hand is lost: a field is only filled in when it is empty in that
+language or is a copy of the default language that was never translated. Each artwork
+carries its title in the default language, and is skipped if it does not match (the file
+was made for another database). It can be run again: it only adds what is missing.
+
 ## Privacy
 
 `/background/privacy/` shows the privacy policy (in English or Spanish), which also lists the cookies of the site. The server stores the IP address of each
