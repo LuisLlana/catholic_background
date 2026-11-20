@@ -43,4 +43,5 @@ private:
     QString m_reason;
     QString m_title;
     QString m_author;
+    QString m_machineNotice;
 };

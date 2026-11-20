@@ -1,3 +1,12 @@
+catholic-background (0.6.1) trixie; urgency=medium
+
+  * Machine translation: the languages the server translates with
+    LibreTranslate in a separate part of the menu of the language, and the
+    notice of the server (with a link) in the window, the tooltip of the tray
+    icon and the notifications when the texts are a machine translation.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 20 Nov 2026 17:23:49 +0100
+
 catholic-background (0.6.0) trixie; urgency=medium
 
   * Options "Also on the lock screen" (Picture of the Day in kscreenlockerrc,

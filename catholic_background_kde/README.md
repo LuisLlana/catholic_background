@@ -119,6 +119,13 @@ below the artwork (reason, title, author; drawn by the server), how to fill the
 screen around the image, how often to check the server, and the icon in the
 system tray.
 
+**Machine translation**: the menu of the language of the texts shows, after the
+languages translated by people and under "Machine translation (LibreTranslate)",
+those the server translates with LibreTranslate (if the server has it). With one
+of them, the texts say so wherever they are shown, with the notice of the server: in
+the label of the wallpaper (drawn by the server), in the window (with a link to
+LibreTranslate), in the tooltip of the tray icon and in its notifications.
+
 **Also on the lock screen and on the login screen** (in the settings; they apply
 at once and are off by default):
 

@@ -203,6 +203,9 @@ void CatholicBackgroundProvider::requestFinished(KJob *_job)
     group.writeEntry("CurrentReason", obj.value(QStringLiteral("reason")).toString().trimmed());
     group.writeEntry("CurrentTitle", m_title);
     group.writeEntry("CurrentAuthor", m_author);
+    // Texts translated by LibreTranslate: the notice, which the tray icon shows too
+    group.writeEntry("CurrentMachineNotice",
+                     obj.value(QStringLiteral("machine_translation")).toObject().value(QStringLiteral("notice")).toString());
     group.writeEntry("CurrentImageHash", QString::fromLatin1(QCryptographicHash::hash(*decoded, QCryptographicHash::Sha1).toHex()));
     config->sync();
 

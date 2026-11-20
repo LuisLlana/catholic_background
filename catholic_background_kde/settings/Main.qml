@@ -229,6 +229,23 @@ Kirigami.ApplicationWindow {
                     spacing: Kirigami.Units.smallSpacing
                     visible: Backend.dayError.length === 0 && !Backend.dayLoading
 
+                    // Texts translated by LibreTranslate: say so and give the credit, with its link
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        visible: (Backend.dayInfo.machine_notice || "").length > 0
+                        textFormat: Text.StyledText
+                        text: {
+                            const notice = (Backend.dayInfo.machine_notice || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                            const url = Backend.dayInfo.machine_url || ""
+                            return /^https?:\/\//i.test(url)
+                                ? notice + " · <a href=\"" + url.replace(/"/g, "%22") + "\">" + url.replace(/^https?:\/\//i, "").replace(/\/.*$/, "") + "</a>"
+                                : notice
+                        }
+                        font: Kirigami.Theme.smallFont
+                        opacity: 0.75
+                        wrapMode: Text.Wrap
+                        onLinkActivated: link => Qt.openUrlExternally(link)
+                    }
                     QQC2.Label {
                         Layout.fillWidth: true
                         visible: text.length > 0
@@ -446,12 +463,29 @@ Kirigami.ApplicationWindow {
                 QQC2.ComboBox {
                     id: languageBox
                     Kirigami.FormData.label: "Language of the texts:"
+                    // As wide as the longest entry (the header of the machine translation part)
+                    implicitContentWidthPolicy: QQC2.ComboBox.WidestTextWhenCompleted
                     textRole: "name"
                     valueRole: "code"
                     model: [{ "code": "", "name": "System language (" + Backend.systemLanguageName + ")" }].concat(Backend.languages)
                     Component.onCompleted: currentIndex = Math.max(0, indexOfValue(form.language))
                     onModelChanged: currentIndex = Math.max(0, indexOfValue(form.language))
-                    onActivated: form.language = currentValue
+                    onActivated: {
+                        // The header of the machine translation part cannot be chosen
+                        if (model[currentIndex] && model[currentIndex].header)
+                            currentIndex = Math.max(0, indexOfValue(form.language))
+                        else
+                            form.language = currentValue
+                    }
+                    delegate: QQC2.ItemDelegate {
+                        required property var modelData
+                        required property int index
+                        width: ListView.view ? ListView.view.width : implicitWidth
+                        text: modelData.name
+                        enabled: !modelData.header
+                        leftPadding: modelData.machine === true ? Kirigami.Units.gridUnit * 1.5 : Kirigami.Units.largeSpacing
+                        highlighted: languageBox.highlightedIndex === index
+                    }
                 }
 
                 QQC2.CheckBox {

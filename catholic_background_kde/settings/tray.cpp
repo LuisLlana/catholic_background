@@ -89,6 +89,7 @@ Tray::Tray(QObject *parent)
     m_reason = group.readEntry("CurrentReason", QString());
     m_title = group.readEntry("CurrentTitle", QString());
     m_author = group.readEntry("CurrentAuthor", QString());
+    m_machineNotice = group.readEntry("CurrentMachineNotice", QString());
     updateTooltip();
 
     // KConfig writes a new file and renames it: watch the folder too, and
@@ -123,6 +124,7 @@ void Tray::onConfigChanged()
     m_reason = group.readEntry("CurrentReason", QString());
     m_title = group.readEntry("CurrentTitle", QString());
     m_author = group.readEntry("CurrentAuthor", QString());
+    m_machineNotice = group.readEntry("CurrentMachineNotice", QString());
     updateTooltip();
     if (hash == m_hash) {
         return;
@@ -145,6 +147,9 @@ void Tray::updateTooltip()
             lines << text.toHtmlEscaped();
         }
     }
+    if (!m_machineNotice.isEmpty()) {
+        lines << u"<small>%1</small>"_s.arg(m_machineNotice.toHtmlEscaped());
+    }
     m_item->setToolTipSubTitle(lines.join("<br>"_L1));
 }
 
@@ -158,7 +163,11 @@ void Tray::notify()
             parts << text;
         }
     }
-    notification->setText(parts.isEmpty() ? u"The wallpaper has changed."_s : parts.join(u" — "_s));
+    QString text = parts.isEmpty() ? u"The wallpaper has changed."_s : parts.join(u" — "_s);
+    if (!m_machineNotice.isEmpty()) {
+        text += u"\n"_s + m_machineNotice;      // machine translation: say so
+    }
+    notification->setText(text);
     notification->setIconName(u"catholic-background"_s);
     KNotificationAction *open = notification->addDefaultAction(u"Open"_s);
     connect(open, &KNotificationAction::activated, this, &Tray::openSettings);

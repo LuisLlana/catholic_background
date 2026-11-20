@@ -573,7 +573,8 @@ void Backend::loadLanguages()
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         reply->deleteLater();
         QVariantList found;
-        const QJsonArray list = QJsonDocument::fromJson(reply->readAll()).object().value("languages"_L1).toArray();
+        const QJsonObject answer = QJsonDocument::fromJson(reply->readAll()).object();
+        const QJsonArray list = answer.value("languages"_L1).toArray();
         for (const QJsonValue &value : list) {
             const QJsonObject language = value.toObject();
             if (!language.value("code"_L1).toString().isEmpty()) {
@@ -585,6 +586,22 @@ void Backend::loadLanguages()
             // Server unreachable or old: the two initial languages
             found = {QVariantMap{{u"code"_s, u"es"_s}, {u"name"_s, u"Español"_s}},
                      QVariantMap{{u"code"_s, u"en"_s}, {u"name"_s, u"English"_s}}};
+        }
+        // Languages the server translates with LibreTranslate: a separate part of the menu, after
+        // a header that cannot be chosen
+        bool header = false;
+        for (const QJsonValue &value : answer.value("machine_languages"_L1).toArray()) {
+            const QJsonObject language = value.toObject();
+            if (language.value("code"_L1).toString().isEmpty()) {
+                continue;
+            }
+            if (!header) {
+                found.append(QVariantMap{{u"code"_s, u"-"_s}, {u"name"_s, u"Machine translation (LibreTranslate)"_s},
+                                         {u"header"_s, true}});
+                header = true;
+            }
+            found.append(QVariantMap{{u"code"_s, language.value("code"_L1).toString()},
+                                     {u"name"_s, language.value("name"_L1).toString()}, {u"machine"_s, true}});
         }
         m_languages = found;
         Q_EMIT languagesChanged();
@@ -675,6 +692,10 @@ void Backend::loadDay(const QDate &day, qint64 after)
         info.insert(u"count"_s, obj.value("count"_L1).toInt());
         info.insert(u"alternative"_s, after >= 0);
         info.insert(u"extra"_s, extra);
+        // Texts translated by LibreTranslate: the notice of the server, which must be shown
+        const QJsonObject machine = obj.value("machine_translation"_L1).toObject();
+        info.insert(u"machine_notice"_s, machine.value("notice"_L1).toString());
+        info.insert(u"machine_url"_s, machine.value("url"_L1).toString());
         setDayResult({}, QUrl::fromLocalFile(file.fileName()), info);
     });
 }
