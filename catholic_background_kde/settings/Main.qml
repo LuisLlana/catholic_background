@@ -24,6 +24,7 @@ Kirigami.ApplicationWindow {
         target: Backend
         function onTestFinished(ok, text) { root.showPassiveNotification(text, ok ? "short" : "long") }
         function onRefreshFinished(ok, text) { root.showPassiveNotification(text, ok ? "short" : "long") }
+        function onLoginScreenFinished(ok, text) { root.showPassiveNotification(text, ok ? "short" : "long") }
     }
 
     Component {
@@ -465,6 +466,43 @@ Kirigami.ApplicationWindow {
                     text: "Icon in the system tray, with a notification when the image changes"
                     checked: form.trayIcon
                     onToggled: form.trayIcon = checked
+                }
+
+                Kirigami.Separator {
+                    Kirigami.FormData.isSection: true
+                }
+
+                // These two apply at once (the login screen asks for the administrator password)
+                QQC2.CheckBox {
+                    id: lockBox
+                    Kirigami.FormData.label: "Also on:"
+                    text: "The lock screen"
+                    checked: Backend.lockScreen
+                    onToggled: Backend.setLockScreen(checked)
+                    Connections {
+                        target: Backend
+                        function onLockScreenChanged() { lockBox.checked = Backend.lockScreen }
+                    }
+                }
+                QQC2.CheckBox {
+                    id: loginBox
+                    text: "The login screen (SDDM, LightDM)"
+                    checked: Backend.loginScreen
+                    enabled: Backend.loginScreenAvailable && !Backend.loginScreenBusy
+                    onToggled: Backend.setLoginScreen(checked)
+                    // The state comes from the helper: back to it if the change fails or is cancelled
+                    Connections {
+                        target: Backend
+                        function onLoginScreenChanged() { loginBox.checked = Backend.loginScreen }
+                    }
+                }
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: Kirigami.Units.gridUnit * 26
+                    wrapMode: Text.WordWrap
+                    font: Kirigami.Theme.smallFont
+                    opacity: 0.7
+                    text: Backend.loginScreenBusy ? "Changing the login screen…" : Backend.loginScreenInfo
                 }
 
                 Kirigami.Separator {

@@ -52,6 +52,10 @@ constexpr int DEFAULT_CHECK_INTERVAL = 30;  // minutes, as in catholic-backgroun
 constexpr int MIN_CHECK_INTERVAL = 5;
 constexpr int MAX_CHECK_INTERVAL = 24 * 60;
 constexpr auto TIMER_UNIT = "catholic-background-update.timer";
+#ifndef LOGIN_HELPER
+#define LOGIN_HELPER ""
+#endif
+constexpr auto LOGIN_HELPER_PATH = LOGIN_HELPER;  // empty when built without the login screen option
 
 /// "30 minutes", "1 hour", "2 hours", "90 minutes"
 QString describeInterval(int minutes)
@@ -397,6 +401,168 @@ void Backend::startInteractive()
 {
     loadLanguages();
     loadDay(QDate::currentDate());
+    readLoginScreenStatus();
+}
+
+// ---------------------------------------------------------------- lock screen
+
+namespace
+{
+KSharedConfig::Ptr lockerConfig()
+{
+    KSharedConfig::Ptr config = KSharedConfig::openConfig(u"kscreenlockerrc"_s);
+    config->reparseConfiguration();     // the screen locker settings may have changed it
+    return config;
+}
+
+KConfigGroup lockerPotdGroup(const KSharedConfig::Ptr &config)
+{
+    return config->group(u"Greeter"_s).group(u"Wallpaper"_s).group(QLatin1String(POTD_PLUGIN)).group(u"General"_s);
+}
+}
+
+bool Backend::lockScreen() const
+{
+    const KSharedConfig::Ptr config = lockerConfig();
+    return config->group(u"Greeter"_s).readEntry("WallpaperPlugin", QString()) == QLatin1String(POTD_PLUGIN)
+        && lockerPotdGroup(config).readEntry("Provider", QString()) == QLatin1String(PROVIDER_ID);
+}
+
+void Backend::setLockScreen(bool enabled)
+{
+    if (enabled == lockScreen()) {
+        return;
+    }
+    const KSharedConfig::Ptr config = lockerConfig();
+    KConfigGroup greeter = config->group(u"Greeter"_s);
+    KConfigGroup potd = lockerPotdGroup(config);
+    KConfigGroup ours = configGroup();
+    if (enabled) {
+        // What there was before, to give it back when the option is turned off
+        ours.writeEntry("LockScreenPreviousPlugin", greeter.readEntry("WallpaperPlugin", QString()));
+        ours.writeEntry("LockScreenPreviousProvider", potd.readEntry("Provider", QString()));
+        ours.writeEntry("LockScreenPreviousFillMode", potd.readEntry("FillMode", QString()));
+        greeter.writeEntry("WallpaperPlugin", QString::fromLatin1(POTD_PLUGIN));
+        potd.writeEntry("Provider", QString::fromLatin1(PROVIDER_ID));
+        potd.writeEntry("FillMode", FILL_MODE);
+    } else {
+        const auto restore = [](KConfigGroup &group, const char *key, const QString &value) {
+            if (value.isEmpty()) {
+                group.deleteEntry(key);
+            } else {
+                group.writeEntry(key, value);
+            }
+        };
+        restore(greeter, "WallpaperPlugin", ours.readEntry("LockScreenPreviousPlugin", QString()));
+        restore(potd, "Provider", ours.readEntry("LockScreenPreviousProvider", QString()));
+        restore(potd, "FillMode", ours.readEntry("LockScreenPreviousFillMode", QString()));
+        ours.deleteEntry("LockScreenPreviousPlugin");
+        ours.deleteEntry("LockScreenPreviousProvider");
+        ours.deleteEntry("LockScreenPreviousFillMode");
+    }
+    config->sync();
+    ours.sync();
+    Q_EMIT lockScreenChanged();
+}
+
+// ---------------------------------------------------------------- login screen
+
+bool Backend::loginScreen() const
+{
+    return m_loginScreen;
+}
+
+bool Backend::loginScreenAvailable() const
+{
+    return !QString::fromUtf8(LOGIN_HELPER_PATH).isEmpty() && QFileInfo::exists(QString::fromUtf8(LOGIN_HELPER_PATH))
+        && (!m_greeters.isEmpty() || m_loginScreen);
+}
+
+bool Backend::loginScreenBusy() const
+{
+    return m_loginScreenBusy;
+}
+
+QString Backend::loginScreenInfo() const
+{
+    const QString helper = QString::fromUtf8(LOGIN_HELPER_PATH);
+    if (helper.isEmpty() || !QFileInfo::exists(helper)) {
+        return u"Not available in this installation (it needs the package or a system-wide installation)."_s;
+    }
+    if (m_greeters.isEmpty()) {
+        return u"No supported login screen was found (SDDM, or LightDM with the GTK or Slick greeter)."_s;
+    }
+    return u"%1. It asks for the administrator password and keeps the label, language and background it had "
+           u"when it was turned on."_s.arg(m_greeters.join(u", "_s));
+}
+
+void Backend::readLoginScreenStatus()
+{
+    const QString helper = QString::fromUtf8(LOGIN_HELPER_PATH);
+    m_loginScreen = false;
+    m_greeters.clear();
+    if (!helper.isEmpty() && QFileInfo::exists(helper)) {
+        QProcess process;
+        process.start(helper, {u"status"_s});
+        if (process.waitForFinished(10000)) {
+            const QJsonObject status = QJsonDocument::fromJson(process.readAllStandardOutput()).object();
+            m_loginScreen = status.value("enabled"_L1).toBool();
+            for (const QJsonValue &greeter : status.value("greeters"_L1).toArray()) {
+                m_greeters.append(greeter.toString());
+            }
+        }
+    }
+    Q_EMIT loginScreenChanged();
+}
+
+void Backend::setLoginScreen(bool enabled)
+{
+    const QString helper = QString::fromUtf8(LOGIN_HELPER_PATH);
+    if (m_loginScreenBusy || helper.isEmpty()) {
+        return;
+    }
+    QStringList arguments{helper};
+    if (enabled) {
+        // The size of the screen in pixels, and the settings of the wallpaper
+        QSize size(1920, 1080);
+        if (const QScreen *screen = QGuiApplication::primaryScreen()) {
+            size = screen->size() * screen->devicePixelRatio();
+        }
+        const KConfigGroup group = configGroup();
+        arguments << u"enable"_s << u"--server"_s << serverUrl() << u"--lang"_s << CatholicBackground::languageCode(group)
+                  << u"--label"_s << (showLabel() ? u"1"_s : u"0"_s) << u"--size"_s
+                  << u"%1x%2"_s.arg(size.width()).arg(size.height()) << u"--background"_s << background()
+                  << u"--color"_s << backgroundColor().name();
+    } else {
+        arguments << u"disable"_s;
+    }
+    m_loginScreenBusy = true;
+    Q_EMIT loginScreenChanged();
+    auto *process = new QProcess(this);
+    connect(process, &QProcess::finished, this, [this, process](int code, QProcess::ExitStatus status) {
+        process->deleteLater();
+        const QStringList lines = QString::fromUtf8(process->readAllStandardOutput() + process->readAllStandardError())
+                                      .trimmed()
+                                      .split(u'\n');
+        QString message = lines.isEmpty() ? QString() : lines.last().trimmed();
+        const bool ok = status == QProcess::NormalExit && code == 0;
+        if (!ok && (code == 126 || code == 127) && message.isEmpty()) {
+            message = u"Authentication was cancelled or failed."_s;
+        }
+        m_loginScreenBusy = false;
+        readLoginScreenStatus();        // the real state, also if it failed
+        Q_EMIT loginScreenFinished(ok, message.isEmpty() ? (ok ? u"Done."_s : u"The login screen could not be changed."_s) : message);
+    });
+    connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+        if (error != QProcess::FailedToStart) {
+            return;
+        }
+        process->deleteLater();
+        m_loginScreenBusy = false;
+        readLoginScreenStatus();
+        Q_EMIT loginScreenFinished(false, u"pkexec is not installed."_s);
+    });
+    process->start(u"pkexec"_s, arguments);
 }
 
 void Backend::loadLanguages()

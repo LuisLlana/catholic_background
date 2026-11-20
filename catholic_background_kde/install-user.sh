@@ -18,6 +18,7 @@ cmake -B build \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DKDE_INSTALL_PLUGINDIR="$PLUGINDIR" \
     -DKDE_INSTALL_SYSTEMDUSERUNITDIR=share/systemd/user \
+    -DINSTALL_LOGIN_SCREEN=OFF \
     "$@"
 cmake --build build
 cmake --install build

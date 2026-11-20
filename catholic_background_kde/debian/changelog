@@ -1,3 +1,13 @@
+catholic-background (0.6.0) trixie; urgency=medium
+
+  * Options "Also on the lock screen" (Picture of the Day in kscreenlockerrc,
+    the previous lock screen wallpaper is given back when it is turned off)
+    and "Also on the login screen" (SDDM and LightDM with the GTK or Slick
+    greeter, through pkexec; restored when it is turned off or the package
+    is removed).
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 20 Nov 2026 12:49:31 +0100
+
 catholic-background (0.5.2) trixie; urgency=medium
 
   * When the day shown has several images, "Next image" shows the following

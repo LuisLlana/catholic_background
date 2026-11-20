@@ -62,6 +62,12 @@ class Backend : public QObject
     Q_PROPERTY(QString dayError READ dayError NOTIFY dayChanged)
     Q_PROPERTY(QUrl dayImage READ dayImage NOTIFY dayChanged)
     Q_PROPERTY(QVariantMap dayInfo READ dayInfo NOTIFY dayChanged)
+    // The image of the day also on the lock screen (kscreenlockerrc) and on the login screen (SDDM, LightDM)
+    Q_PROPERTY(bool lockScreen READ lockScreen NOTIFY lockScreenChanged)
+    Q_PROPERTY(bool loginScreen READ loginScreen NOTIFY loginScreenChanged)
+    Q_PROPERTY(bool loginScreenAvailable READ loginScreenAvailable NOTIFY loginScreenChanged)
+    Q_PROPERTY(bool loginScreenBusy READ loginScreenBusy NOTIFY loginScreenChanged)
+    Q_PROPERTY(QString loginScreenInfo READ loginScreenInfo NOTIFY loginScreenChanged)
 
 public:
     explicit Backend(QObject *parent = nullptr);
@@ -101,6 +107,11 @@ public:
     QString dayError() const;
     QUrl dayImage() const;
     QVariantMap dayInfo() const;
+    bool lockScreen() const;
+    bool loginScreen() const;
+    bool loginScreenAvailable() const;
+    bool loginScreenBusy() const;
+    QString loginScreenInfo() const;
 
     /// Loads the languages and today's image (only for the window, not for the command line).
     void startInteractive();
@@ -132,6 +143,12 @@ public:
     Q_INVOKABLE void updateIfChanged();
     /// Makes "Catholic background of the day" the wallpaper of every desktop. Emits refreshFinished().
     Q_INVOKABLE void setAsWallpaper();
+    /// The Picture of the Day of this provider on the lock screen, or the previous lock screen wallpaper back.
+    Q_INVOKABLE void setLockScreen(bool enabled);
+    /// The image on the login screen (the helper asks for the administrator password). Emits loginScreenFinished().
+    Q_INVOKABLE void setLoginScreen(bool enabled);
+    /// Reads again whether the login screen option is on and which greeters there are.
+    Q_INVOKABLE void readLoginScreenStatus();
 
 Q_SIGNALS:
     void serverUrlChanged();
@@ -148,6 +165,9 @@ Q_SIGNALS:
     void showLabelChanged();
     void trayIconChanged();
     void dayChanged();
+    void lockScreenChanged();
+    void loginScreenChanged();
+    void loginScreenFinished(bool ok, const QString &message);
 
 private:
     void setBusy(bool busy);
@@ -189,4 +209,7 @@ private:
     QVariantMap m_dayInfo;
     int m_dayVersion = 0;
     QPointer<QNetworkReply> m_dayReply;
+    bool m_loginScreen = false;
+    bool m_loginScreenBusy = false;
+    QStringList m_greeters;
 };

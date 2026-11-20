@@ -119,6 +119,26 @@ below the artwork (reason, title, author; drawn by the server), how to fill the
 screen around the image, how often to check the server, and the icon in the
 system tray.
 
+**Also on the lock screen and on the login screen** (in the settings; they apply
+at once and are off by default):
+
+- *The lock screen*: the lock screen uses the Picture of the Day wallpaper with
+  this provider (`~/.config/kscreenlockerrc`, as the screen locking settings of
+  Plasma do). Turning it off gives back the lock screen wallpaper there was.
+- *The login screen (SDDM, LightDM)*: `/usr/libexec/catholic-background/login-background`,
+  run as root with `pkexec` (it asks for the administrator password), downloads
+  the image of the day for the size of the screen to
+  `/var/lib/catholic-background/login.jpg` and points the login screen to it:
+  the current SDDM theme (`theme.conf.user`), the LightDM GTK greeter (a file in
+  `lightdm-gtk-greeter.conf.d/`) or the Slick greeter. The system timer
+  `catholic-background-login.timer` keeps it up to date every hour. It uses the
+  label, language and background settings it had when it was turned on (turn it
+  off and on to use new ones). Turning it off, or removing the package, restores
+  the files it changed (copies in `/var/lib/catholic-background/backup/`). GDM is
+  not supported yet. It is the same helper as in `catholic_background_gtk`; turn
+  it on in only one of the two applications. Not installed by `install-user.sh`
+  (it needs a system-wide installation).
+
 **System tray** (option "Icon in the system tray, with a notification when the
 image changes", off by default): an icon whose tooltip shows the reason, title
 and author of the current image; clicking it opens the application, and its menu

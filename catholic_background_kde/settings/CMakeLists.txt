@@ -17,6 +17,7 @@ qt_add_resources(catholic-background-settings "qml"
 target_compile_definitions(catholic-background-settings PRIVATE
     DEFAULT_WALLPAPER_URL="${WALLPAPER_URL}"
     APP_VERSION="${PROJECT_VERSION}"
+    LOGIN_HELPER="${LOGIN_HELPER}"
 )
 
 target_include_directories(catholic-background-settings PRIVATE ${PROJECT_SOURCE_DIR}/common)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.18)
-project(catholic-background-potd-provider VERSION 0.5.2)
+project(catholic-background-potd-provider VERSION 0.6.0)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF6_MIN_VERSION "6.0.0")
@@ -39,6 +39,12 @@ if(NOT PlasmaPotdProvider_FOUND)
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party"
         INTERFACE_LINK_LIBRARIES "Qt6::Gui;KF6::CoreAddons;KF6::ConfigCore;KF6::KIOCore"
     )
+endif()
+
+# Login screen option (needs root through pkexec: only for system-wide installations)
+option(INSTALL_LOGIN_SCREEN "Install the helper that puts the image on the login screen (SDDM, LightDM)" ON)
+if(INSTALL_LOGIN_SCREEN)
+    add_subdirectory(login)
 endif()
 
 add_subdirectory(src)
