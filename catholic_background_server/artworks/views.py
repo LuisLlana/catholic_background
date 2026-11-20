@@ -44,9 +44,11 @@ def content_language(request, fallback=None):
     asked = (request.GET.get("lang") or "").strip().replace("_", "-")
     language = Language.best_match([asked])
     if language is None and asked:
-        for code, _ in machine_languages():
-            if code.lower() == asked.lower():
-                return Language.default(), code
+        # The exact language, or else the general one ("fr-FR" of a phone: "fr")
+        offered = {code.lower(): code for code, _ in machine_languages()}
+        code = offered.get(asked.lower()) or offered.get(asked.lower().split("-")[0])
+        if code:
+            return Language.default(), code
     return language or fallback or Language.default(), ""
 
 

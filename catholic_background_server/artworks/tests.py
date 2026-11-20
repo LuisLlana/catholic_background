@@ -1071,6 +1071,11 @@ class MachineTranslationTests(TestCase):
         self.assertEqual(data["date"], "1668-1669")
         self.assertEqual(data["license"], "CC BY-SA 4.0, https://commons.wikimedia.org/x")
 
+    def test_language_of_a_phone(self):
+        data = self.get(lang="fr-fr")          # the language of the system of Android or Windows
+        self.assertEqual(data["language"], "fr")
+        self.assertIsNotNone(data["machine_translation"])
+
     def test_languages_written_by_hand_are_not_translated(self):
         for lang in ("es", "en", "en-US", ""):
             data = self.get(lang=lang)
