@@ -214,6 +214,29 @@ public sealed class MainWindow : Form
                 return label;
             }
 
+            // Texts translated by LibreTranslate: say so and give the credit, with its link
+            if (image.IsMachineTranslation)
+            {
+                var url = image.MachineUrl;
+                bool web = Uri.TryCreate(url, UriKind.Absolute, out var address) &&
+                           (address.Scheme == Uri.UriSchemeHttp || address.Scheme == Uri.UriSchemeHttps);
+                var text = web ? $"{image.MachineNotice} \u00b7 {address!.Host}" : image.MachineNotice;
+                var notice = new LinkLabel
+                {
+                    Text = text, AutoSize = true, Margin = new Padding(0, 0, 0, 6), ForeColor = SystemColors.GrayText,
+                    Font = new Font(Font.FontFamily, Font.Size * 0.9f),
+                };
+                if (web)
+                {
+                    notice.LinkArea = new LinkArea(text.Length - address!.Host.Length, address.Host.Length);
+                    notice.LinkClicked += (_, _) => OpenInBrowser(url);
+                }
+                else
+                {
+                    notice.LinkArea = new LinkArea(0, 0);
+                }
+                _info.Controls.Add(notice);
+            }
             if (image.Reason.Length > 0)
                 Add(image.Reason, new Font(Font, FontStyle.Bold), ReasonColor);
             Add(image.Title.Length > 0 ? image.Title : "Untitled", new Font(Font.FontFamily, Font.Size * 1.8f));

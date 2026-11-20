@@ -14,7 +14,10 @@ public sealed class SettingsDialog : Form
     private readonly TextBox _url = new() { Anchor = AnchorStyles.Left | AnchorStyles.Right, Width = 320 };
     private readonly Button _test = new() { Text = "Test", AutoSize = true };
     private readonly Button _default = new() { Text = "Default", AutoSize = true };
-    private readonly ComboBox _language = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 260 };
+    private readonly ComboBox _language = new()
+    {
+        DropDownStyle = ComboBoxStyle.DropDownList, Width = 260, DrawMode = DrawMode.OwnerDrawFixed, MaxDropDownItems = 20,
+    };
     private readonly CheckBox _label = new() { Text = "Show the reason, title and author below the artwork", AutoSize = true };
     private readonly NumericUpDown _interval = new()
     {
@@ -35,9 +38,43 @@ public sealed class SettingsDialog : Form
     /// <summary>After ApplyAsync: the server or the language changed (the texts of the day must be loaded again).</summary>
     public bool TextsChanged { get; private set; }
 
-    private sealed record LanguageItem(string Code, string Name)
+    /// <summary>Header: the title of the part of machine translation, which cannot be chosen.</summary>
+    private sealed record LanguageItem(string Code, string Name, bool Machine = false, bool Header = false)
     {
         public override string ToString() => Name;
+    }
+
+    private int _lastLanguage;
+
+    /// <summary>The menu of the language draws the header of machine translation apart (gray, not selectable).</summary>
+    private void DrawLanguage(object? sender, DrawItemEventArgs e)
+    {
+        if (e.Index < 0 || _language.Items[e.Index] is not LanguageItem item)
+            return;
+        bool inList = (e.State & DrawItemState.ComboBoxEdit) == 0;
+        if (item.Header)
+        {
+            using var back = new SolidBrush(SystemColors.Control);
+            e.Graphics.FillRectangle(back, e.Bounds);
+            TextRenderer.DrawText(e.Graphics, item.Name, new Font(e.Font ?? Font, FontStyle.Italic), e.Bounds,
+                SystemColors.GrayText, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+            return;
+        }
+        e.DrawBackground();
+        var bounds = e.Bounds;
+        if (item.Machine && inList)
+            bounds = new Rectangle(bounds.X + 16, bounds.Y, bounds.Width - 16, bounds.Height);
+        bool selected = (e.State & DrawItemState.Selected) != 0;
+        TextRenderer.DrawText(e.Graphics, item.Name, e.Font ?? Font, bounds,
+            selected ? SystemColors.HighlightText : SystemColors.WindowText, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        if (_language.SelectedItem is LanguageItem { Header: true })
+            _language.SelectedIndex = _lastLanguage < _language.Items.Count ? _lastLanguage : 0;
+        else
+            _lastLanguage = _language.SelectedIndex;
     }
 
     public SettingsDialog(TrayApplication app)
@@ -86,6 +123,8 @@ public sealed class SettingsDialog : Form
         var textsGrid = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Dock = DockStyle.Fill, Padding = new Padding(4) };
         textsGrid.Controls.Add(new Label { Text = "Language:", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
         textsGrid.Controls.Add(_language, 1, 0);
+        _language.DrawItem += DrawLanguage;
+        _language.SelectedIndexChanged += LanguageChanged;
         textsGrid.Controls.Add(_label, 0, 1);
         textsGrid.SetColumnSpan(_label, 2);
         texts.Controls.Add(textsGrid);
@@ -165,11 +204,17 @@ public sealed class SettingsDialog : Form
         }
         _startup.Checked = _startupEnabled;
 
+        bool header = false;
         foreach (var language in await ServerClient.LanguagesAsync(s.ServerUrl))
         {
             if (IsDisposed)
                 return;
-            _language.Items.Add(new LanguageItem(language.Code, language.Name));
+            if (language.Machine && !header)
+            {
+                _language.Items.Add(new LanguageItem("", "Machine translation (LibreTranslate)", Header: true));
+                header = true;
+            }
+            _language.Items.Add(new LanguageItem(language.Code, language.Name, language.Machine));
             if (language.Code == s.Language)
                 _language.SelectedIndex = _language.Items.Count - 1;
         }

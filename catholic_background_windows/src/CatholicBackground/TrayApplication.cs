@@ -111,6 +111,8 @@ public sealed class TrayApplication : ApplicationContext
         var text = string.Join(" \u2014 ", new[] { image.TitleWithYear, image.Author }.Where(t => t.Length > 0));
         if (text.Length == 0)
             text = "The wallpaper has changed.";
+        if (image.IsMachineTranslation)
+            text += "\n" + image.MachineNotice;      // machine translation: say so
         _icon.ShowBalloonTip(10_000, Shorten(title, 63), Shorten(text, 255), ToolTipIcon.None);
     }
 

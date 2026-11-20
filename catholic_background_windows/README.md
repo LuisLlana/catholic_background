@@ -53,6 +53,13 @@ author, year, comment, other data, license and source. From there:
   artwork, how to fill the screen, start with Windows and the notification;
 - **Refresh wallpaper**.
 
+**Machine translation**: the menu of the language shows, after the languages
+translated by people and under "Machine translation (LibreTranslate)" (a header that
+cannot be chosen), those the server translates with LibreTranslate (if the server
+has it). With one of them, the texts say so wherever they are shown, with the notice
+of the server: in the label of the wallpaper (drawn by the server), in the window
+(with a link to LibreTranslate) and in the notifications.
+
 Files: `%LOCALAPPDATA%\CatholicBackground` (standalone) or the package's local
 folder (MSIX): `settings.json`, `original` and `wallpapers\`.
 

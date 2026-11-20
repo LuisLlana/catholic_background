@@ -12,19 +12,25 @@ public sealed record DownloadedImage(
     string Title, string Author, string Year, string Description, string Reason,
     string License, string Source, string EditUrl, string Language,
     IReadOnlyList<KeyValuePair<string, string>> Extra,
-    long Id = 0, int Position = 0, int Count = 0)
+    long Id = 0, int Position = 0, int Count = 0,
+    string MachineNotice = "", string MachineUrl = "")
 {
+    /// <summary>The texts are a machine translation (LibreTranslate): MachineNotice must be shown.</summary>
+    public bool IsMachineTranslation => MachineNotice.Length > 0;
+
     /// <summary>"Title (year)", as shown in the tooltip of the tray icon.</summary>
     public string TitleWithYear => ServerClient.FormatTitle(Title, Year);
 }
 
-public sealed record ContentLanguage(string Code, string Name);
+/// <summary>Machine: translated by the server with LibreTranslate (a separate part of the menu).</summary>
+public sealed record ContentLanguage(string Code, string Name, bool Machine = false);
 
 /// <summary>
 /// Access to the Catholic background of the day server.
 /// Protocol: GET &lt;url&gt;?ts=&lt;Unix timestamp of the local midnight of the day&gt;&amp;lang=&lt;language&gt;[&amp;caption=0]
 ///   -> {"image": "&lt;base64&gt;", "title", "author", "date", "description", "reason", "license", "source",
-///       "extra", "language", "edit_url", ...}
+///       "extra", "language", "edit_url", ..., "machine_translation": null | {"service", "notice", "url"}}
+/// GET &lt;url&gt;/languages -> {"default", "languages": [{"code", "name"}], "machine_languages": [{"code", "name"}]}
 /// </summary>
 public static class ServerClient
 {
@@ -142,11 +148,22 @@ public static class ServerClient
             }
         }
 
+        // Texts translated by LibreTranslate: the notice of the server, which must be shown
+        string machineNotice = "", machineUrl = "";
+        if (root.TryGetProperty("machine_translation", out var machine) && machine.ValueKind == JsonValueKind.Object)
+        {
+            machineNotice = Get(machine, "notice");
+            if (machineNotice.Length == 0)
+                machineNotice = "LibreTranslate";
+            machineUrl = Get(machine, "url");
+        }
+
         return new DownloadedImage(
             bytes, Convert.ToHexString(SHA1.HashData(bytes)).ToLowerInvariant(), size,
             Get(root, "title"), Get(root, "author"), Get(root, "date"), Get(root, "description"), Get(root, "reason"),
             Get(root, "license"), Get(root, "source"), Get(root, "edit_url"), Get(root, "language"), extra,
-            Number(root, "id"), (int)Number(root, "position"), (int)Number(root, "count"));
+            Number(root, "id"), (int)Number(root, "position"), (int)Number(root, "count"),
+            machineNotice, machineUrl);
     }
 
     /// <summary>A whole number of the answer; 0 if it is missing (servers before "next").</summary>
@@ -154,7 +171,10 @@ public static class ServerClient
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)
             ? number : 0;
 
-    /// <summary>Languages of the content offered by the server (Spanish and English if it cannot be asked).</summary>
+    /// <summary>
+    /// Languages of the content offered by the server (Spanish and English if it cannot be asked): first
+    /// those translated by people, then those of machine translation (Machine = true).
+    /// </summary>
     public static async Task<IReadOnlyList<ContentLanguage>> LanguagesAsync(string baseUrl, CancellationToken cancellationToken = default)
     {
         var fallback = new[] { new ContentLanguage("es", "Español"), new ContentLanguage("en", "English") };
@@ -167,7 +187,13 @@ public static class ServerClient
                 .Select(l => new ContentLanguage(Get(l, "code"), Get(l, "name")))
                 .Where(l => l.Code.Length > 0)
                 .ToList();
-            return found.Count > 0 ? found : fallback;
+            if (found.Count == 0)
+                return fallback;
+            if (root.TryGetProperty("machine_languages", out var machine) && machine.ValueKind == JsonValueKind.Array)
+                found.AddRange(machine.EnumerateArray()
+                    .Select(l => new ContentLanguage(Get(l, "code"), Get(l, "name"), Machine: true))
+                    .Where(l => l.Code.Length > 0));
+            return found;
         }
         catch (Exception e) when (e is ServerException or JsonException or KeyNotFoundException or InvalidOperationException)
         {
