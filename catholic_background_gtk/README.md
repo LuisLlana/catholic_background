@@ -20,7 +20,7 @@ images of the same day (*Next image*, only to see them), and *Use as Wallpaper*.
 ```sh
 sudo apt install debhelper
 dpkg-buildpackage -us -uc -b
-sudo apt install ../catholic-background-gtk_0.6.0_all.deb
+sudo apt install ../catholic-background-gtk_*_all.deb
 ```
 
 Another default server: `WALLPAPER_URL=https://my-server.example/background dpkg-buildpackage -us -uc -b`.

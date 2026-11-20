@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Preferences: where the image goes (desktop, lock screen, login screen), how it looks, the server."""
 
-from gi.repository import Adw, Gdk, Gtk
+from gi.repository import Adw, Gdk, Gio, Gtk
 
 from . import login, server
 from .window import in_background
@@ -79,6 +79,7 @@ class Preferences(Adw.PreferencesDialog):
         buttons.add_suffix(default)
         source.add(buttons)
         self.languages = [("", "Language of the system")]
+        self.people = 1             # entries of the first part of the menu (the others: machine translation)
         self.language = Adw.ComboRow(title="Language of the texts", model=Gtk.StringList.new([self.languages[0][1]]))
         self.language_handler = self.language.connect("notify::selected", self.on_language)
         source.add(self.language)
@@ -132,13 +133,30 @@ class Preferences(Adw.PreferencesDialog):
     # ---------------------------------------------------------------- languages
     def load_languages(self):
         def done(found, error):
-            self.languages = [("", "Language of the system")] + (found or [])
+            people, machine = found or ([], [])
+            first = [("", "Language of the system")] + people
+            self.languages = first + machine
+            self.people = len(first)
             self.language.handler_block(self.language_handler)
-            self.language.set_model(Gtk.StringList.new([name for _, name in self.languages]))
+            # Two parts: the languages translated by people, then those of machine translation
+            parts = Gio.ListStore(item_type=Gio.ListModel)
+            parts.append(Gtk.StringList.new([name for _, name in first]))
+            if machine:
+                parts.append(Gtk.StringList.new([name for _, name in machine]))
+            self.language.set_model(Gtk.FlattenListModel.new(parts))
+            self.language.set_header_factory(self.header_factory() if machine else None)
             codes = [code for code, _ in self.languages]
             self.language.set_selected(codes.index(self.settings["language"]) if self.settings["language"] in codes else 0)
             self.language.handler_unblock(self.language_handler)
         in_background(lambda: server.languages(self.settings["server"]), done)
+
+    def header_factory(self):
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", lambda _, header: header.set_child(
+            Gtk.Label(xalign=0, margin_top=6, margin_bottom=3, css_classes=["heading", "dim-label"])))
+        factory.connect("bind", lambda _, header: header.get_child().set_label(
+            "Machine translation (LibreTranslate)" if header.get_start() >= self.people else "Translated by people"))
+        return factory
 
     def on_language(self, row, _):
         index = row.get_selected()

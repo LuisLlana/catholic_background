@@ -1,3 +1,11 @@
+catholic-background-gtk (0.6.1) unstable; urgency=medium
+
+  * Languages of machine translation (LibreTranslate) in a separate part of
+    the menu of the language of the texts, and the notice of the server, with
+    its link, when the texts are a machine translation.
+
+ -- Luis Llana <luis.llana.diaz@gmail.com>  Fri, 20 Nov 2026 17:16:40 +0100
+
 catholic-background-gtk (0.6.0) unstable; urgency=medium
 
   * First version: GTK 4 and libadwaita application, independent of KDE.

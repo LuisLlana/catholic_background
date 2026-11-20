@@ -5,8 +5,13 @@ Protocol of the server:
 
     GET <server>?ts=<Unix timestamp of the local midnight of the day>&lang=<language>[&caption=0][&next=<id>]
     -> {"image": "<base64>", "title", "author", "date", "description", "source", "license",
-        "extra": {...}, "language", "reason", "id", "edit_url", "position", "count"}
-    GET <server>/languages -> {"default": "es", "languages": [{"code", "name"}, ...]}
+        "extra": {...}, "language", "reason", "id", "edit_url", "position", "count",
+        "machine_translation": null | {"service", "notice", "url"}}
+    GET <server>/languages -> {"default": "es", "languages": [{"code", "name"}, ...],
+                               "machine_languages": [{"code", "name"}, ...], "machine_translation": …}
+
+The machine languages (translated by LibreTranslate) go in a separate part of the menu, and an
+artwork whose texts are a machine translation shows the notice of the server, with its link.
 """
 
 import base64
@@ -100,8 +105,12 @@ def fetch(url):
         value = answer.get(name)
         return value if isinstance(value, int) else 0
 
+    machine = answer.get("machine_translation")
+    machine = {"notice": str(machine.get("notice") or "LibreTranslate"), "url": str(machine.get("url") or "")} \
+        if isinstance(machine, dict) else None
+
     return {
-        "bytes": data, "hash": hashlib.sha1(data).hexdigest(),
+        "bytes": data, "hash": hashlib.sha1(data).hexdigest(), "machine": machine,
         "title": text("title"), "author": text("author"), "year": text("date"),
         "description": text("description"), "reason": text("reason"),
         "license": text("license"), "source": text("source"), "edit_url": text("edit_url"),
@@ -111,12 +120,24 @@ def fetch(url):
 
 
 def languages(base):
-    """[(code, name)] of the languages of the texts, from the server."""
+    """
+    Languages of the texts, from the server: ([(code, name)] translated by people,
+    [(code, name)] of machine translation). Old servers have no machine languages.
+    """
     parts = urllib.parse.urlsplit(validate(base))
     url = urllib.parse.urlunsplit(parts._replace(path=parts.path.rstrip("/") + "/languages", query=""))
     answer = _get(url)
-    return [(str(item.get("code", "")), str(item.get("name", ""))) for item in answer.get("languages", [])
-            if item.get("code")]
+
+    def items(name):
+        found = answer.get(name) if isinstance(answer, dict) else None
+        return [(str(item.get("code", "")), str(item.get("name", "") or item.get("code", "")))
+                for item in (found if isinstance(found, list) else []) if isinstance(item, dict) and item.get("code")]
+    return items("languages"), items("machine_languages")
+
+
+def link_label(url):
+    """libretranslate.com for https://libretranslate.com/…"""
+    return urllib.parse.urlsplit(url or "").netloc or url
 
 
 def title_with_year(artwork):

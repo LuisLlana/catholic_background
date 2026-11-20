@@ -223,6 +223,9 @@ def notify(artwork):
         return
     notification = Gio.Notification.new(artwork["reason"] or "New image of the day")
     body = " — ".join(t for t in (title_with_year(artwork), artwork["author"]) if t)
-    notification.set_body(body or "The wallpaper has changed.")
+    body = body or "The wallpaper has changed."
+    if artwork.get("machine"):
+        body += "\n" + artwork["machine"]["notice"]       # machine translation: say so
+    notification.set_body(body)
     notification.set_default_action("app.open")
     application.send_notification("new-image", notification)

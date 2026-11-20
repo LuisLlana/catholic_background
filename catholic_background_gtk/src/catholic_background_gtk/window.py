@@ -124,8 +124,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.title_label = Gtk.Label(wrap=True, xalign=0, selectable=True, css_classes=["title-1"])
         self.author = Gtk.Label(wrap=True, xalign=0, selectable=True, css_classes=["title-4"])
         self.description = Gtk.Label(wrap=True, xalign=0, selectable=True)
+        # Texts translated by LibreTranslate: say so and give the credit, with its link
+        self.machine = Gtk.Label(wrap=True, xalign=0, use_markup=True, css_classes=["dim-label", "caption"])
         self.details = Adw.PreferencesGroup()
-        for widget in (self.reason, self.title_label, self.author, self.description, self.details):
+        for widget in (self.machine, self.reason, self.title_label, self.author, self.description, self.details):
             page.append(widget)
         self.detail_rows = []
 
@@ -196,6 +198,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.description.set_label(artwork.get("description", ""))
         for widget in (self.reason, self.title_label, self.author, self.description):
             widget.set_visible(bool(widget.get_label()))
+        machine = artwork.get("machine")
+        self.machine.set_visible(bool(machine))
+        if machine:
+            notice = GLib.markup_escape_text(machine["notice"])
+            url = machine["url"]
+            self.machine.set_markup(f'{notice} · <a href="{GLib.markup_escape_text(url)}">'
+                                    f'{GLib.markup_escape_text(server.link_label(url))}</a>'
+                                    if server.is_web_link(url) else notice)
         for row in self.detail_rows:
             self.details.remove(row)
         self.detail_rows = []
