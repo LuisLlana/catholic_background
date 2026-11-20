@@ -49,6 +49,7 @@ export default class CatholicBackgroundExtension extends Extension {
             this._settings.connect('changed::check-interval', () => this._startTimer()),
             this._settings.connect('changed::panel-indicator', () => this._syncIndicator()),
             this._settings.connect('changed::reason', () => this._updateIndicator()),
+            this._settings.connect('changed::machine-notice', () => this._updateIndicator()),
             this._settings.connect('changed::title', () => this._updateIndicator()),
             this._settings.connect('changed::author', () => this._updateIndicator()),
         ];
@@ -169,6 +170,7 @@ export default class CatholicBackgroundExtension extends Extension {
         this._settings.set_string('title', result.titleWithYear);
         this._settings.set_string('author', result.author);
         this._settings.set_string('reason', result.reason);
+        this._settings.set_string('machine-notice', result.machine?.notice ?? '');
         this._settings.set_string('image-hash', hash);
         await this._composeAndSet(cancellable);
         this._setStatus('The wallpaper has been updated.');
@@ -195,8 +197,10 @@ export default class CatholicBackgroundExtension extends Extension {
         this._reasonItem = new PopupMenu.PopupMenuItem('', {reactive: false});
         this._titleItem = new PopupMenu.PopupMenuItem('', {reactive: false});
         this._authorItem = new PopupMenu.PopupMenuItem('', {reactive: false});
+        this._machineItem = new PopupMenu.PopupMenuItem('', {reactive: false});    // machine translation
         this._reasonItem.label.style = 'font-weight: bold;';
-        for (const item of [this._reasonItem, this._titleItem, this._authorItem])
+        this._machineItem.label.style = 'font-size: smaller; opacity: 0.7;';
+        for (const item of [this._reasonItem, this._titleItem, this._authorItem, this._machineItem])
             button.menu.addMenuItem(item);
         button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         button.menu.addAction('Image of the Day\u2026', () => this.openPreferences());
@@ -214,6 +218,7 @@ export default class CatholicBackgroundExtension extends Extension {
             [this._reasonItem, this._settings.get_string('reason')],
             [this._titleItem, this._settings.get_string('title') || 'Catholic Background of the Day'],
             [this._authorItem, this._settings.get_string('author')],
+            [this._machineItem, this._settings.get_string('machine-notice')],
         ];
         for (const [item, text] of texts) {
             item.label.text = text;
@@ -223,7 +228,7 @@ export default class CatholicBackgroundExtension extends Extension {
 
     _destroyIndicator() {
         this._indicator?.destroy();
-        this._indicator = this._reasonItem = this._titleItem = this._authorItem = null;
+        this._indicator = this._reasonItem = this._titleItem = this._authorItem = this._machineItem = null;
     }
 
     /** Notification of a new image (only with the icon in the top bar); clicking it opens the preferences. */
@@ -237,11 +242,11 @@ export default class CatholicBackgroundExtension extends Extension {
             });
             Main.messageTray.add(this._source);
         }
-        const body = [result.titleWithYear, result.author].filter(t => t).join(' \u2014 ');
+        const body = [result.titleWithYear, result.author].filter(t => t).join(' \u2014 ') || 'The wallpaper has changed.';
         const notification = new MessageTray.Notification({
             source: this._source,
             title: result.reason || 'New image of the day',
-            body: body || 'The wallpaper has changed.',
+            body: result.machine ? `${body}\n${result.machine.notice}` : body,
         });
         notification.connect('activated', () => this.openPreferences());
         this._source.addNotification(notification);

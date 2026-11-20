@@ -81,6 +81,10 @@
       <default>''</default>
       <summary>Why the current image is shown that day</summary>
     </key>
+    <key name="machine-notice" type="s">
+      <default>''</default>
+      <summary>Notice of machine translation of the texts of the current image (empty if they are not)</summary>
+    </key>
     <key name="status" type="s">
       <default>''</default>
       <summary>Result of the last check of the server</summary>

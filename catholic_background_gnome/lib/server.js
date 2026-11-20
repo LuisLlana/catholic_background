@@ -144,15 +144,22 @@ async function getJson(session, url, cancellable) {
 }
 
 /** Languages of the content offered by the server (Spanish and English if it cannot be asked). */
+/**
+ * Languages of the texts: {people: [{code, name}], machine: [{code, name}]}. "machine" are those the
+ * server translates with LibreTranslate (a separate part of the menu); old servers have none.
+ */
 export async function fetchLanguages(session, baseUrl, cancellable = null) {
-    const fallback = [{code: 'es', name: 'Español'}, {code: 'en', name: 'English'}];
+    const fallback = {people: [{code: 'es', name: 'Español'}, {code: 'en', name: 'English'}], machine: []};
+    const list = items => (Array.isArray(items) ? items : [])
+        .filter(l => l && typeof l.code === 'string' && l.code)
+        .map(l => ({code: l.code, name: String(l.name ?? l.code)}));
     try {
         const uri = GLib.Uri.parse(baseUrl.trim(), GLib.UriFlags.NONE);
         const url = GLib.Uri.build(GLib.UriFlags.ENCODED, uri.get_scheme(), uri.get_userinfo(), uri.get_host(),
             uri.get_port(), `${uri.get_path().replace(/\/+$/, '')}/languages`, null, null).to_string();
         const json = await getJson(session, url, cancellable);
-        const found = (json.languages ?? []).filter(l => l && typeof l.code === 'string' && l.code);
-        return found.length ? found.map(l => ({code: l.code, name: String(l.name ?? l.code)})) : fallback;
+        const people = list(json.languages);
+        return people.length ? {people, machine: list(json.machine_languages)} : fallback;
     } catch (e) {
         if (e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
             throw e;
@@ -163,8 +170,9 @@ export async function fetchLanguages(session, baseUrl, cancellable = null) {
 /**
  * Downloads an image of the server (url: see requestUrl and wallpaperUrl).
  * Returns {bytes, pixbuf, title, year, titleWithYear, author, description, reason, license,
- * source, editUrl, language, extra: [[name, value], ...], id, position, count}; bytes is the image
- * (GLib.Bytes); position (from 1) and count place it among the artworks of the day (0 if not sent).
+ * source, editUrl, language, extra: [[name, value], ...], id, position, count, machine}; bytes is the image
+ * (GLib.Bytes); position (from 1) and count place it among the artworks of the day (0 if not sent);
+ * machine is {notice, url} when the texts are a machine translation (LibreTranslate), else null.
  * Throws an Error with a readable message on failure.
  */
 export async function fetchWallpaper(session, url, cancellable = null) {
@@ -203,5 +211,8 @@ export async function fetchWallpaper(session, url, cancellable = null) {
         id: Number.isInteger(json.id) ? json.id : 0,
         position: Number.isInteger(json.position) ? json.position : 0,
         count: Number.isInteger(json.count) ? json.count : 0,
+        machine: typeof json.machine_translation === 'object' && json.machine_translation !== null
+            ? {notice: String(json.machine_translation.notice ?? 'LibreTranslate'), url: String(json.machine_translation.url ?? '')}
+            : null,
     };
 }

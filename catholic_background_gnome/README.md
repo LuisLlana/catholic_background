@@ -59,6 +59,13 @@ Open them from the Extensions application, or with
   comes from the server), label below the artwork, how to fill the screen
   around the image, and the icon in the top bar (with the notifications).
 
+**Machine translation**: the menu of the language has two parts, the languages
+translated by people and, under "Machine translation (LibreTranslate)", those the
+server translates with LibreTranslate (if the server has it). With one of them, the
+texts say so wherever they are shown, with the notice of the server: in the label
+of the wallpaper (drawn by the server), in Image of the Day (with a link to
+LibreTranslate), in the menu of the top bar and in the notifications.
+
 The extension and the preferences build the address of the image in the same
 way (`wallpaperUrl` in `lib/server.js`: day, `lang` and `caption`).
 

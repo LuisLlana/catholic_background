@@ -153,6 +153,9 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             info.append(l);
             return l;
         };
+        // Texts translated by LibreTranslate: say so and give the credit, with its link
+        const machine = new Gtk.Label({xalign: 0, wrap: true, use_markup: true, css_classes: ['dim-label', 'caption']});
+        info.append(machine);
         const reason = label(['accent', 'heading']);
         const title = label(['title-2']);
         const authorYear = label(['title-4']);
@@ -241,6 +244,14 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             authorYear.visible = authorYear.label !== '';
             description.label = data.description;
             description.visible = data.description !== '';
+            machine.visible = data.machine !== null;
+            if (data.machine) {
+                const notice = GLib.markup_escape_text(data.machine.notice, -1);
+                const url = data.machine.url;
+                machine.set_markup(/^https?:\/\//i.test(url)
+                    ? `${notice} · <a href="${GLib.markup_escape_text(url, -1)}">${GLib.markup_escape_text(url.replace(/^https?:\/\//i, '').replace(/\/.*$/, ''), -1)}</a>`
+                    : notice);
+            }
             showDetails(data);
             info.visible = true;
             updateState();
@@ -387,10 +398,23 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
         })();
         const codes = [''];
         const names = new Gtk.StringList({strings: [`System language${systemName ? ` (${systemName})` : ''}`]});
+        const machineNames = new Gtk.StringList();
+        // Two parts: the languages translated by people, then those of machine translation
+        const parts = new Gio.ListStore({item_type: Gio.ListModel});
+        parts.append(names);
+        parts.append(machineNames);
         const languageRow = new Adw.ComboRow({
             title: 'Language',
             subtitle: 'Of the texts of the label and of the image of the day',
-            model: names,
+            model: new Gtk.FlattenListModel({model: parts}),
+        });
+        const headers = new Gtk.SignalListItemFactory();
+        headers.connect('setup', (_factory, header) => {
+            header.child = new Gtk.Label({xalign: 0, margin_top: 6, margin_bottom: 3, css_classes: ['heading', 'dim-label']});
+        });
+        headers.connect('bind', (_factory, header) => {
+            header.child.label = header.get_start() >= names.get_n_items()
+                ? 'Machine translation (LibreTranslate)' : 'Translated by people';
         });
         texts.add(languageRow);
         let fillingLanguages = true;
@@ -398,11 +422,17 @@ export default class CatholicBackgroundPreferences extends ExtensionPreferences 
             if (!fillingLanguages && codes[languageRow.selected] !== undefined)
                 settings.set_string('language', codes[languageRow.selected]);
         });
-        fetchLanguages(session, settings.get_string('server-url')).then(languages => {
-            for (const language of languages) {
+        fetchLanguages(session, settings.get_string('server-url')).then(({people, machine}) => {
+            for (const language of people) {
                 codes.push(language.code);
                 names.append(language.name);
             }
+            for (const language of machine) {
+                codes.push(language.code);
+                machineNames.append(language.name);
+            }
+            if (machine.length)
+                languageRow.header_factory = headers;
             languageRow.selected = Math.max(0, codes.indexOf(settings.get_string('language')));
             fillingLanguages = false;
         }).catch(() => {
