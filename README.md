@@ -21,6 +21,7 @@ Each project is a git subtree of this repository, with its own README:
 | [`catholic_background_server`](catholic_background_server) | Server and content manager | Python, Django | — |
 | [`catholic_background_kde`](catholic_background_kde) | KDE Plasma: wallpaper provider and settings application | C++, Qt 6, KDE Frameworks 6, QML | 0.5.1 |
 | [`catholic_background_gnome`](catholic_background_gnome) | GNOME Shell extension | JavaScript (GJS) | 0.5.1 |
+| [`catholic_background_gtk`](catholic_background_gtk) | GNOME and other GTK desktops: application with `.deb`, independent of KDE and of the extension | Python, GTK 4, libadwaita | 0.6.0 |
 | [`catholic_background_windows`](catholic_background_windows) | Windows application (standalone `.exe` and MSIX for the Microsoft Store) | C#, .NET 10, Windows Forms | 0.5.1 |
 | [`catholic_background_android`](catholic_background_android) | Android application, with a daily notification | Kotlin, Jetpack Compose | 0.6.3 |
 
@@ -66,7 +67,7 @@ Each project is a git subtree of this repository, with its own README:
 
 ### The applications
 
-The desktop applications (KDE, GNOME and Windows):
+The desktop applications (KDE, GNOME, GTK and Windows):
 
 - check the server periodically (every 30 minutes by default) and change the
   wallpaper only when the image changes (the server may have several a day);
@@ -75,6 +76,10 @@ The desktop applications (KDE, GNOME and Windows):
   taskbar, filling the rest of the screen with a blurred copy of it, its average
   color or a color;
 - keep the current wallpaper if the server is down;
+- KDE and GTK: can also put the image on the lock screen and on the login screen
+  (SDDM, and LightDM with the GTK or Slick greeter; GDM not yet). Both are options,
+  off by default; the login screen asks for the administrator password (pkexec)
+  and is restored when it is turned off or the package is removed;
 - notify when the image changes, from their icon in the notification area
   (Windows, on by default), the system tray (KDE) or the top bar (GNOME); in KDE
   and GNOME the icon is an option, off by default.
@@ -140,6 +145,12 @@ PostgreSQL or MariaDB) see [its README](catholic_background_server/README.md).
     make install          # then log out and in
     gnome-extensions enable catholic-background@luis.llana.diaz
 
+**GNOME, GTK application** (Debian 13, Ubuntu 24.10 or later):
+
+    cd catholic_background_gtk
+    dpkg-buildpackage -us -uc -b
+    sudo apt install ../catholic-background-gtk_*_all.deb
+
 **Android** (JDK 17+ and the Android SDK):
 
     cd catholic_background_android
@@ -161,6 +172,7 @@ project:
     git subtree add --prefix=catholic_background_server  ../catholic_background_server.bundle  main
     git subtree add --prefix=catholic_background_kde     ../catholic_background_kde.bundle     main
     git subtree add --prefix=catholic_background_gnome   ../catholic_background_gnome.bundle   main
+    git subtree add --prefix=catholic_background_gtk     ../catholic_background_gtk.bundle     main
     git subtree add --prefix=catholic_background_windows ../catholic_background_windows.bundle main
     git subtree add --prefix=catholic_background_android ../catholic_background_android.bundle main
 
