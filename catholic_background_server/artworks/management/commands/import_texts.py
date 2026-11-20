@@ -12,7 +12,9 @@ Loads the texts of the artworks in a language from a JSON file (e.g. a translati
     "<id>": {
       "check_title": "<title in the default language>",     # skipped if it does not match
       "texts": {"title": …, "author": …, "year": …, "description": …, "license": …},
-      "fix_default_language": {"<field>": {"from": "<current value>", "to": "<new value>"}}
+      "fix_default_language": {"<field>": {"from": "<current value>", "to": "<new value>"}},
+      "fix": {"<field>": {"from": …, "to": …}},                 # the same, in the language of the file
+      "fix_metadata": {"<internal name of the kind of data>": {"from": …, "to": …}}   # default language
     }
   },
   "metadata_keys": {"<internal name of the kind of data>": "<name in the language>"},
@@ -20,8 +22,9 @@ Loads the texts of the artworks in a language from a JSON file (e.g. a translati
 }
 
 Nothing written by hand is lost: a field is only filled in when it is empty in that language or
-holds the same text as the default language (a copy that was never translated). A correction of
-the default language is only made when the field still has the "from" value.
+holds the same text as the default language (a copy that was never translated). A correction
+(fix_default_language, fix, fix_metadata) is only made when the field still has the "from" value,
+so it can also be used to correct mistakes of texts already written.
 """
 import json
 
@@ -60,7 +63,7 @@ class Command(BaseCommand):
                 transaction.set_rollback(True)
         c = self.counts
         self.stdout.write(("Would change" if dry_run else "Changed") +
-                          f": {c['texts']} fields of {language.name}, {c['fixes']} corrections of {default.name}, "
+                          f": {c['texts']} fields of {language.name}, {c['fixes']} corrections, "
                           f"{c['data']} additional data, {c['names']} names of kinds of data. "
                           f"Kept as they were (already written by hand): {c['kept']}. Artworks skipped: {c['skipped']}.")
 
@@ -72,16 +75,16 @@ class Command(BaseCommand):
             self.stderr.write(f"Artwork {pk}: not found or its title is not {entry.get('check_title')!r}; skipped.")
             return
         # Corrections of the default language first (e.g. a text written in the block of another language)
-        changed = False
-        for field, change in entry.get("fix_default_language", {}).items():
-            if field in TEXT_FIELDS and getattr(original, field) == change.get("from"):
-                setattr(original, field, change.get("to", ""))
+        self.fix(original, entry.get("fix_default_language", {}))
+        for key_name, change in entry.get("fix_metadata", {}).items():
+            row = ArtworkMetadata.objects.filter(artwork=artwork, key__name=key_name, language=default).first()
+            if row is not None and row.value == change.get("from") and change.get("to"):
+                row.value = change["to"]
+                row.save()
                 self.counts["fixes"] += 1
-                changed = True
-        if changed:
-            original.save()
 
         translation, _ = ArtworkTranslation.objects.get_or_create(artwork=artwork, language=language)
+        self.fix(translation, entry.get("fix", {}))
         changed = False
         for field, value in entry.get("texts", {}).items():
             if field not in TEXT_FIELDS or not value:
@@ -95,6 +98,18 @@ class Command(BaseCommand):
             setattr(translation, field, value)
             self.counts["texts"] += 1
             changed = True
+        if changed:
+            translation.full_clean()
+            translation.save()
+
+    def fix(self, translation, changes):
+        """Each field that still has the "from" value gets the "to" value."""
+        changed = False
+        for field, change in changes.items():
+            if field in TEXT_FIELDS and getattr(translation, field) == change.get("from"):
+                setattr(translation, field, change.get("to", ""))
+                self.counts["fixes"] += 1
+                changed = True
         if changed:
             translation.full_clean()
             translation.save()

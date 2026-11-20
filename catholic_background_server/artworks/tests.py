@@ -970,5 +970,25 @@ class ImportTextsTests(TestCase):
         self.assertEqual(fresh.additional_data(english()), {"Museum": "Prado Museum"})
         self.assertEqual(fresh.additional_data(spanish()), {"Museo": "Museo del Prado"})
         # Running it again changes nothing
-        self.assertIn("Changed: 0 fields of English, 0 corrections of Español, 0 additional data, 0 names",
+        self.assertIn("Changed: 0 fields of English, 0 corrections, 0 additional data, 0 names",
                       self.run_import(data))
+
+    def test_corrections(self):
+        artwork = make_artwork("San Ablerto")
+        ArtworkTranslation.objects.create(artwork=artwork, language=english(), title="Saint Albert", year="1400")
+        key = MetadataKey.objects.create(name="Museo")
+        ArtworkMetadata.objects.create(artwork=artwork, key=key, language=spanish(), value="Museo Menling")
+        data = {"language": "en", "artworks": {str(artwork.pk): {
+            "check_title": "San Ablerto",
+            "fix_default_language": {"title": {"from": "San Ablerto", "to": "San Alberto"}},
+            "fix": {"title": {"from": "Saint Albert", "to": "Saint Albert the Great"},
+                    "year": {"from": "1300", "to": "1250"}},          # changed by hand since: not touched
+            "fix_metadata": {"Museo": {"from": "Museo Menling", "to": "Museo Memling"}},
+        }}}
+        self.assertIn("3 corrections", self.run_import(data))
+        self.assertEqual(artwork.texts(spanish())["title"], "San Alberto")
+        self.assertEqual(artwork.texts(english())["title"], "Saint Albert the Great")
+        self.assertEqual(artwork.texts(english())["year"], "1400")
+        self.assertEqual(artwork.additional_data(spanish()), {"Museo": "Museo Memling"})
+        # The title has changed, so the file no longer matches this artwork
+        self.assertIn("Artworks skipped: 1", self.run_import(data))
