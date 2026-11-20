@@ -953,3 +953,7 @@ msgstr "El reloj necesita JavaScript."
 #, python-format
 msgid "%(title)s: a work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment."
 msgstr "%(title)s: una obra de arte sacro católico para cada día del año litúrgico, con su motivo, autor y comentario."
+
+#: templates/pages/redirect.html
+msgid "Go to the image of the day"
+msgstr "Ir a la imagen del día"

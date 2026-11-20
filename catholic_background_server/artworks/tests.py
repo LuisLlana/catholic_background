@@ -886,20 +886,30 @@ class SearchEngineTests(TestCase):
         self.assertContains(self.client.get(reverse("browser")), "favicon.svg")
 
 
-    @override_settings(GOOGLE_SITE_VERIFICATION="abc123")
+    @override_settings(GOOGLE_SITE_VERIFICATION="abc123", BING_SITE_VERIFICATION="B1N9")
     def test_root_is_a_page_for_browsers(self):
-        """The root of the site (Google Search Console checks its tag there) is HTML for browsers."""
+        """
+        The root of the site (Google and Bing check their tags there) is, for browsers, a page that
+        redirects to the browser page and keeps the verification tags.
+        """
         make_artwork("Anunciación", {"type": "any"})
         html = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        browser = reverse("browser")
         for url in (reverse("background"), reverse("background") + "/"):
             page = self.client.get(url, HTTP_ACCEPT=html)
+            self.assertEqual(page.status_code, 200, url)       # not an HTTP redirect: the verifiers read it
             self.assertEqual(page["Content-Type"], "text/html; charset=utf-8", url)
             self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
-            self.assertContains(page, f'<link rel="canonical" href="http://testserver{reverse("browser")}">')
+            self.assertContains(page, '<meta name="msvalidate.01" content="B1N9">')
+            self.assertContains(page, f'<meta http-equiv="refresh" content="0; url={browser}">')
+            self.assertContains(page, f'location.replace("{browser}")')
+            self.assertContains(page, f'<link rel="canonical" href="http://testserver{browser}">')
+            self.assertNotContains(page, "Anunciación</h")      # not the page of the image any more
         # Verifiers and robots that send no Accept, or */*, also get the page
         for accept in ({}, {"HTTP_ACCEPT": "*/*"}):
             page = self.client.get(reverse("background") + "/", HTTP_USER_AGENT="Mozilla/5.0 (compatible; Google-Site-Verification/1.0)", **accept)
             self.assertContains(page, '<meta name="google-site-verification" content="abc123">')
+            self.assertContains(page, '<meta name="msvalidate.01" content="B1N9">')
         # The applications (they always send ts) still get the JSON document or the image
         ts = local_midnight_ts(date.today())
         self.assertEqual(self.client.get(reverse("background"), {"ts": ts}, HTTP_ACCEPT=html)["Content-Type"], "application/json")

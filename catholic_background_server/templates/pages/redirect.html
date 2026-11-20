@@ -1,0 +1,21 @@
+{% load i18n static %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Root of the site: it only sends to the browser page, but it keeps the verification tags of #}
+  {# Google and Bing, which look for them here. An HTTP redirect would hide them from the verifiers. #}
+  <meta http-equiv="refresh" content="0; url={{ target }}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'artworks/favicon.svg' %}">
+  <title>Catholic Background</title>
+  {% translate "A work of Catholic sacred art for every day of the liturgical year, with its reason, author and comment." as description %}
+  {% include "includes/search_engines.html" with description=description og_title="Catholic Background" %}
+  <script>location.replace({{ target_json|safe }});</script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 3rem 1rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <p><a href="{{ target }}">{% translate "Go to the image of the day" %}</a></p>
+</body>
+</html>

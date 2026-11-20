@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 import base64
+import json
 import time
 import zoneinfo
 from datetime import date, datetime, timedelta, timezone
@@ -104,11 +105,12 @@ def background(request):
     The texts are in the requested language (lang), or else in the default one. The image has a
     label below the artwork with the reason, title and author (unless caption=0).
     """
-    # No parameters at all: a person with a browser or a search engine. The page of the image of
-    # the day (it is also the root of the site for Google Search Console). The applications always
-    # send ts; a client that wants the JSON of today without parameters can send Accept: application/json.
+    # No parameters at all: a person with a browser or a search engine. A page that sends them to
+    # the browser page, with the verification tags of Google and Bing (this is the root of the site
+    # for Google Search Console and Bing Webmaster Tools). The applications always send ts; a client
+    # that wants the JSON of today without parameters can send Accept: application/json.
     if not request.GET and wants_html(request):
-        return browser(request)
+        return root_page(request)
 
     now = time.time()
     raw = request.GET.get("ts")
@@ -282,6 +284,22 @@ def browser(request):
             "can_edit": request.user.is_active and request.user.is_staff,
         })
     return render(request, "pages/browser.html", context)
+
+
+def root_page(request):
+    """
+    Root of the site (/background/) for browsers and search engines: it redirects to the browser
+    page (meta refresh and script), and keeps the verification tags of Google and Bing, which an
+    HTTP redirect would not show. Its canonical address is the browser page.
+    """
+    target = reverse("browser")
+    now = dj_timezone.localtime()
+    today = pick(now.date(), (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
+    return render(request, "pages/redirect.html", {
+        **_search_engines(request, today, target),
+        "target": target,
+        "target_json": json.dumps(target),
+    })
 
 
 @require_GET

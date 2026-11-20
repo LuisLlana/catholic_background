@@ -115,9 +115,11 @@ To appear in search results:
 
 Google checks the tag at the root of the property, `/background/`: there a browser or a
 search engine (without parameters, asking for HTML or with the User-Agent of a browser or
-a robot, like Google's verifier, which does not always ask for HTML) gets the page of the
-image of the day, whose canonical address is the browser page; the applications always send `ts`
-and get the JSON document as before.
+a robot, like Google's verifier, which does not always ask for HTML) gets a short page
+with the verification tags of Google and Bing that redirects at once to the browser page
+(`<meta http-equiv="refresh">` and a script, not an HTTP redirect, which would hide the tags
+from the verifiers); its canonical address is the browser page. The applications always send
+`ts` and get the JSON document as before.
 
 `robots.txt` belongs to the root of the host, which is not this application, so the
 sitemap is sent by hand. **When moving the server**, set `PUBLIC_URL` to the new
