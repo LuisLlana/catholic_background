@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Catholic Background
+Name[es]=Fondo católico
+Comment=The image of the day as the background of the desktop, the lock screen and the login screen
+Comment[es]=La imagen del día como fondo del escritorio, la pantalla de bloqueo y la de inicio de sesión
+Exec=catholic-background-gtk
+Icon=es.llana.CatholicBackground
+Terminal=false
+Categories=GTK;GNOME;Settings;DesktopSettings;
+Keywords=wallpaper;background;catholic;art;lock;login;
+DBusActivatable=true
+StartupNotify=true

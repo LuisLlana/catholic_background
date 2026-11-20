@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Runs every 5 minutes; the application only checks when the interval of its settings has
+# passed, and does nothing for users who have not turned the desktop background on.
+[Unit]
+Description=Check for a new Catholic background of the day
+
+[Timer]
+OnActiveSec=1min
+OnUnitActiveSec=5min
+AccuracySec=1min
+
+[Install]
+WantedBy=default.target

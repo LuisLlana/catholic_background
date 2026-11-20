@@ -1,0 +1,11 @@
+catholic-background-gtk usr/bin
+src/catholic_background_gtk usr/share/catholic-background-gtk
+data/es.llana.CatholicBackground.desktop usr/share/applications
+data/es.llana.CatholicBackground.service usr/share/dbus-1/services
+data/es.llana.CatholicBackground.svg usr/share/icons/hicolor/scalable/apps
+data/catholic-background-gtk-update.service usr/lib/systemd/user
+data/catholic-background-gtk-update.timer usr/lib/systemd/user
+login/login-background usr/libexec/catholic-background-gtk
+login/catholic-background-gtk-login.service usr/lib/systemd/system
+login/catholic-background-gtk-login.timer usr/lib/systemd/system
+login/es.llana.CatholicBackground.gtk.login.policy usr/share/polkit-1/actions

@@ -1,0 +1,345 @@
+#!/usr/bin/python3
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""
+Image of the day as the background of the login screen (SDDM and LightDM).
+
+Run as root, through pkexec from the application (the administrator password is asked once):
+
+    login-background enable --server URL [--lang es] [--label 1] [--size 1920x1080]
+                            [--background blur|average|color] [--color #rrggbb]
+    login-background disable
+    login-background update        # what the system timer runs every hour
+    login-background status        # JSON, no root needed
+
+enable remembers the settings, points the greeters to a fixed image
+(/var/lib/<package>/login.jpg, readable by everybody), downloads it and starts the
+timer that keeps it up to date. disable restores the greeter configuration as it was.
+
+The same file is installed by each package (catholic-background for KDE,
+catholic-background-gtk for GNOME): its paths come from the folder it is in,
+/usr/libexec/<package>/login-background.
+"""
+
+import argparse
+import base64
+import configparser
+import datetime
+import glob
+import io
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+import urllib.request
+
+PACKAGE = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+if not re.fullmatch(r"catholic-background(-[a-z]+)?", PACKAGE):
+    PACKAGE = "catholic-background"          # run from the source tree
+CONFIG = f"/etc/{PACKAGE}/login.conf"
+STATE_DIR = f"/var/lib/{PACKAGE}"
+IMAGE = f"{STATE_DIR}/login.jpg"
+STATE = f"{STATE_DIR}/login.state"
+TIMER = f"{PACKAGE}-login.timer"
+ROOT = os.environ.get("CATHOLIC_BACKGROUND_ROOT", "")   # only for the tests: a fake / to work in
+
+SDDM_CONFIGS = ["/usr/lib/sddm/sddm.conf.d/*.conf", "/etc/sddm.conf", "/etc/sddm.conf.d/*.conf"]
+SDDM_THEMES = "/usr/share/sddm/themes"
+LIGHTDM_GTK_DROPIN = f"/etc/lightdm/lightdm-gtk-greeter.conf.d/90-{PACKAGE}.conf"
+SLICK_CONFIG = "/etc/lightdm/slick-greeter.conf"
+
+
+def path(p):
+    return ROOT + p
+
+
+# ---------------------------------------------------------------- settings
+
+def checked_settings(args):
+    """The settings given by the application, checked (they come from a user)."""
+    parts = urllib.parse.urlsplit(args.server)
+    if parts.scheme not in ("http", "https") or not parts.netloc or any(c.isspace() for c in args.server):
+        raise SystemExit("The server must be an http:// or https:// address")
+    if not re.fullmatch(r"[A-Za-z-]{0,12}", args.lang):
+        raise SystemExit("Wrong language code")
+    size = re.fullmatch(r"(\d{3,5})x(\d{3,5})", args.size)
+    if not size or not (320 <= int(size[1]) <= 16384 and 240 <= int(size[2]) <= 16384):
+        raise SystemExit("Wrong screen size")
+    if args.background not in ("blur", "average", "color"):
+        raise SystemExit("Wrong background")
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", args.color):
+        raise SystemExit("Wrong color")
+    return {"server": args.server, "lang": args.lang, "label": args.label == "1",
+            "width": int(size[1]), "height": int(size[2]),
+            "background": args.background, "color": args.color.lower()}
+
+
+def read_json(file, default):
+    try:
+        with open(path(file), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def write_file(file, data, mode=0o644):
+    """Atomic write: never a half written file for the greeter."""
+    target = path(file)
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    handle, temporary = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
+    with os.fdopen(handle, "wb") as f:
+        f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
+    os.chmod(temporary, mode)
+    os.replace(temporary, target)
+
+
+# ---------------------------------------------------------------- the image
+
+def request_url(settings, day):
+    """base?ts=<midnight of the day>&lang=...&caption=0, keeping other parameters of the base."""
+    parts = urllib.parse.urlsplit(settings["server"])
+    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query) if k not in ("ts", "lang", "caption", "next", "log")]
+    midnight = datetime.datetime.combine(day, datetime.time())
+    query.append(("ts", str(int(midnight.timestamp()))))
+    if settings["lang"]:
+        query.append(("lang", settings["lang"]))
+    if not settings["label"]:
+        query.append(("caption", "0"))
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(query)))
+
+
+def download(settings):
+    """The image of today (bytes) from the server."""
+    request = urllib.request.Request(request_url(settings, datetime.date.today()),
+                                     headers={"User-Agent": f"{PACKAGE}-login", "Accept": "application/json"})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        answer = json.load(response)
+    encoded = answer["image"]
+    if encoded.startswith("data:"):
+        encoded = encoded.split(",", 1)[1]
+    return base64.b64decode(encoded, validate=True)
+
+
+def compose(data, settings):
+    """
+    The whole image, as big as possible without cropping it, centered on the screen, over the
+    image enlarged and blurred (or its average color, or a color). As the applications do.
+    """
+    from PIL import Image, ImageFilter, ImageOps, ImageStat
+    image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+    width, height = settings["width"], settings["height"]
+    average = tuple(int(v) for v in ImageStat.Stat(image.resize((64, 64))).mean)
+    if settings["background"] == "color":
+        color = settings["color"]
+        canvas = Image.new("RGB", (width, height), tuple(int(color[i:i + 2], 16) for i in (1, 3, 5)))
+    elif settings["background"] == "average":
+        canvas = Image.new("RGB", (width, height), average)
+    else:
+        cover = ImageOps.fit(image, (max(1, width // 8), max(1, height // 8)), Image.BILINEAR)
+        cover = cover.filter(ImageFilter.GaussianBlur(6)).point(lambda v: int(v * 0.73))
+        canvas = cover.resize((width, height), Image.BILINEAR)
+    scale = min(width / image.width, height / image.height)
+    fitted = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))), Image.LANCZOS)
+    canvas.paste(fitted, ((width - fitted.width) // 2, (height - fitted.height) // 2))
+    output = io.BytesIO()
+    canvas.save(output, "JPEG", quality=92)
+    return output.getvalue()
+
+
+def update(quiet=False):
+    """Downloads the image of today and composes it; nothing if it has not changed."""
+    settings = read_json(CONFIG, None)
+    if not settings:
+        return 0
+    try:
+        data = download(settings)
+    except Exception as error:      # offline, server down: the image of before stays
+        if not quiet:
+            print(f"Could not download the image: {error}", file=sys.stderr)
+        return 1
+    import hashlib
+    fingerprint = hashlib.sha1(data + json.dumps(settings, sort_keys=True).encode()).hexdigest()
+    if read_json(STATE, {}).get("hash") == fingerprint and os.path.exists(path(IMAGE)):
+        return 0
+    write_file(IMAGE, compose(data, settings))
+    write_file(STATE, json.dumps({"hash": fingerprint, "updated": datetime.datetime.now().isoformat(timespec="seconds")}))
+    return 0
+
+
+# ---------------------------------------------------------------- greeters
+
+def sddm_theme():
+    """Theme of SDDM ([Theme] Current, the last file wins), or None if SDDM is not installed."""
+    if not (os.path.exists(path("/usr/bin/sddm")) or os.path.isdir(path(SDDM_THEMES))):
+        return None
+    current = ""
+    for pattern in SDDM_CONFIGS:
+        for file in sorted(glob.glob(path(pattern))):
+            parser = configparser.ConfigParser(interpolation=None, strict=False)
+            try:
+                parser.read(file, encoding="utf-8")
+            except configparser.Error:
+                continue
+            current = parser.get("Theme", "Current", fallback=current).strip() or current
+    if not current and os.path.isdir(path(f"{SDDM_THEMES}/breeze")):
+        current = "breeze"
+    if current and os.path.isdir(path(f"{SDDM_THEMES}/{current}")) and "/" not in current:
+        return current
+    return None
+
+
+def edit_ini(file, section, values, backup):
+    """Sets keys of an ini file keeping the rest; the first time, keeps a copy to restore it."""
+    target = path(file)
+    if not os.path.exists(path(backup)):
+        if os.path.exists(target):
+            os.makedirs(os.path.dirname(path(backup)), exist_ok=True)
+            shutil.copy2(target, path(backup))
+        else:
+            write_file(backup + ".absent", "")
+    parser = configparser.ConfigParser(interpolation=None, strict=False)
+    parser.optionxform = str        # keep the case of the keys
+    if os.path.exists(target):
+        parser.read(target, encoding="utf-8")
+    if not parser.has_section(section):
+        parser.add_section(section)
+    for key, value in values.items():
+        parser.set(section, key, value)
+    text = io.StringIO()
+    parser.write(text)
+    write_file(file, text.getvalue())
+
+
+def restore_ini(file, backup):
+    target = path(file)
+    if os.path.exists(path(backup)):
+        shutil.copy2(path(backup), target)
+        os.remove(path(backup))
+    elif os.path.exists(path(backup + ".absent")):
+        if os.path.exists(target):
+            os.remove(target)
+        os.remove(path(backup + ".absent"))
+
+
+def greeters():
+    """The greeters found: [(name, description)]."""
+    found = []
+    theme = sddm_theme()
+    if theme:
+        found.append(("sddm", f"SDDM ({theme})"))
+    if os.path.exists(path("/usr/sbin/lightdm-gtk-greeter")):
+        found.append(("lightdm-gtk", "LightDM GTK greeter"))
+    if os.path.exists(path("/usr/sbin/slick-greeter")):
+        found.append(("slick", "LightDM Slick greeter"))
+    return found
+
+
+def configure_greeters():
+    done = []
+    for name, description in greeters():
+        if name == "sddm":
+            theme = sddm_theme()
+            edit_ini(f"{SDDM_THEMES}/{theme}/theme.conf.user", "General", {"background": IMAGE, "type": "image"},
+                     f"{STATE_DIR}/backup/sddm-{theme}.conf.user")
+        elif name == "lightdm-gtk":
+            # Its own file in conf.d (lightdm-gtk-greeter reads them after the main one)
+            write_file(LIGHTDM_GTK_DROPIN, f"# Written by {PACKAGE}: image of the day on the login screen\n"
+                                           f"[greeter]\nbackground={IMAGE}\nuser-background=false\n")
+        elif name == "slick":
+            edit_ini(SLICK_CONFIG, "Greeter", {"background": IMAGE, "draw-user-backgrounds": "false"},
+                     f"{STATE_DIR}/backup/slick-greeter.conf")
+        done.append(description)
+    return done
+
+
+def restore_greeters():
+    for backup in glob.glob(path(f"{STATE_DIR}/backup/sddm-*.conf.user*")):
+        theme = re.match(r"sddm-(.+)\.conf\.user", os.path.basename(backup)).group(1)
+        restore_ini(f"{SDDM_THEMES}/{theme}/theme.conf.user", f"{STATE_DIR}/backup/sddm-{theme}.conf.user")
+    if os.path.exists(path(LIGHTDM_GTK_DROPIN)):
+        os.remove(path(LIGHTDM_GTK_DROPIN))
+        try:
+            os.rmdir(os.path.dirname(path(LIGHTDM_GTK_DROPIN)))     # if it was created only for us
+        except OSError:
+            pass
+    restore_ini(SLICK_CONFIG, f"{STATE_DIR}/backup/slick-greeter.conf")
+
+
+def systemctl(*args):
+    if ROOT:
+        return
+    subprocess.run(["systemctl", *args], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+# ---------------------------------------------------------------- commands
+
+def enable(args):
+    settings = checked_settings(args)
+    found = greeters()
+    if not found:
+        raise SystemExit("No supported login screen was found (SDDM or LightDM with the GTK or Slick greeter).")
+    write_file(CONFIG, json.dumps(settings, indent=2))
+    os.makedirs(path(STATE_DIR), exist_ok=True)
+    os.chmod(path(STATE_DIR), 0o755)       # the greeters (users sddm, lightdm) read the image
+    try:
+        os.remove(path(STATE))          # compose again with the new settings
+    except FileNotFoundError:
+        pass
+    downloaded = update() == 0 and os.path.exists(path(IMAGE))
+    configured = configure_greeters()
+    systemctl("enable", "--now", TIMER)
+    print("Login screen: " + ", ".join(configured) + ("" if downloaded else
+          " (the image could not be downloaded now; the timer will try again)"))
+    return 0
+
+
+def disable(_args=None):
+    restore_greeters()
+    systemctl("disable", "--now", TIMER)
+    for file in (CONFIG, STATE, IMAGE):
+        try:
+            os.remove(path(file))
+        except FileNotFoundError:
+            pass
+    print("Login screen: restored")
+    return 0
+
+
+def status(_args=None):
+    print(json.dumps({"enabled": os.path.exists(path(CONFIG)),
+                      "greeters": [description for _, description in greeters()],
+                      "image": IMAGE if os.path.exists(path(IMAGE)) else ""}))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Image of the day on the login screen (SDDM, LightDM).")
+    commands = parser.add_subparsers(dest="command", required=True)
+    on = commands.add_parser("enable")
+    on.add_argument("--server", required=True)
+    on.add_argument("--lang", default="")
+    on.add_argument("--label", choices=("0", "1"), default="1")
+    on.add_argument("--size", default="1920x1080")
+    on.add_argument("--background", default="blur")
+    on.add_argument("--color", default="#000000")
+    commands.add_parser("disable")
+    commands.add_parser("update")
+    commands.add_parser("status")
+    args = parser.parse_args()
+    if args.command == "status":
+        return status()
+    if os.geteuid() != 0 and not ROOT:
+        raise SystemExit("It must be run as root (the application uses pkexec).")
+    if args.command == "enable":
+        return enable(args)
+    if args.command == "disable":
+        return disable()
+    return update(quiet=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

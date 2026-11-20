@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+     SPDX-License-Identifier: GPL-3.0-or-later -->
+<policyconfig>
+  <vendor>Catholic Background</vendor>
+  <action id="es.llana.catholicbackground.gtk.login">
+    <description>Change the background of the login screen</description>
+    <description xml:lang="es">Cambiar el fondo de la pantalla de inicio de sesión</description>
+    <message>Authentication is needed to put the image of the day on the login screen</message>
+    <message xml:lang="es">Se necesita autenticación para poner la imagen del día en la pantalla de inicio de sesión</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/catholic-background-gtk/login-background</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Luis Llana <luis.llana.diaz@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+[Unit]
+Description=Image of the day on the login screen (Catholic Background)
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/catholic-background-gtk/login.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/catholic-background-gtk/login-background update
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/catholic-background-gtk

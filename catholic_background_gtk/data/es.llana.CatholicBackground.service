@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=es.llana.CatholicBackground
+Exec=/usr/bin/catholic-background-gtk --gapplication-service
