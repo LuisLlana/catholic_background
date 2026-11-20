@@ -36,6 +36,13 @@ Requirements: Android 8.0 (API 26) or later.
   the list comes from the server), label, notification and its time, and how to
   fill the screen.
 - Interface in English and Spanish, following the language of the phone.
+- **Machine translation**: the menu of the language shows, after the languages
+  translated by people and under "Machine translation (LibreTranslate)", those the
+  server translates with LibreTranslate (if the server has it). With one of them
+  (or with the language of the phone, if it has no translation by hand), the texts
+  say so wherever they are shown, with the notice of the server: in the label of the
+  wallpaper (drawn by the server), in the main screen (with a link to LibreTranslate)
+  and in the notification.
 
 The notification uses an alarm of the system (`setAndAllowWhileIdle`, no special
 permission): it goes off even when the phone is idle, at most a few minutes late,

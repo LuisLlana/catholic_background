@@ -91,6 +91,7 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
             val title = artwork.reason.ifEmpty { context.getString(R.string.notification_title) }
             val text = listOf(artwork.title, listOf(artwork.author, artwork.year).filter { it.isNotEmpty() }.joinToString(", "))
                 .filter { it.isNotEmpty() }.joinToString(" — ")
+                .let { if (artwork.machineNotice.isNotEmpty()) "$it\n${artwork.machineNotice}" else it }   // machine translation
             val builder = NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)

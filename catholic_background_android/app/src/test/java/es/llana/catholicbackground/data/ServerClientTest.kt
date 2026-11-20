@@ -90,6 +90,26 @@ class ServerClientTest {
     }
 
     @Test
+    fun machineLanguagesAfterThoseOfPeople() {
+        val languages = ServerClient.parseLanguages("""{"default": "es", "languages": [{"code": "es", "name": "Español"}],
+            "machine_languages": [{"code": "fr", "name": "Français"}, {"code": "", "name": "?"}],
+            "machine_translation": {"service": "LibreTranslate", "url": "https://libretranslate.com"}}""")
+        assertEquals(listOf(ContentLanguage("es", "Español"), ContentLanguage("fr", "Français", machine = true)), languages)
+    }
+
+    @Test
+    fun noticeOfMachineTranslation() {
+        val image = Base64.getEncoder().encodeToString(byteArrayOf(1))
+        val translated = ServerClient.parseArtwork("""{"image": "$image", "title": "L'Annonciation", "language": "fr",
+            "machine_translation": {"service": "LibreTranslate", "notice": "Traduction automatique (LibreTranslate)",
+            "url": "https://libretranslate.com"}}""")
+        assertEquals("Traduction automatique (LibreTranslate)", translated.machineNotice)
+        assertEquals("libretranslate.com", ServerClient.host(translated.machineUrl))
+        val byHand = ServerClient.parseArtwork("""{"image": "$image", "title": "La Anunciación", "machine_translation": null}""")
+        assertEquals("", byHand.machineNotice)
+    }
+
+    @Test
     fun onlyWebLinksAreOpened() {
         assertTrue(ServerClient.isWebLink("https://example.com"))
         assertTrue(ServerClient.isWebLink("HTTP://example.com"))

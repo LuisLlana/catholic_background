@@ -122,7 +122,10 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
             // ---- texts
             var expanded by remember { mutableStateOf(false) }
             val system = locale.getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
-            val options = listOf("" to resources.getString(R.string.system_language, system)) + model.languages.map { it.code to it.name }
+            val people = listOf("" to resources.getString(R.string.system_language, system)) +
+                model.languages.filter { !it.machine }.map { it.code to it.name }
+            val machine = model.languages.filter { it.machine }.map { it.code to it.name }
+            val options = people + machine
             ExposedDropdownMenuBox(expanded, { expanded = it }) {
                 OutlinedTextField(
                     value = options.firstOrNull { it.first == language }?.second ?: language,
@@ -132,8 +135,9 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 )
                 ExposedDropdownMenu(expanded, { expanded = false }) {
-                    options.forEach { (code, name) ->
-                        DropdownMenuItem(text = { Text(name) }, onClick = {
+                    @Composable
+                    fun item(code: String, name: String, indent: Boolean) {
+                        DropdownMenuItem(text = { Text(name, Modifier.padding(start = if (indent) 12.dp else 0.dp)) }, onClick = {
                             expanded = false
                             if (code != settings.language) {
                                 language = code
@@ -141,6 +145,14 @@ fun SettingsScreen(model: DayViewModel, onBack: () -> Unit) {
                                 model.settingsChanged(reloadDay = true)
                             }
                         })
+                    }
+                    people.forEach { (code, name) -> item(code, name, indent = false) }
+                    // The languages the server translates with LibreTranslate, in a separate part
+                    if (machine.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(stringResource(R.string.machine_translation), Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        machine.forEach { (code, name) -> item(code, name, indent = true) }
                     }
                 }
             }

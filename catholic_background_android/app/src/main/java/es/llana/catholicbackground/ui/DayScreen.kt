@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -144,6 +145,19 @@ fun DayScreen(model: DayViewModel, onSettings: () -> Unit) {
             model.artwork?.let { artwork ->
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // Texts translated by LibreTranslate: say so and give the credit, with its link
+                        if (artwork.machineNotice.isNotEmpty()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(artwork.machineNotice, style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (ServerClient.isWebLink(artwork.machineUrl)) {
+                                    Text(" · ", style = MaterialTheme.typography.bodySmall)
+                                    Text(ServerClient.host(artwork.machineUrl), Modifier.clickable { open(artwork.machineUrl) },
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
+                                        textDecoration = TextDecoration.Underline)
+                                }
+                            }
+                        }
                         if (artwork.reason.isNotEmpty()) {
                             Text(artwork.reason, color = ReasonColor, fontWeight = FontWeight.Bold)
                         }

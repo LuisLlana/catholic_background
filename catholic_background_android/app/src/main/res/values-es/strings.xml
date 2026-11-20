@@ -52,4 +52,5 @@
     <string name="image_position">Imagen %1$d de %2$d de este día</string>
     <string name="next_image">Siguiente imagen</string>
     <string name="alternative_note">«Usar como fondo…» pone la imagen que toca a esta hora, que puede no ser esta.</string>
+    <string name="machine_translation">Traducción automática (LibreTranslate)</string>
 </resources>

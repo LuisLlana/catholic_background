@@ -34,9 +34,13 @@ class Artwork(
     val id: Long = 0,
     val position: Int = 0,
     val count: Int = 0,
+    /** The texts are a machine translation (LibreTranslate): this notice of the server must be shown. */
+    val machineNotice: String = "",
+    val machineUrl: String = "",
 )
 
-data class ContentLanguage(val code: String, val name: String)
+/** machine: translated by the server with LibreTranslate (a separate part of the menu). */
+data class ContentLanguage(val code: String, val name: String, val machine: Boolean = false)
 
 /** What went wrong, so that the interface can explain it in its language. */
 enum class Problem { INVALID_URL, NO_IMAGE, CONNECTION, HTTP, INVALID_ANSWER }
@@ -47,8 +51,9 @@ class ServerException(val problem: Problem, message: String) : Exception(message
  * Access to the Catholic background of the day server:
  *   GET <url>?ts=<Unix timestamp of the local midnight of the day>&lang=<language>[&caption=0]
  *   -> {"image": "<base64>", "title", "author", "date", "description", "reason", "license",
- *       "source", "extra", "language", "edit_url", ...}
- *   GET <url>/languages -> {"default": "es", "languages": [{"code", "name"}, ...]}
+ *       "source", "extra", "language", "edit_url", ..., "machine_translation": null | {"service", "notice", "url"}}
+ *   GET <url>/languages -> {"default": "es", "languages": [{"code", "name"}, ...],
+ *                           "machine_languages": [{"code", "name"}, ...]}
  */
 object ServerClient {
     const val DEFAULT_SERVER = "https://simba.fdi.ucm.es/background"
@@ -113,6 +118,9 @@ object ServerClient {
             }
         }
         fun text(name: String) = if (json.isNull(name)) "" else json.optString(name, "").trim()
+        val machine = json.optJSONObject("machine_translation")
+        val machineNotice = machine?.let { m -> (if (m.isNull("notice")) "" else m.optString("notice", "").trim()).ifEmpty { "LibreTranslate" } } ?: ""
+        val machineUrl = machine?.let { m -> if (m.isNull("url")) "" else m.optString("url", "").trim() } ?: ""
         return Artwork(
             bytes = bytes,
             hash = MessageDigest.getInstance("SHA-1").digest(bytes).joinToString("") { "%02x".format(it) },
@@ -129,19 +137,33 @@ object ServerClient {
             id = json.optLong("id", 0),
             position = json.optInt("position", 0),
             count = json.optInt("count", 0),
+            machineNotice = machineNotice,
+            machineUrl = machineUrl,
         )
     }
 
     val FALLBACK_LANGUAGES = listOf(ContentLanguage("es", "Español"), ContentLanguage("en", "English"))
 
+    /** Those translated by people, then those of machine translation (machine = true). */
     fun parseLanguages(body: String): List<ContentLanguage> = try {
-        val list = JSONObject(body).getJSONArray("languages")
-        (0 until list.length()).map { list.getJSONObject(it) }
-            .map { ContentLanguage(it.optString("code", ""), it.optString("name", "")) }
-            .filter { it.code.isNotEmpty() }
-            .ifEmpty { FALLBACK_LANGUAGES }
+        val json = JSONObject(body)
+        fun items(name: String, machine: Boolean): List<ContentLanguage> {
+            val list = json.optJSONArray(name) ?: return emptyList()
+            return (0 until list.length()).mapNotNull { list.optJSONObject(it) }
+                .map { ContentLanguage(it.optString("code", ""), it.optString("name", ""), machine) }
+                .filter { it.code.isNotEmpty() }
+        }
+        val people = items("languages", false)
+        if (people.isEmpty()) FALLBACK_LANGUAGES else people + items("machine_languages", true)
     } catch (e: JSONException) {
         FALLBACK_LANGUAGES
+    }
+
+    /** "libretranslate.com" for "https://libretranslate.com/…" */
+    fun host(url: String): String = try {
+        URI(url).host ?: url
+    } catch (e: Exception) {
+        url
     }
 
     private fun get(url: String): String {
